@@ -3,8 +3,8 @@
 from odoo import models, fields, api, _
 from datetime import datetime,date, timedelta
 from odoo.exceptions import UserError, ValidationError
-import base64
-from odoo.tools.misc import format_amount
+# import base64
+# from odoo.tools.misc import format_amount
 
 class AccountPayment(models.Model):
     _inherit = 'account.payment'

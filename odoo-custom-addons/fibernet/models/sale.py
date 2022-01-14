@@ -176,7 +176,7 @@ class SaleOrderExtend(models.Model):
         if partn_ids:
             self.message_follower_ids.unlink()
             msg = _(
-                'The ddSales Order Document %s has been approved by %s.  ') % (
+                'The Sales Order Document %s has been approved by %s.  ') % (
                       self.name, self.env.user.name)
             self.message_post(
                 body=msg,

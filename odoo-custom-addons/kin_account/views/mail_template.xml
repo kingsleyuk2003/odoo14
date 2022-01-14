@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <odoo>
-    <data noupdate="0">
+    <data noupdate="1">
+        <!-- This error (Unknown error: Header values may not contain linefeed or carriage return characters), while sending email is caused when the value of some attributes (subject,report_name) has breakline(linefeed, carriage return).  so removing the breaklines around resolves it-->
         <record id="email_template_payment_receipt" model="mail.template">
             <field name="name">Payment Receipt - Send by Email</field>
-
-            <field name="subject">${object.company_id.name})</field>
+              <field name="subject">${object.company_id.name} Payment Receipt (Ref ${object.name or 'n/a'})</field>
             <field name="partner_to">${object.partner_id.id}</field>
             <field name="model_id" ref="account.model_account_payment"/>
             <field name="body_html" type="html">
@@ -18,7 +18,7 @@
                           <strong>REFERENCES</strong><br />
                           Receipt ID: <strong>${object.name}</strong><br />
                            Receipt total: ${object.currency_id.symbol} <strong>${object.amount} </strong><br />
-                           Receipt date: ${object.date}<br />
+                           Receipt Date: <strong>${format_date(object.date,'d/M/Y')}</strong>
                         </p>
 
                          <br/>
@@ -52,9 +52,8 @@
                 </div>
            </field>
             <field name="report_template" ref="action_report_receipt"/>
-            <field name="report_name">
-                Receipt_${(object.name or '').replace('/','_')}_${object.state == 'draft' and 'draft' or ''}
-            </field>
+
+            <field name="report_name">Receipt_${(object.name or '').replace('/','_')}_${object.state == 'draft' and 'draft' or ''}</field>
             <field name="lang">${object.partner_id.lang}</field>
              <field name="auto_delete" eval="True"/>
         </record>
