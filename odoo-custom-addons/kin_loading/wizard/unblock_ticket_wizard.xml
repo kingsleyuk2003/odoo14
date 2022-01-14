@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+
+        <record id="view_unblock_ticket_form" model="ir.ui.view">
+            <field name="name">UnBlock Ticket Reason</field>
+            <field name="model">unblock.ticket.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Block Reason">
+                     <p>You are about to UnBlock a Ticket. Please Put the Reason for the UnBlock</p>
+                    <group>
+                        <label for="msg" string="Reason"  />
+                        <field nolabel="1" name="msg"/>
+                    </group>
+                    <footer>
+                        <button name="action_unblock_reason" string="UnBlock" type="object" class="oe_highlight"/>
+                        or
+                        <button string="Close" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_unblock_ticket" model="ir.actions.act_window">
+            <field name="name">UnBlock Ticket</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">unblock.ticket.wizard</field>
+
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_unblock_ticket_form" />
+            <field name="target">new</field>
+            <!--<field name="groups_id" eval="[(4,ref('base.group_sale_salesman'))]"/>-->
+        </record>
+
+
+    </data>
+</odoo>

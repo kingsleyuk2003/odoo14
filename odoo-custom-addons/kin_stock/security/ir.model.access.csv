@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_custom_account_move_stock,custom.stock.account.move,account.model_account_move,stock.group_stock_user,1,1,1,0
+access_custom_account_move_line_stock,custom.stock.account.move.line,account.model_account_move_line,stock.group_stock_user,1,1,1,0
+access_custom_account_type_stock,custom.stock.account.type,account.model_account_account_type,stock.group_stock_user,1,1,1,0
+access_stock_inventory_manager,stock.inventory manager_extend,stock.model_stock_inventory,stock.group_stock_manager,1,1,1,0

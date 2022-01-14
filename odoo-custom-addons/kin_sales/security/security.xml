@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+
+	<record model="ir.module.category" id="module_category_sales">
+            <field name="name">Sales - Custom</field>
+            <field name="description">Sales</field>
+            <!--<field name="sequence">7</field>-->
+        </record>
+
+	<record id="group_show_sales_app" model="res.groups">
+			<field name="name">Show Sales Application</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+	<record id="group_show_sales_configuration" model="res.groups">
+			<field name="name">Show Sales Configuration</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+
+    		<record id="group_show_send_by_email_button" model="res.groups">
+			<field name="name">Show "Send by Email" Button in Sales</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+		<record id="group_show_create_invoice_si_button" model="res.groups">
+			<field name="name">Show "Create Invoice" button for Sale to Invoice</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+		<record id="group_show_create_invoice_button" model="res.groups">
+			<field name="name">Show "Create Invoice" Button</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+	<record id="group_show_cancel_sale_button" model="res.groups">
+			<field name="name">Show "Cancel" Button</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+	<record id="group_show_confirm_sale_button" model="res.groups">
+			<field name="name">Show "Confirm" Button on Sales Order</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+	<record id="group_receive_sale_order_purchase_request_email" model="res.groups">
+			<field name="name">Receive Purchase Request Email from Sales Order</field>
+			<field name="category_id" ref="module_category_sales"/>
+	</record>
+
+
+		<record id="group_receive_sale_order_stock_alert_email" model="res.groups">
+			<field name="name">Receive Low Stock Email Notification from Sales Order</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+
+	<record id="group_receive_delivery_stock_transfer_email" model="res.groups">
+			<field name="name">Receive Delivery Order Transfer Notification from Sales</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+
+		<record id="group_invoice_before_delivery_email" model="res.groups">
+			<field name="name">Receive Invoice Before Delivery Notification Email</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+		<record id="group_sales_order_approved_email" model="res.groups">
+			<field name="name">Receive Sales Order Approved Notification Email</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+
+
+<!--	&lt;!&ndash;<record id="group_cash_sales_btn" model="res.groups">&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="name">Show "Cash Sales" btn</field>&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="category_id" ref="module_category_sales"/>&ndash;&gt;-->
+<!--		&lt;!&ndash;</record>&ndash;&gt;-->
+
+<!--	&lt;!&ndash;<record id="group_credit_sales_btn" model="res.groups">&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="name">Show "Credit Sales" btn</field>&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="category_id" ref="module_category_sales"/>&ndash;&gt;-->
+<!--		&lt;!&ndash;</record>&ndash;&gt;-->
+
+<!--		&lt;!&ndash;<record id="group_cancel_stock_button" model="res.groups">&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="name">Show Cancel Stock Button</field>&ndash;&gt;-->
+<!--		&lt;!&ndash;</record>&ndash;&gt;-->
+
+
+
+
+
+
+
+<!--	   &lt;!&ndash;<record id="group_show_sale_menu" model="res.groups">&ndash;&gt;-->
+<!--			&lt;!&ndash;<field name="name">Show "Sales" Menu</field>&ndash;&gt;-->
+<!--		&lt;!&ndash;</record>&ndash;&gt;-->
+
+
+<!--		<record id="group_show_customer_account_fields" model="res.groups">-->
+<!--			<field name="name">Show Customer Account fields</field>-->
+<!--			<field name="category_id" ref="module_category_sales"/>-->
+<!--		</record>-->
+
+<!--	<record id="group_show_qty_available_field" model="res.groups">-->
+<!--			<field name="name">Show Qty. Available field</field>-->
+<!--			<field name="category_id" ref="module_category_sales"/>-->
+<!--		</record>-->
+
+<!--		<record id="group_show_margin_cost_fields" model="res.groups">-->
+<!--			<field name="name">Show Margin and Cost fields</field>-->
+<!--			<field name="category_id" ref="module_category_sales"/>-->
+<!--		</record>-->
+
+
+
+
+
+<!--	<record id="group_receive_sale_quote_expiration_email" model="res.groups">-->
+<!--			<field name="name">Receive "Expiration Sale Quote Email" Notification</field>-->
+<!--			<field name="category_id" ref="module_category_sales"/>-->
+<!--		</record>-->
+
+
+
+</data>
+</odoo>

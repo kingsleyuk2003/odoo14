@@ -1,0 +1,76 @@
+<odoo>
+
+<template id="web.styles_company_report" >
+
+
+        <t t-foreach="company_ids" t-as="company" t-translation="off">
+                <t t-set="font" t-value="company.font or 'Lato'" />
+                <t t-set="primary" t-value="company.primary_color or 'black'" />
+                <t t-set="secondary" t-value="company.secondary_color or 'black'" />
+                <t t-set="layout" t-value="company.external_report_layout_id.key or 'web.external_layout_standard'" />
+                    .o_company_<t t-esc='company.id'/>_layout {
+                    font-family: '<t t-esc="font" />';
+
+                <t t-if="layout == 'web.external_layout_background'">
+                    .o_background_header {
+                        h3 {
+                            color: <t t-esc='primary'/>;
+                        }
+                    }
+                    &amp;.o_background_footer {
+                        ul {
+                            li {
+                                color: <t t-esc='secondary'/>;
+                            }
+                        }
+                    }
+                    &amp;.o_report_layout_background {
+                       strong {
+                            color: <t t-esc='secondary'/>;
+                        }
+                        h2 {
+                            color: <t t-esc='primary'/>;
+                        }
+                        thead tr th {
+                            color: <t t-esc='secondary'/>;
+                        }
+                    }
+                    .row > div > table,
+                    div#total table {
+                        &amp;:first-child,
+                        &amp;:last-child,
+                        &amp;.o_subtotal,
+                        &amp;.o_total {
+                            strong {
+                                color: <t t-esc='primary'/>;
+                            }
+                        }
+                    }
+                </t>
+                <t t-elif="layout == 'web.external_layout_boxed'">
+
+                </t>
+                <t t-elif="layout == 'web.external_layout_standard'">
+                    &amp;.o_report_layout_standard {
+                        h2 {
+                            color: <t t-esc='primary'/>;
+                        }
+                        #informations strong {
+                            color: <t t-esc='secondary'/>;
+                        }
+                        #total strong{
+                            color: <t t-esc='primary'/>;
+                        }
+                        table {
+                            thead {
+                                color: <t t-esc='secondary'/>;
+                            }
+                        }
+                    }
+                </t>
+                }
+        </t>
+
+</template>
+
+</odoo>

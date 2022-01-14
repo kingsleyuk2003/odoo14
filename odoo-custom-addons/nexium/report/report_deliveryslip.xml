@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+
+		<record id="stock.action_report_delivery" model="ir.actions.report">
+            <field name="name">Delivery Slip</field>
+            <field name="model">stock.picking</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">nexium.report_deliveryslip</field>
+            <field name="report_file">nexium.report_deliveryslip</field>
+            <field name="print_report_name">'Delivery Slip - %s - %s' % (object.partner_id.name or '', object.name)</field>
+            <field name="binding_model_id" ref="model_stock_picking"/>
+            <field name="binding_type">report</field>
+        </record>
+
+
+ <template id="web.external_layout_standard"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-6" name="company_address">
+                    <div t-field="company.partner_id"
+                        t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <!-- <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+            <div class="text-center" style="border-top: 1px solid black;">
+                <ul class="list-inline mb4">
+                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem
+                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>
+                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>
+                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>
+                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>
+                </ul>
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> / <span class="topage"/>
+                </div>
+            </div>
+        </div> -->
+    </template>
+
+
+
+        <template id="cust_delivery_note_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t t-if="company.external_report_layout_id" t-call="{{company.external_report_layout_id.key}}"><t t-raw="0"/></t>
+        <t t-else="else" t-call="web.external_layout_standard"><t t-raw="0"/></t>
+    </template>
+
+
+    <template id="report_deliveryslip">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="web.html_container">
+            <t t-call="nexium.cust_delivery_note_layout">
+                <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+                <t t-set="partner" t-value="o.partner_id or (o.move_lines and o.move_lines[0].partner_id) or False"/>
+                <t t-if="partner" name="partner_header">
+                    <t t-set="address">
+                        <div t-esc="partner"
+                        t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True}'/>
+                   </t>
+                </t>
+                <div class="page">
+                    <h2>
+                       DELIVERY ORDER: <span t-field="o.name"/>
+                    </h2>
+                    <div class="row mt32 mb32">
+                        <div t-if="o.origin" class="col-auto" name="div_origin">
+                            <strong>Sales Order No:</strong>
+                            <p t-field="o.origin"/>
+                        </div>
+                        <div t-if="o.state" class="col-auto" name="div_sched_date">
+                            <strong>Dispatch Date:</strong>
+                            <t t-if="o.state == 'done'">
+                                <p t-field="o.date_done"/>
+                            </t>
+                            <t t-if="o.state != 'done'">
+                                <p t-field="o.scheduled_date"/>
+                           </t>
+                        </div>
+                    </div>
+                    <table class="table table-sm table-bordered"  name="stock_move_table">
+                        <thead>
+                            <tr class="custom_th">
+                                <th><strong>PRODUCT TYPE</strong></th>
+                                <th><strong>AMOUNT IN WORDS</strong></th>
+                                <th><strong>QUANTITY IN US GALLONS</strong></th>
+                                <th><strong>PO Number</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
+                            <tr t-foreach="lines" t-as="move">
+                                <td>
+                                    <span t-field="move.product_id"/>
+                                    <p t-if="move.description_picking != move.product_id.name">
+                                        <span t-field="move.description_picking"/>
+                                    </p>
+                                </td>
+                                <td>
+                                    <span t-field="o.amount_in_words"/>
+                                </td>
+                                <td>
+                                    <span t-field="move.product_uom_qty"/>
+                                    <span t-field="move.product_uom"/>
+                                </td>
+                                <td><span t-field="o.po_number"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+
+                <br />
+                    <span><strong>COMPARTMENT</strong></span>
+              <table class="table table-bordered"  >
+                            <tbody>
+                                <tr>
+                                    <td style="width:3%" >1</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                     <td></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td></td>
+                                   <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+              </table>
+
+
+                <br />
+              <div class="container">
+                  <div  class="row"  >
+                        <div class="col-xs-6 mt32" >
+                            <strong><span>Nexium's Official Signature: ......................................................</span></strong>
+                        </div>
+                       <div class="col-xs-6 mt32" >
+                           <strong><span>Driver's Signature: ......................................................</span></strong>
+                       </div>
+                  </div>
+              </div>
+                <br />
+             <div class="container">
+                  <div  class="row"  >
+                        <div class="col-xs-12 mt32" >
+                            <p><span>I .................................................. Certify that i have received ............................ gallons of product quantity on this date of .......................................... customer</span></p>
+                        </div>
+                  </div>
+              </div>
+            <br />
+             <div class="container">
+                  <div  class="row"  >
+                       <div class="col-xs-6 mt32" >
+                           <strong> <span>Authorized Person Signature: ......................................................</span></strong>
+                       </div>
+                      <div class="col-xs-6 mt32" >
+                          <strong><span>Time Received: ....................................................</span></strong>
+                      </div>
+                  </div>
+              </div>
+                    <br /><br />
+              <div class="container">
+                  <div  class="row"  >
+                       <div class="col-xs-12" >
+                         <p class="text-center">Thank you for your business!</p>
+                            <p> Should you have any enquires concerning this delivery note, please contact Mr. John Olowa on 0886 559 177 / 0777 290 229</p>
+                      </div>
+                  </div>
+              </div>
+              <div class="container">
+                  <div  class="row"  >
+                       <div class="col-xs-12 text-center" >
+                         <p>134, Carey Street, Monrovia, Liberia<br />
+                            Tel: 0777290229, 0776668363     Email: finance1@nexiumpetroleum.com    Website: www.nexiumpetroleum.com</p>
+                      </div>
+                  </div>
+              </div>
+
+          </div>
+            </t>
+         </t>
+        </t>
+    </template>
+    </data>
+
+</odoo>
+
+
+
+
+
+
+
+
+
+

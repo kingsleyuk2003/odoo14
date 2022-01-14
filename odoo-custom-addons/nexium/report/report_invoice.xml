@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <template id="report_invoice_document_nexium" inherit_id="account.report_invoice_document">
+             <xpath expr="//div[@name='reference']"  position="after">
+                 <div class="col-auto col-3 mw-100 mb-2" t-if="o.via" name="via">
+                                <strong>Via:</strong>
+                                <p class="m-0" t-field="o.via"/>
+                      </div>
+                      <div class="col-auto col-3 mw-100 mb-2" t-if="o.po_number" name="po_number">
+                                <strong>PO Number:</strong>
+                                <p class="m-0" t-field="o.po_number"/>
+                      </div>
+                 <div class="col-auto col-3 mw-100 mb-2" t-if="o.do_number" name="do_number">
+                                <strong>DO Number:</strong>
+                                <p class="m-0" t-field="o.do_number"/>
+                      </div>
+             </xpath>
+
+            <xpath expr="//div[@id='qrcode']"  position="after">
+                <br />
+                <br />
+                <br />
+                     <div class="col-xs-12" >
+                         <div class="row">
+                             <div class="col-xs-12" >
+                                 <div>
+                                    <strong> Authorised Signature: ..............................</strong>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+            </xpath>
+
+         </template>
+
+
+
+    </data>
+</odoo>

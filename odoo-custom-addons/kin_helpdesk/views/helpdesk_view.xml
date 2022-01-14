@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <menuitem name="Help Desk"
+            id="kin_help_desk"
+            groups="group_show_helpdesk_app"
+            sequence="25" web_icon="kin_helpdesk,static/description/icon.png" />
+
+        <menuitem name="Help Desk" id="menu_help_desk"  groups="group_helpdesk_manager,group_helpdesk_user" parent="kin_help_desk" sequence="1" />
+
+         <menuitem name="Configuration" id="menu_help_desk_config" groups="group_helpdesk_configuration" parent="kin_help_desk" sequence="10" />
+
+    <record id="ticket_form" model="ir.ui.view">
+            <field name="name">kin.ticket.form</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <form string="Ticket">
+                <header>
+                     <button name="btn_ticket_open" type="object" states="draft" string="Open Ticket" class="oe_highlight" groups="kin_helpdesk.group_helpdesk_open_ticket" />
+                    <button name="btn_ticket_progress" type="object" states="new" string="Work In Progress" class="oe_highlight" groups="kin_helpdesk.group_helpdesk_progess_ticket" />
+                    <button name="btn_ticket_done" type="object" states="progress" string="Done"  class="oe_highlight" groups="kin_helpdesk.group_helpdesk_done_ticket"/>
+                    <button name="btn_ticket_close" type="object" states="done,draft,new" string="Close" class="oe_highlight"  groups="kin_helpdesk.group_helpdesk_close_ticket" confirm="Ticket will be Closed?" />
+                    <button name="btn_ticket_reset" type="object" states="cancel,closed" string="Reset Ticket"  groups="kin_helpdesk.group_helpdesk_reset_ticket" />
+                     <button name="btn_ticket_cancel" type="object" states="done,new,closed" string="Cancel Ticket"  groups="kin_helpdesk.group_helpdesk_cancel_ticket" />
+                   <field name="state" widget="statusbar"  />
+
+                    <!--<field name="stage_id" widget="statusbar" clickable="True"-->
+                            <!--options="{'fold_field': 'fold'}"-->
+                            <!--domain="[('categ_id', '=', category_id)]"-->
+                            <!--/>-->
+                </header>
+                <sheet>
+                    <!--<div class="oe_button_box" name="button_box" attrs="{'invisible': [('state', 'not in', ('purchase', 'done', 'cancel'))]}">-->
+                        <!--<button type="object"-->
+                            <!--name="action_view_picking"-->
+                            <!--class="oe_stat_button"-->
+                            <!--icon="fa-truck">-->
+                            <!--<field name="picking_count" widget="statinfo" string="Shipment" help="Incoming Shipments"/>-->
+                        <!--</button>-->
+                        <!--<button type="object"  name="action_view_invoice"-->
+                            <!--class="oe_stat_button"-->
+                            <!--icon="fa-pencil-square-o">-->
+                            <!--<field name="invoice_count" widget="statinfo" string="Invoices"/>-->
+                        <!--</button>-->
+                    <!--</div>-->
+                    <div class="oe_title">
+                        <label for="ticket_id" string="Ticket ID:" attrs="{'invisible': [('state','in',('draft'))]}"/>
+                        <h1>
+                            <field name="ticket_id" readonly="1"/>
+                        </h1>
+                        <h1><field name="name" placeholder="Subject..." attrs="{'readonly': [('state', 'not in', ('draft', 'new'))]}"  /></h1>
+                    </div>
+                    <group>
+                        <group>
+                             <field name="user_id" required="1" />
+                            <field name="priority"  widget="priority"/>
+                            <field name="category_id"  options="{'no_open': True, 'no_create': True}"  string="Category" attrs="{'readonly': [('state', 'not in', ('draft', 'new'))]}"  />
+                             <field name="user_ticket_group_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'not in', ('draft', 'new', 'progress'))]}"  />
+                            <field name="assigned_date" readonly="1"  />
+                            <field name="expected_finish_date"  attrs="{'readonly': [('state', 'not in', ('draft', 'new', 'progress'))]}"  />
+                            <field name="done_ticket_date" readonly="1" />
+                            <field name="duration" />
+                            <field name="ticket_company_id" options="{'no_open': True, 'no_create': True}" readonly="1" />
+                        </group>
+                        <group>
+                            <field name="partner_id"  options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'not in', ('draft', 'new'))]}"  />
+                            <!--<field name="partner_name" />-->
+                            <field name="email"/>
+                            <field name="mobile" />
+                            <field name="phone" />
+                            <field name="open_date" readonly="1" />
+                            <field name="closed_date" readonly="1" />
+                            <field name="time_elapsed" />
+                            <field name="time_spent" />
+                        </group>
+                    </group>
+                     <notebook>
+                        <page string="Description" name="description" >
+                            <field name="description" attrs="{'readonly': [('state', 'in', ('closed'))]}" placeholder="Add an internal note..." />
+                        </page>
+<!--                         <page string="Users" >-->
+<!--                             <group col="4">                                 -->
+<!--                             <field name="engineer_ids" readonly="1"  widget="many2many_tags" />-->
+<!--                             </group>-->
+
+<!--                         </page>-->
+
+                         <!--<page string="Cost" >-->
+                             <!--<field name="ticket_cost_ids" >-->
+                                <!--<tree editable="bottom" >-->
+                                     <!--<field name="analytic_account_id"  />-->
+                                     <!--<field name="ticket_cost" sum="Total" widget="monetary" options="{'currency_field': 'currency_id'}" />-->
+
+                                <!--</tree>-->
+                             <!--</field>-->
+                         <!--</page>-->
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+                </form>
+            </field>
+        </record>
+
+
+
+
+        <record model="ir.ui.view" id="ticket_tree_view">
+            <field name="name">Ticket Tree</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <tree string="Ticket Tree" >
+                    <field name="ticket_id"/>
+                    <field name="name"/>
+                    <field name="partner_id"/>
+                    <field name="priority" string="Priority" />
+                    <field name="category_id" />
+                    <field name="user_ticket_group_id" />
+                    <field name="create_date"/>
+                    <field name="open_date"/>
+                    <field name="closed_date"/>
+                    <field name="time_elapsed" />
+                    <field name="time_spent"/>
+                    <field name="state" widget="selection" />
+                </tree>
+            </field>
+        </record>
+
+         <record id="view_kin_ticket_filter" model="ir.ui.view">
+            <field name="name">Ticket Search</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <search string="Ticket Search">
+                    <field name="name" string="ID/Customer/Description/Email/Subject" filter_domain="['|', '|', '|','|', ('ticket_id','ilike',self),('partner_id','child_of',self), ('description','ilike',self),('email','ilike',self),('name','ilike',self)]"/>
+                    <field name="ticket_id"/>
+                     <field name="category_id" />
+                    <field name="partner_id" operator="child_of"/>
+                    <field name="user_id"/>
+                    <field name="state" />
+                    <filter name="myTickets" string="My Tickets" domain="[('user_id','=',uid)]"/>
+                    <filter string="Unassigned Ticket" name="unassigned" domain="[('user_id', '=', False)]"/>
+                    <separator/>
+                    <filter string="New" name="draft" domain="[('state', '=', 'draft')]"/>
+                    <separator/>
+                   <filter string="Ticket Category" name="grpTC" context="{'group_by':'category_id'}" />
+                     <filter string="Status" name="grpStatus" context="{'group_by':'state'}"/>
+                    <filter string="Unread Messages" name="message_needaction" domain="[('message_needaction','=',True)]"/>
+
+                    <group expand="0" string="Group By" >
+                        <filter string="Support Person" name="Responsible" context="{'group_by':'user_id'}" />
+                        <filter name="priority" string="Priority" context="{'group_by':'priority'}" />
+                        <filter name="state" string="State" context="{'group_by':'state'}"/>
+                        <filter name="company" string="Company" context="{'group_by':'ticket_company_id'}" groups="base.group_multi_company"/>
+                        <separator/>
+                        <filter name="create_day" string="Create Day" context="{'group_by':'create_date:day'}" help="Create Date"/>
+
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!--<record model="ir.ui.view" id="ticket_calendar_view">-->
+            <!--<field name="name">Ticket Calendar</field>-->
+            <!--<field name="model">kin.ticket</field>-->
+            <!--<field name="arch" type="xml">-->
+                <!--<calendar string="Tickets" date_start="open_date" color="user_id" date_delay="duration">-->
+                    <!--<field name="name"/>-->
+                    <!--<field name="partner_id"/>-->
+                <!--</calendar>-->
+            <!--</field>-->
+        <!--</record>-->
+
+        <record model="ir.ui.view" id="ticket_pivot_view">
+            <field name="name">Ticket Pivot</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <pivot string="Tickets">
+                    <field name="partner_id" type="row"/>
+                    <field name="state" type="col"/>
+                </pivot>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="ticket_graph_view">
+            <field name="name">Ticket Graph</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <graph string="Tickets" type="bar">
+                    <field name="partner_id" type="row"/>
+                    <field name="create_date" interval="month" type="col"/>
+                </graph>
+            </field>
+        </record>
+
+        <!--<record model="ir.ui.view" id="ticket_kanban_view">-->
+            <!--<field name="name">Ticket Kanban</field>-->
+            <!--<field name="model">kin.ticket</field>-->
+            <!--<field name="arch" type="xml">-->
+                <!--<kanban default_group_by="stage_id" class="o_kanban_small_column">-->
+                    <!--<field name="stage_id" />-->
+                    <!--<field name="colour"/>-->
+                    <!--<field name="user_id"/>-->
+                    <!--<templates>-->
+                        <!--<t t-name="kanban-box">-->
+                            <!--<div t-attf-class="#{kanban_color(record.colour.raw_value)} oe_kanban_global_click">-->
+                                <!--<div class="o_dropdown_kanban dropdown">-->
+                                    <!--<a class="dropdown-toggle btn" data-toggle="dropdown" href="#" >-->
+                                        <!--<span class="fa fa-bars fa-lg"/>-->
+                                    <!--</a>-->
+                                    <!--<ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">-->
+                                        <!--<t t-if="widget.editable"><li><a type="edit">Edit</a></li></t>-->
+                                        <!--<t t-if="widget.deletable"><li><a type="delete">Delete</a></li></t>-->
+                                        <!--<li><ul class="oe_kanban_colorpicker" data-field="colour"/></li>-->
+                                    <!--</ul>-->
+                                <!--</div>-->
+                                <!--<div class="oe_kanban_content">-->
+                                    <!--<div>-->
+                                        <!--<strong><field name="name"/></strong>-->
+                                    <!--</div>-->
+                                    <!--<div class="o_kanban_footer">-->
+                                        <!--<field name="priority" widget="priority" groups="base.group_user"/>-->
+                                        <!--<img t-att-src="kanban_image('res.users', 'image_small', record.user_id.raw_value)" t-att-title="record.user_id.value" width="24" height="24" class="oe_kanban_avatar pull-right"/>-->
+                                    <!--</div>-->
+                                <!--</div>-->
+                                <!--<div class="oe_clear"></div>-->
+                            <!--</div>-->
+                        <!--</t>-->
+                    <!--</templates>-->
+                <!--</kanban>-->
+            <!--</field>-->
+        <!--</record>-->
+
+
+        <record id="action_view_all_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">All Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+            <field name="context">{'search_default_grpTC': 1 , 'search_default_grpStatus' : 1}</field>
+              <!--<field name="domain">[('stage_id.categ_id.name','=','Installation')]</field>-->
+            <field name="help" type="html">
+                <p>
+                    All Tickets
+                </p>
+            </field>
+        </record>
+
+         <record id="action_view_draft_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Draft Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="domain">[('state', 'in', ['draft'])]</field>
+            <field name="help" type="html">
+                <p>
+                    Draft Tickets
+                </p>
+            </field>
+        </record>
+
+         <record id="action_view_new_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Open Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="domain">[('state', 'in', ['new'])]</field>
+            <field name="help" type="html">
+                <p>
+                   New Tickets
+                </p>
+            </field>
+        </record>
+
+         <record id="action_view_progress_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">In Progress Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="domain">[('state', 'in', ['progress'])]</field>
+            <field name="help" type="html">
+                <p>
+                   On Going Tickets
+                </p>
+            </field>
+        </record>
+
+        <record id="action_view_done_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Done Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="domain">[('state', 'in', ['done'])]</field>
+            <field name="help" type="html">
+                <p>
+                   On Going Tickets
+                </p>
+            </field>
+        </record>
+
+         <record id="action_view_unclosed_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name" >Active Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+              <field name="context">{'search_default_grpTC': 1 , 'search_default_grpStatus' : 1}</field>
+             <field name="domain">[('state', '!=', 'closed')]</field>
+            <field name="help" type="html">
+                <p>
+                   Un - Closed Tickets
+                </p>
+            </field>
+        </record>
+
+         <record id="action_view_closed_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Closed Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="context">{'search_default_grpTC': 1}</field>
+             <field name="domain">[('state', 'in', ['closed'])]</field>
+            <field name="help" type="html">
+                <p>
+                   Closed Tickets
+                </p>
+            </field>
+        </record>
+
+         <!--<record id="action_view_my_tickets" model="ir.actions.act_window">-->
+            <!--<field name="res_model">kin.ticket</field>-->
+            <!--<field name="name">Open Tickets</field>-->
+            <!--<field name="view_mode">tree,form,pivot,graph</field>-->
+             <!--<field name="domain">[('user_id', '=', uid),('state','!=', 'closed')]</field>-->
+            <!--<field name="help" type="html">-->
+                <!--<p>-->
+                   <!--My Tickets-->
+                <!--</p>-->
+            <!--</field>-->
+        <!--</record>-->
+
+
+        <!-- Ticket category -->
+          <record model="ir.ui.view" id="ticket_category_view">
+            <field name="name">Ticket Category</field>
+            <field name="model">kin.ticket.category</field>
+              <field name="arch" type="xml">
+                <form string="Ticket Category">
+                    <sheet>
+                        <group col="4" >
+                            <field name="name" />
+                            <field name="code" readonly="1"/>
+                        </group>
+                        <notebook>
+                            <page string="Stages" name="stage">
+                                <field name="ticket_stage_ids" />
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+              </field>
+          </record>
+
+         <record id="action_view_ticket_category" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket.category</field>
+            <field name="name">Ticket Category</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_ticket_category" name="Ticket Category" parent="menu_help_desk_config" action="action_view_ticket_category" sequence="1"/>
+
+
+        <!-- Ticket Stages -->
+          <record model="ir.ui.view" id="ticket_stage_view">
+            <field name="name">Ticket Stages</field>
+            <field name="model">kin.ticket.stage</field>
+              <field name="arch" type="xml">
+                <form string="Ticket Stages">
+                    <sheet>
+                        <group col="4" >
+                            <field name="name" />
+                            <field name="categ_id" />
+                            <field name="active" />
+                             <field name="sequence" widget="handle" />
+                        </group>
+                    </sheet>
+                </form>
+              </field>
+          </record>
+
+        <record model="ir.ui.view" id="ticket_stage_tree_view">
+            <field name="name">Ticket Stages Tree</field>
+            <field name="model">kin.ticket.stage</field>
+              <field name="arch" type="xml">
+                  <tree string="Ticket Tree" >
+                      <field name="sequence" widget="handle" />
+                        <field name="name" />
+                      <field name="categ_id" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_view_ticket_stage" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket.stage</field>
+            <field name="name">Ticket Stage</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_ticket_stage" name="Ticket Stages" parent="menu_help_desk_config" action="action_view_ticket_stage" sequence="2"/>
+
+
+                <!-- User Ticket Group -->
+          <record id="user_ticket_group_form" model="ir.ui.view">
+            <field name="name">user.ticket.group.form</field>
+            <field name="model">user.ticket.group</field>
+            <field name="arch" type="xml">
+                <form string="User Ticket Groups">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                            <field name="company_id" />
+                                <field name="user_ids"  widget="many2many_tags" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="user_ticket_group_tree_view">
+            <field name="name">User Ticket Group Tree</field>
+            <field name="model">user.ticket.group</field>
+              <field name="arch" type="xml">
+                  <tree string="User Ticket Group" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_user_ticket_group" model="ir.actions.act_window">
+            <field name="res_model">user.ticket.group</field>
+            <field name="name">User Ticket Group</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_user_ticket_group" name="User Ticket Group" parent="menu_help_desk_config" action="action_user_ticket_group" sequence="3"/>
+
+
+        <record id="action_view_my_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Open Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="context">{'search_default_grpTC': 1 , 'search_default_grpStatus' : 1}</field>
+             <field name="domain">[('user_id', '=', uid),('state','!=', 'closed')]</field>
+            <field name="help" type="html">
+                <p>
+                   My Tickets
+                </p>
+            </field>
+        </record>
+
+
+
+        <!--<menuitem id="menu_helpdesk_tickets" name="Tickets" parent="menu_help_desk" sequence="3"/>-->
+          <menuitem id="menu_helpdesk_my_tickets" name="My Tickets" parent="menu_help_desk" action="action_view_my_tickets" sequence="3"/>
+         <menuitem id="menu_helpdesk_un_closed_tickets" name="Active Tickets" parent="menu_help_desk" action="action_view_unclosed_tickets" sequence="1"/>
+        <!--<menuitem id="menu_helpdesk_draft_tickets" name="Draft Tickets" parent="menu_helpdesk_tickets" action="action_view_draft_tickets" sequence="3"/>-->
+        <!--<menuitem id="menu_helpdesk_new_tickets" name="Open Tickets" parent="menu_helpdesk_tickets" action="action_view_new_tickets" sequence="4"/>-->
+        <!--<menuitem id="menu_helpdesk_progress_tickets" name="In Progress Tickets" parent="menu_helpdesk_tickets" action="action_view_progress_tickets" sequence="5"/>-->
+        <!--<menuitem id="menu_helpdesk_done_tickets" name="Resolved Tickets" parent="menu_helpdesk_tickets" action="action_view_done_tickets" sequence="6"/>-->
+        <menuitem id="menu_helpdesk_close_tickets" name="Closed Tickets" parent="menu_help_desk" action="action_view_closed_tickets" sequence="2"/>
+        <menuitem id="menu_helpdesk_all_tickets" name="All Tickets (Active and Closed)" parent="menu_help_desk" action="action_view_all_tickets" sequence="4"/>
+
+        <menuitem id="menu_customer" parent="kin_help_desk" action="base.action_partner_form" sequence="4"  groups="group_helpdesk_customers" />
+        <!--<menuitem id="menu_inventory" name="Inventory" parent="menu_help_desk" />-->
+        <!--<menuitem id="menu_tracking_inventory" name="Tracking Inventory" parent="menu_inventory" action="stock.action_production_lot_form" sequence="7"/>-->
+
+
+        <!-- Partner Extend -->
+      <record id="view_res_partner_extend" model="ir.ui.view">
+            <field name="name" >res.partner.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                 <div class="oe_button_box" name="button_box" position="inside">
+                            <button name="action_view_ticket"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('ticket_count', '=', 0)]}" >
+                                <field  name="ticket_count" widget="statinfo" string="Ticket" />
+                            </button>
+                 </div>
+            </field>
+      </record>
+
+
+
+<record id="user_groups_view_ticket_extend" model="ir.ui.view">
+            <field name="name">res.users.ticket</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                <field  name="company_ids" position="before" >
+                    <field name="user_ticket_group_ids"  widget="many2many_tags" />
+                </field>
+            </field>
+        </record>
+
+
+
+
+    </data>
+</odoo>

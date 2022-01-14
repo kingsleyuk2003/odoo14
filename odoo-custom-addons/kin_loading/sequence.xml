@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<openerp>
+	<data>
+
+
+    <record model="ir.sequence" id="seq_loading_programme_id">
+        <field name="name">Loading Programme ID</field>
+        <field name="code">loading_prog_id_code</field>
+        <field name="prefix">LP</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_tcl_id">
+        <field name="name">Truck Check list ID</field>
+        <field name="code">tcl_id_code</field>
+        <field name="prefix">TCL</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_tp_id">
+        <field name="name">Truck Park ID</field>
+        <field name="code">tp_id_code</field>
+        <field name="prefix">TP</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_ig_id">
+        <field name="name">In Gate ID</field>
+        <field name="code">ig_id_code</field>
+        <field name="prefix">IG</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+         <record model="ir.sequence" id="seq_ttcl_id">
+        <field name="name">Tarmac Truck Check list ID</field>
+        <field name="code">ttcl_id_code</field>
+        <field name="prefix">TTCL</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+           <record model="ir.sequence" id="seq_ete_id">
+        <field name="name">Empty Truck Exit ID</field>
+        <field name="code">ete_id_code</field>
+        <field name="prefix">ETE</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_eg_id">
+        <field name="name">Exit Gate ID</field>
+        <field name="code">eg_id_code</field>
+        <field name="prefix">EG</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+         <record model="ir.sequence" id="seq_tlr_id">
+        <field name="name">Tarmac Loading Record ID</field>
+        <field name="code">tlr_id_code</field>
+        <field name="prefix">TLR</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+     <record model="ir.sequence" id="seq_authorization_id">
+        <field name="name">Authorization Code</field>
+        <field name="code">authorization_code</field>
+        <field name="prefix">AC</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+    <record model="ir.sequence" id="seq_waybill_id">
+        <field name="name">Waybill ID</field>
+        <field name="code">waybill_id</field>
+        <field name="prefix"></field>
+        <field name="padding">8</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+
+    <record model="ir.sequence" id="seq_kin_throughput_receipt_id">
+        <field name="name">Throughput Receipt ID</field>
+        <field name="code">thru_move_code</field>
+        <field name="prefix">TR</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_kin_throughput_delivery_id">
+        <field name="name">Throughput Delivery ID</field>
+        <field name="code">thru_delv_code</field>
+        <field name="prefix">TP</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+      <record model="ir.sequence" id="seq_kin_internal_use_id">
+        <field name="name">Internal Use ID</field>
+        <field name="code">intu_code</field>
+        <field name="prefix">INTU</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+         <record model="ir.sequence" id="seq_kin_internal_use_delivery_id">
+        <field name="name">Internal Use Delivery ID</field>
+        <field name="code">intu_delv_code</field>
+        <field name="prefix">ITU</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+
+	</data>
+</openerp>

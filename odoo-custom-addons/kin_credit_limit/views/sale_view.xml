@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_sale_order_form_credit_limit" model="ir.ui.view">
+            <field name="name">sale.order.form.credit.limit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form" />
+            <field name="arch" type="xml" >
+                <button name="action_cancel" position="before" >
+                    <button name="confirm_credit_limit_bypass" string="Confirm Credit Limit By Pass" class="btn-primary" type="object"  states="credit_limit_by_pass_request" groups="kin_credit_limit.group_show_confirm_credit_limit_bypass" />
+                    <button name="approve_credit_limit_bypass" string="Approve Credit Limit By Pass" class="btn-primary" type="object"  states="credit_limit_by_pass_confirm" groups="kin_credit_limit.group_show_approve_credit_limit_bypass" />
+                    <button name="%(action_credit_limit_disapproval_reason)d"   type="action"   string="Disapprove Credit Limit By Pass"  states="credit_limit_by_pass_request,credit_limit_by_pass_confirm"  groups="kin_credit_limit.group_show_disapprove_credit_limit_bypass" />
+                    <button name="cancel_credit_limit_bypass" string="Cancel Credit Limit By Pass"  type="object"   states="credit_limit_by_pass_disapprove" confirm="Are you sure you want to cancel this credit limit workflow?" />
+                    <button name="reset_to_draft" string="Reset to Draft"  type="object"  states="credit_limit_by_pass_cancel" groups="kin_credit_limit.group_show_reset_credit_limit_bypass" />
+                </button>
+                 <group name="sale_info" position="after">
+                         <group name="credit_limit_grp" string="Credit Limit Details">
+                             <field name="is_credit_limit_bypass" invisible="True" />
+                             <field name="bypass_msg" readonly="True"  />
+                             <field name="bypass_msg_disapproved" readonly="True"  />
+                         </group>
+                 </group>
+
+            </field>
+        </record>
+    </data>
+</odoo>

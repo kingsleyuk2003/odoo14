@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>>
+
+       <record id="invoice_form_extend_account_kkon" model="ir.ui.view">
+            <field name="name">account.invoice.form.kkon</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_form" />
+            <field name="arch" type="xml">
+                <button name="action_invoice_sent" position="replace" >
+                     <button name="action_invoice_sent_kkon" type="object" string="Send by Email" attrs="{'invisible':['|',('sent','=',True), ('state', '!=', 'open')]}" class="oe_highlight" groups="kkon_modifications.group_send_by_email_kkon_account"/>
+                    <button name="action_invoice_sent_kkon" type="object" string="Send by Email" attrs="{'invisible':['|',('sent','=',False), ('state', '!=', 'open')]}" groups="kkon_modifications.group_send_by_email_kkon_account"/>
+
+                    <button name="action_invoice_sent_fob" type="object" string="Send by Email" attrs="{'invisible':['|',('sent','=',True), ('state', '!=', 'open')]}" class="oe_highlight" groups="kkon_modifications.group_send_by_email_fob_account"/>
+                    <button name="action_invoice_sent_fob" type="object" string="Send by Email" attrs="{'invisible':['|',('sent','=',False), ('state', '!=', 'open')]}" groups="kkon_modifications.group_send_by_email_fob_account"/>
+                </button>
+                <field name="move_id" position="after" >
+                    <field name="is_eservice_invoice" readonly="1" />
+                     <field name="payment_group_id" readonly="1" />
+                    <field name="is_upcountry" readonly="1"  groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+            </field>
+        </record>
+
+
+     <!-- Eservice  invoices -->
+        <record id="action_invoice_eservice_extend" model="ir.actions.act_window">
+            <field name="name">Eservice Invoices</field>
+            <field name="res_model">account.invoice</field>
+
+            <field name="view_mode">tree,form,kanban,calendar,pivot,graph</field>
+            <field eval="False" name="view_id"/>
+            <field name="domain">[('type','in',('out_invoice', 'out_refund')),('is_eservice_invoice','=',True)]</field>
+            <field name="context">{'default_type':'out_invoice', 'type':'out_invoice', 'journal_type': 'sale'}</field>
+            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+        </record>
+
+     <record id="account_invoice_form_action_eservice_fob" model="ir.actions.act_window.view">
+            <field name="sequence" eval="1"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="account.invoice_form"/>
+            <field name="act_window_id" ref="action_invoice_eservice_extend"/>
+        </record>
+
+     <record id="account_invoice_tree_action_eservice_fob" model="ir.actions.act_window.view">
+            <field name="sequence" eval="0"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="account.invoice_tree"/>
+            <field name="act_window_id" ref="action_invoice_eservice_extend"/>
+        </record>
+
+        <menuitem action="action_invoice_eservice_extend" id="menu_action_invoice_tree_eservice_invoice" parent="account.menu_finance_receivables" sequence="3"/>
+
+
+
+        <!-- Account payment Group -->
+        <record id="view_account_payment_group_kkon_extend1_form" model="ir.ui.view">
+            <field name="name">account.payment.group.kkon.form.extend1</field>
+            <field name="model">account.payment.group</field>
+            <field name="inherit_id" ref="account_payment_group.view_account_payment_group_form" />
+            <field name="arch" type="xml">
+                <field name="payment_difference" position="after" >
+                    <field name="is_from_eservice" readonly="1"/>
+                    <field name="eservice_invoice_id" readonly="1" />
+                    <field name="is_sent_receipt_eservice" readonly="1" />
+                    <field name="is_upcountry" readonly="1"  groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+            </field>
+        </record>
+
+
+     <!-- Eservice  Payments -->
+        <record id="action_payment_group_tree_eservice_extend" model="ir.actions.act_window">
+            <field name="name">Eservice Payments</field>
+            <field name="res_model">account.payment.group</field>
+
+            <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
+            <field eval="False" name="view_id"/>
+            <field name="domain">[('is_from_eservice','=',True)]</field>
+        </record>
+
+        <menuitem action="action_payment_group_tree_eservice_extend" id="menu_action_payment_group_tree_eservice_payment" parent="account.menu_finance_receivables" sequence="4"/>
+
+
+      <!-- Upcountry invoices -->
+        <record id="action_invoice_upcountry_extend" model="ir.actions.act_window">
+            <field name="name">Upcountry Invoices</field>
+            <field name="res_model">account.invoice</field>
+
+            <field name="view_mode">tree,form,kanban,calendar,pivot,graph</field>
+            <field eval="False" name="view_id"/>
+            <field name="domain">[('type','in',('out_invoice', 'out_refund')),('is_upcountry','=',True)]</field>
+            <field name="context">{'default_type':'out_invoice', 'type':'out_invoice', 'journal_type': 'sale'}</field>
+            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+        </record>
+
+     <record id="account_invoice_form_action_upcountry_kkon" model="ir.actions.act_window.view">
+            <field name="sequence" eval="1"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="account.invoice_form"/>
+            <field name="act_window_id" ref="action_invoice_upcountry_extend"/>
+        </record>
+
+     <record id="account_invoice_tree_action_upcountry_kkon" model="ir.actions.act_window.view">
+            <field name="sequence" eval="0"/>
+            <field name="view_mode">tree</field>
+            <field name="view_id" ref="account.invoice_tree"/>
+            <field name="act_window_id" ref="action_invoice_upcountry_extend"/>
+        </record>
+
+        <menuitem action="action_invoice_upcountry_extend" id="menu_action_invoice_tree_upcountry_invoice" parent="account.menu_finance_receivables" sequence="3" groups="kkon_modifications.group_upcountry_chk_kkon"  />
+
+
+
+        <!-- Account payment Group -->
+        <record id="view_account_payment_group_kkon_extend1_form" model="ir.ui.view">
+            <field name="name">account.payment.group.kkon.form.extend1</field>
+            <field name="model">account.payment.group</field>
+            <field name="inherit_id" ref="account_payment_group.view_account_payment_group_form" />
+            <field name="arch" type="xml">
+                <field name="payment_difference" position="after" >
+                    <field name="is_from_eservice" readonly="1"/>
+                    <field name="eservice_invoice_id" readonly="1" />
+                    <field name="is_sent_receipt_eservice" readonly="1" />
+                    <field name="is_upcountry" readonly="1"  groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+            </field>
+        </record>
+
+
+     <!-- Upcountry  Payments -->
+        <record id="action_payment_group_tree_upcountry_extend" model="ir.actions.act_window">
+            <field name="name">Upcountry Payments</field>
+            <field name="res_model">account.payment.group</field>
+
+            <field name="view_mode">tree,kanban,form,calendar,pivot,graph</field>
+            <field eval="False" name="view_id"/>
+            <field name="domain">[('is_upcountry','=',True)]</field>
+        </record>
+
+        <menuitem action="action_payment_group_tree_upcountry_extend" id="menu_action_payment_group_tree_upcountry_payment" parent="account.menu_finance_receivables" groups="kkon_modifications.group_upcountry_chk_kkon"  sequence="4"/>
+
+
+
+
+
+</data>
+</odoo>

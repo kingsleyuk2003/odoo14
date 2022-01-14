@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+<record id="action_report_tanK_to_tank" model="ir.actions.report">
+            <field name="name">Tank to Tank Order</field>
+            <field name="model">stock.picking</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">nexium.report_tank_to_tank</field>
+            <field name="report_file">nexium.report_tank_to_tank</field>
+            <field name="print_report_name">'Tank to Tank - %s - %s' % (object.partner_id.name or '', object.name)</field>
+            <field name="binding_model_id" ref="model_stock_picking"/>
+            <field name="binding_type">report</field>
+        </record>
+
+<template id="external_layout_standard_nexium_tank_to_tank"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto" >
+					 <p class="m-0" t-field="company.partner_id.street" />
+					  <p  class="m-0" t-field="company.partner_id.phone" />
+					   <p  class="m-0" t-field="company.partner_id.website" />
+				</div>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+          
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+<!-- 
+            <div class="text-center" style="border-top: 1px solid black;">
+                <ul class="list-inline mb4">
+                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem
+                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>
+                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>
+                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>
+                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>
+                </ul>
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> / <span class="topage"/>
+                </div>
+            </div> -->
+			
+        </div>
+    </template>
+
+
+
+   <template id="cust_tank_to_tank_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t t-if="company.external_report_layout_id" t-call="{{company.external_report_layout_id.key}}"><t t-raw="0"/></t>
+        <t t-else="else" t-call="nexium.external_layout_standard_nexium_tank_to_tank"><t t-raw="0"/></t>
+    </template>
+
+    
+<template id="report_tank_to_tank">
+ <t t-foreach="docs" t-as="o">
+	     <t t-call="web.html_container">
+			<t t-call="nexium.cust_tank_to_tank_layout">
+			<t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+			<div class="page">
+			
+				<div class="row" >
+						<div class="col-7 text-left" >
+						<span t-esc="o.scheduled_date.strftime('%B %d, %Y')"/>
+					</div>
+				</div>
+			
+				<br />
+				<div class="row" >
+					<div class="col" >
+						<strong>Attn:</strong> <span t-field="o.attn_tank" /> <br />
+						<span t-field="o.role_tank" /><br />
+						<strong>To:</strong> <span t-field="o.to_address_tank" />				
+					</div>
+				</div>
+					<br />
+					<p>
+					Dear <span t-field="o.attn_tank" /> 
+					</p>
+					<p>
+					We present our compliments and request that you affect the following Tank - Tank transfer from Nexium Petroleum to <strong><span t-field="o.partner_id"/></strong>. Said product is none refundable, and it is a replacement of distributor on reference.				
+					</p>
+				   <p>
+					<t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
+									<t t-foreach="lines" t-as="move" >
+									<li><span t-esc="'{:,.0f}'.format(move.product_uom_qty)"/>  (<span t-field="o.amount_in_words"/>)  <span t-field="move.product_id"/></li>	
+						</t>
+				   </p>
+				   <br />
+				   <p>
+				  	 Let this constitute your authority.				   
+				   </p>
+				   <br />
+				    <br />
+					 <br />
+				   <p>
+				   Kind Regards,
+				   </p>							
+
+ <br /><br /> <br /><br />
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							 __________________________________________<br />
+									<strong >Esther G. Neufville</strong><br />
+									(CEO NEXIUM PETROLEUM)                        
+                       </div>   					   
+					              
+                </div>
+
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							<strong >Mr. John Olowa</strong><br />
+							(Opt. manager NEXIUM PETROLEUM)                        
+                       </div>     
+					                
+                </div>
+<br /><br /><br /><br />
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							<span>CC: Adrian Mario Hoff</span><br />
+							<strong>DMD/OPERATIONS</strong>                  
+                       </div>     
+					            
+                </div>
+
+		
+				
+
+				
+			</div>
+			</t>
+		</t>
+	  </t>
+</template>
+
+
+
+</odoo>

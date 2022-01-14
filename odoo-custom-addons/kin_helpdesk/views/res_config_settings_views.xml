@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+        <record id="res_config_settings_view_form_helpdesk" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.helpdesk</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="40"/>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[hasclass('settings')]" position="inside">
+                    <div class="app_settings_block"  id="kin_helpdesk_settings" data-key="kin_helpdesk_settings"  string="Helpdesk" data-string="Helpdesk" groups="kin_helpdesk.group_helpdesk_user">
+                        <h2>Help Desk</h2>
+                        <div class="row mt16 o_settings_container" id="expected_finished_date_setting">
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane">
+                                    <span class="o_form_label">Expected Finished Date Interval</span>
+                                    <div class="text-muted content-group mt16">
+                                        <span>Set  </span>
+                                        <field name="expected_finished_date_interval" class="text-center oe_inline" />
+                                        <span> days interval from the ticket opening date for expected finished date</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="action_helpdesk_settings" model="ir.actions.act_window">
+            <field name="name">Settings</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.config.settings</field>
+            <field name="view_mode">form</field>
+            <field name="target">inline</field>
+            <field name="context">{'module' : 'kin_helpdesk', 'bin_size': False}</field>
+        </record>
+
+        <menuitem id="menu_helpdesk_settings" parent="menu_help_desk_config" name="Settings" action="action_helpdesk_settings" groups="base.group_system" sequence="0"/>
+
+
+
+    </data>
+</odoo>

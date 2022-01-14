@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+<record id="action_report_release_order" model="ir.actions.report">
+            <field name="name">Release Order</field>
+            <field name="model">stock.picking</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">nexium.report_release_order</field>
+            <field name="report_file">nexium.report_release_order</field>
+            <field name="print_report_name">'Release Order - %s - %s' % (object.partner_id.name or '', object.name)</field>
+            <field name="binding_model_id" ref="model_stock_picking"/>
+            <field name="binding_type">report</field>
+        </record>
+
+<template id="external_layout_standard_nexium_release_order"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto" >
+					 <p class="m-0" t-field="company.partner_id.street" />
+					  <p  class="m-0" t-field="company.partner_id.phone" />
+					   <p  class="m-0" t-field="company.partner_id.website" />
+				</div>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+          
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+<!-- 
+            <div class="text-center" style="border-top: 1px solid black;">
+                <ul class="list-inline mb4">
+                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem
+                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>
+                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>
+                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>
+                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>
+                </ul>
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> / <span class="topage"/>
+                </div>
+            </div> -->
+
+			<div class="row border border-dark border-right-0 border-left-0 border-bottom-0"  >                       
+					   <div  class="col-12 mt32 text-center"   >
+							<span class="" >  <strong> Your energy. delivered!</strong></span>                           
+					   </div>                          
+                </div>				
+        </div>
+    </template>
+
+
+
+   <template id="cust_release_note_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t t-if="company.external_report_layout_id" t-call="{{company.external_report_layout_id.key}}"><t t-raw="0"/></t>
+        <t t-else="else" t-call="nexium.external_layout_standard_nexium_release_order"><t t-raw="0"/></t>
+    </template>
+
+    
+<template id="report_release_order">
+ <t t-foreach="docs" t-as="o">
+	     <t t-call="web.html_container">
+			<t t-call="nexium.cust_release_note_layout">
+			<t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+			<div class="page">
+			
+				<div class="row" >
+					<div class="col-5" >
+						<table class="table table-sm table-borderless  border border-dark" >				
+							<tr class="border border-dark">
+								<td class="text-left"><strong>RELEASE ORDER REF #</strong>	</td>
+							</tr>
+							<tr class="border border-dark" >
+								<td class="text-left"><span t-field="o.release_order_no" /> </td>
+							</tr>
+							<tr class="border border-dark" >
+								<td class="text-left"><strong>Our Reference: </strong><span t-field="o.name" />	</td>
+							</tr>
+						</table>
+					</div>
+				
+					<div class="col-7 text-right" >
+						<strong>Date:  </strong><span t-esc="o.scheduled_date.strftime('%B %d, %Y')"/>
+					</div>
+
+				</div>
+			
+				<br />
+				<div class="row" >
+					<div class="col" >
+						<strong>Attn:</strong> <span t-field="o.attn" /> <br />
+						<span t-field="o.role" /><br />
+						<strong>To:</strong> <span t-field="o.to_address" />				
+					</div>
+				</div>
+					<br />
+				<p>
+				<span>This is to officially authorize the lifting of the below mentioned product grade and quantity (ies) from our stocks held with you by the below mentioned distributor.</span>
+				</p>
+				<table  class="table table-sm  table-borderless text-center border border-dark m-0"   >				
+					<tr>
+					<td class="p-0 text-left border border-dark  ">						
+						
+						<table  class="table table-sm table-borderless text-center "   >	
+								<tr class="border border-dark border-top-0 border-left-0 border-right-0" >
+									<td class="text-left" style="font-size: 32px" ><strong>DISTRIBUTOR</strong>	</td>								
+								</tr>					
+																
+								<tr class="border border-dark border-top-0 border-left-0 border-right-0 border-bottom-0">
+										<td>
+											<span t-field="o.partner_id"/>										
+										</td>									
+								</tr>					
+							</table>							
+						</td>
+						<td class="p-0 text-left">						
+							<table class="table table-sm  table-borderless text-center"   >	
+								<tr class="border border-dark border-top-0 border-left-0 border-right-0">
+									<td>
+										<strong>Quantity (US Gallons)</strong>									
+									</td>									
+								</tr>							
+								<t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
+								<t t-foreach="lines" t-as="move" >
+									
+									<tr class="border border-dark border-top-0 border-left-0 border-right-0">
+										<td>
+											<span t-field="move.product_id"/>										
+										</td>									
+									</tr>
+									<tr class="border border-dark border-top-0 border-left-0 border-right-0 border-bottom-0" >
+										<td>										 
+											<strong><span t-esc="'{:,.0f}'.format(move.product_uom_qty)"/></strong>									
+										</td>
+									</tr>
+								</t>								
+							</table>
+						</td>
+					</tr>				
+				</table>
+<br />
+				<p>
+				Thanks in anticipation
+				</p>
+				<p>
+				For and on behalf of <strong>NEXIUM PETROLEUM LIMITED</strong>
+				</p>
+				<p class="text-center">
+					<strong>For LPRC </strong>
+				</p>
+
+				<div class="row" >
+                       <div class="offset-6 col-6 mt32 text-center" >
+							Attested: ________________________________ <br />
+									<strong >Charles D. Sherman II</strong>    <br/>
+						     Marketing Manager
+
+                       </div>                    
+                </div>
+ <br />
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							 __________________________________________<br />
+									<strong >Esther G. Neufville</strong><br />
+									(CEO NEXIUM PETROLEUM LIMITED)                        
+                       </div>   					   
+					    <div class="col-6 mt32 text-center" >							 
+						__________________________________________<br />
+									<strong >Leelar N. Dymacole</strong><br />
+									Assistant Operation Manager /PIS                        
+                       </div>                    
+                </div>
+<br />
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							<strong >Mr. John Olowa</strong><br />
+							(Operation manager NEXIUM PETROLEUM LIMITED)                        
+                       </div>     
+					   <div class="col-6 mt32 text-center" >
+					   		 __________________________________________<br />
+									<strong>Ishmeal Sheriff</strong><br />
+						   Operations Manager
+					   </div>               
+                </div>
+<br />
+				<div class="row" >
+                       <div class="col-6 mt32 text-left" >
+							<span><strong>Cc:</strong>Marketing</span>
+						   <br />
+									<span >Oil Movement and Supply, LPRC</span><br />
+						   	<span >PIS</span><br />
+						   	<span >Distributor</span>
+
+                       </div>
+                </div>
+				
+			</div>
+			</t>
+		</t>
+	  </t>
+</template>
+
+
+
+</odoo>

@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+        <!-- Credit Limit By Pass -->
+        <record id="view_credit_limit_bypass" model="ir.ui.view">
+            <field name="name">Credit Limit By Pass</field>
+            <field name="model">credit.limit.bypass.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Credit Limit By Pass">
+                     <p><field name="err_msg" style="color:red" class="oe_inline" readonly="1"/></p>
+                    <group>
+                        <label for="msg" string="Reason for the Credit Limit By-Pass"  />
+                        <field nolabel="1" name="msg"/>
+                    </group>
+                    <footer>
+                        <button name="action_credit_limit_bypass_request" groups="kin_credit_limit.group_show_request_credit_limit_bypass" string="Request for Credit Limit Bypass" type="object"  />
+
+                        <button string="No, Thanks and Close"  special="cancel" class="oe_highlight" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_credit_limit_bypass" model="ir.actions.act_window">
+            <field name="name">Credit Limit By Pass</field>
+            <field name="res_model">credit.limit.bypass.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_credit_limit_bypass" />
+            <field name="target">new</field>
+            <field name="context">{}</field>
+        </record>
+
+    </data>
+</odoo>

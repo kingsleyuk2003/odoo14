@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record model="ir.ui.menu" id="sale.sale_menu_root">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_sales_app')])]"/>
+        </record>
+
+         <record model="ir.ui.menu" id="sale.menu_sale_config">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_sales_configuration')])]"/>
+        </record>
+
+
+        <record id="view_sale_order_form_kin_sales" model="ir.ui.view">
+            <field name="name">sale.order.form.kin.sales</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form" />
+            <field name="arch" type="xml" >
+                 <button name="action_quotation_send" type="object" states="draft" class="btn-primary" position="attributes" >
+                        <attribute name="groups" >kin_sales.group_show_send_by_email_button</attribute>
+                </button>
+                <button name="action_quotation_send" type="object" states="sent,sale" position="attributes" >
+                        <attribute name="groups" >kin_sales.group_show_send_by_email_button</attribute>
+                </button>
+
+                <button name="%(sale.action_view_sale_advance_payment_inv)d"  position="attributes"
+                        type="action" class="btn-primary"
+                        attrs="{'invisible': [('invoice_status', '!=', 'to invoice')]}" >
+                         <attribute name="groups">kin_sales.group_show_create_invoice_si_button</attribute>
+                 </button>
+
+                 <button name="%(sale.action_view_sale_advance_payment_inv)d" position="attributes"
+                        type="action" context="{'default_advance_payment_method': 'percentage'}"
+                        attrs="{'invisible': ['|',('invoice_status', '!=', 'no'), ('state', '!=', 'sale')]}" >
+                        <attribute name="groups">kin_sales.group_show_create_invoice_button</attribute>
+                </button>
+
+                <button name="action_cancel" position="attributes" >
+                    <attribute name="groups" >kin_sales.group_show_cancel_sale_button</attribute>
+                </button>
+
+                <xpath expr="//button[@id='action_confirm']" position="attributes">
+                       <attribute name="groups" >kin_sales.group_show_confirm_sale_button</attribute>
+                </xpath>
+
+                <field name="partner_id" position="attributes" >
+                    <attribute name="widget">False</attribute>
+                    <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </field>
+
+                <xpath expr="//field[@name='order_line']/form/group/group/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/tree/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/kanban/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+
+                <field name="date_order" position="attributes" >
+                    <attribute name="groups" >sales_team.group_sale_salesman</attribute>
+                </field>
+
+
+            </field>
+        </record>
+
+        <record id="crm_team_view_form_extend" model="ir.ui.view">
+            <field name="name">crm.team.form.extend</field>
+            <field name="model">crm.team</field>
+            <field name="inherit_id" ref="sales_team.crm_team_view_form" />
+            <field name="arch" type="xml">
+                <field name="active" position="after">
+                    <field name="warehouse_id" colspan="2" col="2" />
+                    <field name="sale_stock_location_ids" domain="[('usage','=','internal')]"  widget="many2many_tags"    />
+                </field>
+            </field>
+        </record>
+
+        <record id="view_move_form_sale_extend" model="ir.ui.view">
+            <field name="name">account.move.form</field>
+            <field name="model">account.move</field>
+             <field name="inherit_id" ref="account.view_move_form" />
+            <field name="arch" type="xml">
+                <group id="other_tab_group">
+                    <group string="Sales Info." id="sale_info" >
+                        <field name="sale_order_id" readonly="1" />
+                    </group>
+                </group>
+            </field>
+        </record>
+
+    </data>
+</odoo>

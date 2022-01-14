@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="view_company_kkon">
+                    <field name="name">res.company.form.kkon</field>
+                    <field name="inherit_id" ref="base.view_company_form"/>
+                    <field name="model">res.company</field>
+                    <field name="arch" type="xml">
+                        <notebook position="inside">
+                            <page string="Other Company Config">
+                                <group>
+                                    <field name="header_data_receipt_kkon"  />
+                                </group>
+                            </page>
+                        </notebook>
+                    </field>
+                </record>
+
+
+    </data>
+</odoo>
+

@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_credit_limit_bypass_wizard,credit.limit.bypass.wizard access,kin_credit_limit.model_credit_limit_bypass_wizard,sales_team.group_sale_salesman,1,1,1,1
+access_group_show_request_credit_limit_bypass,Show Request Credit Limit Bypass access,kin_credit_limit.model_credit_limit_bypass_wizard,kin_credit_limit.group_show_request_credit_limit_bypass,1,1,1,1
+access_group_show_confirm_credit_limit_bypass,Show Confirm Credit Limit Bypass access,sale.model_sale_order,kin_credit_limit.group_show_confirm_credit_limit_bypass,1,1,1,1
+access_group_show_confirm_credit_limit_bypass,Show Credit Limit Disapproval Wizard,kin_credit_limit.model_credit_limit_disapproval_wizard,kin_credit_limit.group_show_disapprove_credit_limit_bypass,1,1,1,1

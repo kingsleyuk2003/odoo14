@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+         <record id="action_move_in_invoice_type_charges" model="ir.actions.act_window">
+            <field name="name">LRA Charges Bills</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">tree,kanban,form</field>
+            <field name="view_id" ref="account.view_in_invoice_tree"/>
+            <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+            <field name="domain">[('is_charge_bill', '=', True)]</field>
+        </record>
+          <menuitem id="menu_action_move_in_invoice_type_charges"  parent="account.menu_finance_payables" action="action_move_in_invoice_type_charges" sequence="2"/>
+
+        <!-- account.move (Journal Entry) -->
+        <record id="view_move_form" model="ir.ui.view">
+            <field name="name">account.move.form.nexium</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form" />
+            <field name="arch" type="xml">
+                 <div name="journal_div" position="after" >
+                     <field name="via"  attrs="{'invisible': [('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                     <field name="po_number"  attrs="{'invisible': [('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                     <field name="do_number"  attrs="{'invisible': [('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                     <field name="picking_do_id"  attrs="{'invisible': [('move_type', 'not in', ('out_invoice', 'out_refund', 'in_invoice', 'in_refund', 'out_receipt', 'in_receipt'))]}"/>
+                 </div>
+            </field>
+        </record>
+    </data>
+</odoo>

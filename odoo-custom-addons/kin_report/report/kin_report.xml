@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="view_company_kin_report">
+                    <field name="name">res.company.form.kin.report</field>
+                    <field name="inherit_id" ref="base.view_company_form"/>
+                    <field name="model">res.company</field>
+                    <field name="arch" type="xml">
+                        <notebook position="inside">
+                            <page string="Report Config">
+                                <group>
+                                     <field name="header_logo"  />
+                                    <field name="footer_banner"  />
+                                    <field name="header_data"  />
+                                    <field name="footer_data" />
+                                     <field name="po_note"  />
+                                    <field name="inv_note" />
+                                    <!--<field name="logo_text"  />-->
+                                    <field name="html_after_header" />
+                                </group>
+                                <group string="Others" >
+                                    <field name="is_show_uom" />
+                                </group>
+                            </page>
+                        </notebook>
+                    </field>
+                </record>
+
+        <record model="ir.ui.view" id="view_operating_unit_extend">
+                    <field name="name">kin.operating.unit.extend</field>
+                    <field name="inherit_id" ref="operating_unit.view_operating_unit_form"/>
+                    <field name="model">operating.unit</field>
+                    <field name="arch" type="xml">
+                        <field name="company_id" position="after" >
+
+                                     <field name="header_logo"  />
+                                    <field name="footer_banner"  />
+                                    <field name="header_data"  />
+                                    <field name="footer_data" />
+                                     <field name="po_note"  />
+                                    <field name="inv_note" />
+                                    <!--<field name="logo_text"  />-->
+                                    <field name="html_after_header" />
+                        </field>
+                    </field>
+        </record>
+    </data>
+</odoo>
+

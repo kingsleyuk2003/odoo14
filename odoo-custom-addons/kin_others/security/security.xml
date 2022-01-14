@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+		<record id="group_mail_delivery_failed" model="res.groups">
+			<field name="name">Receive Mail Delivery Failed Email Notification</field>
+		</record>
+
+	<record id="group_show_settings_app" model="res.groups">
+			<field name="name">Show Settings App Menu</field>
+		</record>
+
+		<record id="group_show_discuss_app" model="res.groups">
+			<field name="name">Show Discuss App Menu</field>
+		</record>
+
+		<record id="group_show_apps" model="res.groups">
+			<field name="name">Show Apps Menu</field>
+		</record>
+
+		<record id="group_show_utm_tracker" model="res.groups" >
+			<field name="name" >Show Link Tracker Menu</field>
+		</record>
+
+</data>
+</odoo>

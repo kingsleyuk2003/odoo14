@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record  id="view_transfer_order_wizard" model="ir.ui.view" >
+                <field name="name">Transfer Order Wizard</field>
+                <field name="model">transfer.order.wizard</field>
+                <field name="arch" type="xml" >
+                <form string="Transfer Order Wizard" >
+
+                    <strong>This wizard will help you to generate a transfer order</strong>
+                    <p><b>Please Select the Order Line and Change the "Requested Ticket Qty." by clicking on it and changing the amount to the requested quantity to be transferred</b></p>
+                    <group col="4" >
+                           <field name="recipient_id" required="1" options="{'no_open':True,'no_create':True}"   />
+                    </group>
+                    <notebook>
+                            <page string="Order Lines">
+                                <field name="order_line_ids" options="{'no_create':True}"  domain="[('order_id','=',context.get('the_order_id'))]" >
+                                    <tree string="Order Lines"   >
+                                        <field name="product_id" />
+                                        <field name="product_uom_qty" />
+                                        <field name="product_uom" />
+                                        <field name="ticket_created_qty" />
+                                        <field name="transfer_created_qty" />
+                                        <field name="ticket_remaining_qty" />
+                                        <field name="product_ticket_qty"  required="1" />
+                                    </tree>
+                                    <form string="Order Lines">
+                                        <group col="4" >
+                                            <field name="product_id" readonly="1"  />
+                                            <field name="product_uom_qty" readonly="1"  />
+                                            <field name="product_uom" readonly="1"  />
+                                            <field name="ticket_created_qty" readonly="1"  />
+                                            <field name="transfer_created_qty" readonly="1" />
+                                            <field name="ticket_remaining_qty" readonly="1" />
+                                            <field name="product_ticket_qty" required="1" />
+                                        </group>
+                                    </form>
+                                </field>
+                            </page>
+                          </notebook>
+                        <footer>
+
+                            <button default_focus="1" icon="gtk-execute" name="action_generate_transfer_order" context="{'is_create_transfer_wizard_btn':True}" string="Generate Transfer Order" type="object"  colspan="2" class="oe_highlight" />
+                            or <button special="cancel" class="oe_link"  string="Cancel"  />
+                        </footer>
+                </form>
+             </field>
+        </record>
+
+		<record id="action_transfer_order_wizard" model="ir.actions.act_window">
+            <field name="name">Generate Transfer Order</field>
+            <field name="res_model">transfer.order.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_transfer_order_wizard"/>
+            <field name="context">{}</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="target">new</field>
+        </record>
+
+
+   </data>
+</odoo>

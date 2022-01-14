@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+
+        <record id="mass_confirm_order_wizard_view" model="ir.ui.view">
+            <field name="name">Mass Confirm Order Wizard</field>
+            <field name="model">mass.confirm.order.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Mass Confirm Order Confirmation">
+                    <p>You are about the confirm the selected records. Click Product Order </p>
+                    <footer>
+                        <button name="mass_confirm_product_order" string="Confirm Product Order" type="object" class="oe_highlight"/>
+                        or
+                        <button string="Cancel" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_mass_confirm_order" model="ir.actions.act_window">
+            <field name="name">Mass Confirm Order</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mass.confirm.order.wizard</field>
+
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <!--<field name="groups_id" eval="[(4,ref('base.group_hr_user'))]"/>           -->
+        </record>
+
+
+<!--        <record model="ir.values" id="mass_confirm_order_multi">-->
+<!--            <field name="model_id" ref="sale.model_sale_order" />-->
+<!--            <field name="name">Mass Confirm Order</field>-->
+<!--            <field name="key2">client_action_multi</field>-->
+<!--            <field name="value" eval="'ir.actions.act_window,' + str(ref('action_mass_confirm_order'))" />-->
+<!--            <field name="key">action</field>-->
+<!--            <field name="model">sale.order</field>-->
+<!--            <field name="groups_id" eval="[(4,ref('base.group_no_one'))]"/>-->
+<!--        </record>-->
+
+    </data>
+</odoo>

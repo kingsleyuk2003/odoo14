@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record  id="view_sales_loading_report_wizard" model="ir.ui.view" >
+                <field name="name">Order Lines Report Wizard</field>
+                <field name="model">sales.loading.report.wizard</field>
+                <field name="arch" type="xml" >
+                <form string="Order Lines Report Wizard" >
+                  <strong>This wizard will help you generate a sales order lines report in .xlsx file</strong>
+                     <group col="4" colspan="4" >
+                         <field name="start_date" />
+                         <field name="type" required="1" />
+                         <field name="end_date" />
+                    </group>
+                    <group col="4" colspan="4" >
+                         <field name="partner_id" options="{'no_open':True,'no_create':True}"  />
+                         <field name="partner_root_id" options="{'no_open':True,'no_create':True}" attrs="{'required': [('include_root_customer_order', '=', True)]}"  />
+                         <field name="product_ids"  widget="many2many_tags" domain="[('type','=','product')]"  options="{'no_open':True,'no_create':True}" />
+                         <field name="include_root_customer_order"   />
+                         <field name="parent_sales_order_transfer_id"  options="{'no_open':True,'no_create':True}" domain="[('state','in',('sale','done'))]"  />
+                        <field name="root_order_transfer_id"   options="{'no_open':True,'no_create':True}"  />
+                    </group>
+                        <footer>
+                            <button default_focus="1" icon="gtk-execute" name="sales_loading_excel_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
+                            or <button special="cancel" class="oe_link"  string="Cancel"  />
+                        </footer>
+                </form>
+             </field>
+        </record>
+
+		<record id="action_sales_loading_report_wizard" model="ir.actions.act_window">
+            <field name="name">Generate Order Lines Report</field>
+            <field name="res_model">sales.loading.report.wizard</field>
+
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_sales_loading_report_wizard"/>
+            <field name="context">{}</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="target">new</field>
+        </record>
+
+
+
+   </data>
+</odoo>

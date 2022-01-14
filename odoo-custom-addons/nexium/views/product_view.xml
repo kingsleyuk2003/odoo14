@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+             <record id="product_template_form_view_nexium" model="ir.ui.view">
+                    <field name="name">product.template.common.form.nexium</field>
+                    <field name="model">product.template</field>
+                     <field name="inherit_id" ref="product.product_template_form_view" />
+                      <field name="arch" type="xml">
+                        <label for="purchase_ok" position="after" >
+                            <div>
+                                <field name="is_charge"/>
+                                <label for="is_charge"/>
+                            </div>
+
+                        </label>
+                          <field name="type" position="after" >
+                              <field name="is_petroleum_product"  />
+                          </field>
+
+                           <page  name="inventory"  position="after" >
+                                    <page string="Charges" name="charges"  attrs="{'invisible':[('type', '=', 'service')]}">
+                                            <field name="charges_ids"   >
+                                                <tree editable="bottom" >
+                                                    <field name="product_charges_id"  domain="[('is_charge','=',True)]"  />
+                                                    <field name="charges_percentage" />
+                                                </tree>
+                                            </field>
+                                    </page>
+                           </page>
+
+                    </field>
+             </record>
+
+    </data>
+</odoo>

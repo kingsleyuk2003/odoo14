@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_bank_statement_user,bank.statement user,model_bank_statement,account.group_account_invoice,1,1,1,1
+access_create_entry_user,Create entry user,model_create_entry_wizard,account.group_account_invoice,1,1,1,1
+access_bank_statement_wizard_user,Bank Statement wizard user,model_bank_statement_wizard,account.group_account_invoice,1,1,1,1

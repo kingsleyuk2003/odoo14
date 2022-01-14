@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+            <record id="view_create_entry" model="ir.ui.view">
+            <field name="name">Create Entry</field>
+            <field name="model">create.entry.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Create Entry">
+                    <group  col="4" name="grp_entry" >
+                          <field name="trx_type" widget="radio" required="1"/>
+                        <field name="date" required="1"/>
+                          <field name="account_id" domain="[('id','!=',bank_account_id)]" required="1"  options="{'no_open':True,'no_create':True}" />
+                          <field name="partner_id"  options="{'no_open':True,'no_create':True}" />
+                          <field name="name" required="1" />
+                          <field name="ref" />
+                        <field name="amount" required="1" />
+                        <field name="bank_account_id"  invisible="1" />
+                    </group>
+                    <footer>
+                        <button name="btn_create_entry" string="Create Entry" type="object"  class="oe_highlight"/>
+                        or
+                        <button string="Close" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_create_entry" model="ir.actions.act_window">
+            <field name="name">Create Entry</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">create.entry.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_create_entry" />
+            <field name="target">new</field>
+        </record>
+
+
+
+
+
+    </data>
+</odoo>

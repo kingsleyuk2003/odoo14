@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+         <record model="ir.ui.menu" id="mail.menu_root_discuss">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_discuss_app')])]"/>
+        </record>
+
+        <record model="ir.ui.menu" id="base.menu_administration">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_settings_app'),ref('base.group_no_one')]),]"/>
+        </record>
+
+        <record model="ir.ui.menu" id="base.menu_management">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_apps')])]"/>
+        </record>
+
+        <record model="ir.ui.menu" id="utm.menu_link_tracker_root">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_utm_tracker')])]"/>
+        </record>
+
+
+
+  <record id="view_users_form_other_settings" model="ir.ui.view">
+            <field name="name">res.users.form.other.settings</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                <notebook colspan="4" position="inside">
+                    <page string="Other User Settings">
+                        <group>
+                            <field name="is_group_email"/>
+                            <field name="img_signature" />
+                        </group>
+                    </page>
+                </notebook>
+            </field>
+        </record>
+
+
+    </data>
+</odoo>

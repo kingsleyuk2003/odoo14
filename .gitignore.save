@@ -1,0 +1,19 @@
+.local
+.idea
+.profile
+.bash_hist
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+.odoo-venv
+env/
+venv/
+odoo-venv/
+ENV/
+env.bak/
+venv.bak/

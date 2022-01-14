@@ -1,0 +1,31 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_kin_ticket_user,kin.ticket ticket user,model_kin_ticket,group_helpdesk_user,1,1,1,1
+access_kin_ticket_manager,kin.ticket ticket manager,model_kin_ticket,group_helpdesk_manager,1,1,1,1
+access_kin_ticket_general_manager,kin.ticket ticket general manager,model_kin_ticket,group_helpdesk_general_manager,1,1,1,1
+access_kin_ticket_category_user,kin.ticket.category ticket user,model_kin_ticket_category,group_helpdesk_user,1,1,1,1
+access_kin_ticket_category_manager,kin.ticket.category ticket manager,model_kin_ticket_category,group_helpdesk_manager,1,1,1,1
+access_kin_ticket_category_general_manager,kin.ticket.category general manager,model_kin_ticket_category,group_helpdesk_general_manager,1,1,1,1
+access_kin_ticket_stage_user,kin.ticket.stage ticket user,model_kin_ticket_stage,group_helpdesk_user,1,1,1,1
+access_kin_ticket_stage_manager,kin.ticket.stage ticket manager,model_kin_ticket_stage,group_helpdesk_manager,1,1,1,1
+access_kin_ticket_stage_genaral_manager,kin.ticket.stage ticket general manager,model_kin_ticket_stage,group_helpdesk_general_manager,1,1,1,1
+access_stock_production_ticket_user,stock.production.lot ticket user,stock.model_stock_production_lot,group_helpdesk_user,1,1,1,1
+access_stock_production_ticket_manager,stock.production.lot ticket manager,stock.model_stock_production_lot,group_helpdesk_manager,1,1,1,1
+access_stock_production_ticket_general_manager,stock.production.lot ticket general manager,stock.model_stock_production_lot,group_helpdesk_general_manager,1,1,1,1
+access_stock_picking_ticket_user,stock.picking ticket user,stock.model_stock_picking,group_helpdesk_user,1,1,1,1
+access_stock_picking_ticket_manager,stock.picking ticket manager,stock.model_stock_picking,group_helpdesk_manager,1,1,1,1
+access_stock_picking_ticket_general_manager,stock.picking ticket general manager,stock.model_stock_picking,group_helpdesk_general_manager,1,1,1,1
+access_kin_sla_user,kin.sla ticket user,model_kin_sla,group_helpdesk_user,1,1,1,1
+access_kin_sla_manager,kin.sla ticket manager,model_kin_sla,group_helpdesk_manager,1,1,1,1
+access_kin_sla_general_manager,kin.sla ticket general manager,model_kin_sla,group_helpdesk_general_manager,1,1,1,1
+access_kin_helpdesk_team_user,kin.helpdesk.team ticket user,model_kin_helpdesk_team,group_helpdesk_user,1,1,1,1
+access_kin_helpdesk_team_manager,kin.helpdesk.team ticket manager,model_kin_helpdesk_team,group_helpdesk_manager,1,1,1,1
+access_kin_helpdesk_team_general_manager,kin.helpdesk.team ticket general manager,model_kin_helpdesk_team,group_helpdesk_general_manager,1,1,1,1
+access_kin_ticket_cost_helpdesk_user,kin.ticket.cost ticket helpdesk user,model_kin_ticket_cost,group_helpdesk_user,1,1,1,1
+access_kin_ticket_cost_manager,kin.ticket.cost ticket manager,model_kin_ticket_cost,group_helpdesk_manager,1,1,1,1
+access_kin_ticket_cost_general_manager,kin.ticket.cost ticket general manager,model_kin_ticket_cost,group_helpdesk_general_manager,1,1,1,1
+access_user_ticket_group_user,user.ticket.group user,model_user_ticket_group,group_helpdesk_user,1,1,1,1
+access_user_ticket_group_manager,user.ticket.group manager,model_user_ticket_group,group_helpdesk_manager,1,1,1,1
+access_user_ticket_group_general_manager,user.ticket.group general manager,model_user_ticket_group,group_helpdesk_general_manager,1,1,1,1
+access_account_invoice_helpdesk_user,account.move helpdesk user,account.model_account_move,group_helpdesk_customers,1,0,0,0
+access_account_move_line_helpdesk_user,account.move.line helpdesk user,account.model_account_move_line,group_helpdesk_customers,1,0,0,0
+access_res_partner_helpdesk_user,res.partner helpdesk user,base.model_res_partner,group_helpdesk_customers,1,1,1,1

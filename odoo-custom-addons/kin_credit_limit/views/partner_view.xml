@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_partner_form_credit_limit" model="ir.ui.view">
+            <field name="name">res.partner.credit.limit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                 <xpath expr="//sheet" position="before">
+                    <header>
+                         <button name="btn_approve_credit_limit" type="object"  string="Approve Credit Limit" class="oe_highlight" attrs="{'invisible': [('is_credit_limit_changed', '=', False)]}" groups="kin_credit_limit.group_credit_limit_approval" />
+                    </header>
+                 </xpath>
+
+                <xpath expr="//group[@name='container_row_2']" position="inside" >
+                     <group colspan="2" string="Credit Limit">
+                        <field name="not_due_amount_receivable" />
+                        <field name="due_amount_receivable" />
+                        <field name="credit_limit"   />
+                        <field name="allowed_credit" />
+                        <field name="is_enforce_credit_limit_so" />
+                        <field name="is_credit_limit_changed" readonly="1" />
+                        <field name="is_credit_limit_changed_by" readonly="1" />
+                        <field name="is_credit_limit_approved" readonly="1" />
+                        <field name="is_credit_limit_last_approved_by"  readonly="1" />
+                    </group>
+                </xpath>
+            </field>
+        </record>
+
+
+
+
+         <record id="view_partner_tree_sale_credit_limit" model="ir.ui.view">
+            <field name="name">res.partner.sale.tree.credit.limit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_tree"/>
+            <field name="arch" type="xml">
+                  <field name="display_name" position="after">
+                      <field name="ref" />
+                      </field>
+                    <field name="email" position="after" >
+                        <field name="total_invoiced" />
+                        <field name="credit" sum="Total" />
+                        <field name="debit" sum="Total"  />
+                         <field name="not_due_amount_receivable" sum="Total" />
+                        <field name="due_amount_receivable" sum="Total" />
+                        <field name="credit_limit" sum="Total"  />
+                        <field name="allowed_credit"  />
+                    </field>
+            </field>
+        </record>
+
+
+
+    </data>
+</odoo>

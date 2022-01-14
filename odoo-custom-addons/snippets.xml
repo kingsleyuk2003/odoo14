@@ -1,0 +1,166 @@
+
+
+
+<!-- Client multi Action server -->
+<!-- source: ../addons/hr_expense/views/hr_expense_views.xml:307 -->
+  <record id="hr_expense_submit_action_server" model="ir.actions.server">
+            <field name="name">Submit Expenses</field>
+            <field name="type">ir.actions.server</field>
+            <field name="model_id" ref="model_hr_expense"/>
+            <field name="state">code</field>
+            <field name="code">
+                self.submit_expenses(cr, uid, context.get('active_ids', []), context=context)
+            </field>
+        </record>
+        <record id="action_hr_expense_submit" model="ir.values">
+            <field name="name">action_hr_expense_submit</field>
+            <field name="action_id" ref="hr_expense_submit_action_server" />
+            <field name="value" eval="'ir.actions.server,' + str(ref('hr_expense_submit_action_server'))" />
+            <field name="key">action</field>
+            <field name="model_id" ref="model_hr_expense"/>
+            <field name="model">hr.expense</field>
+            <field name="key2">client_action_multi</field>
+        </record>
+
+
+
+<!--../addons/crm/crm_lead_view.xml:161-->
+<field name="user_id" on_change="on_change_user(user_id, context)"
+             context="{'default_groups_ref': ['base.group_user', 'base.group_partner_manager', 'base.group_sale_salesman_all_leads'], 'team_id': team_id}"/>
+
+<!-- ../addons/rog_modifications/hr_view.xml:444 -->
+<!-- Button Box in a view that does not have button box -->
+       <record model="ir.ui.view" id="edit_holiday_new_rog">
+            <field name="name">Leave Request</field>
+            <field name="model">hr.holidays</field>
+            <field name="inherit_id" ref="hr_holidays.edit_holiday_new" />
+            <field name="arch" type="xml">
+                <xpath expr="//sheet/group" position="before">
+                        <div class="oe_button_box" name="button_box">
+                            <button name="action_view_rule_adjustments"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('ra_count', '=', 0)]}" >
+                                <field  name="ra_count" widget="statinfo" string="Rule Adjustment(s)"/>
+                            </button>
+                        </div>
+                </xpath>
+
+            </field>
+        </record>
+
+
+<!-- Assigning  Access right to a report-->
+    <report
+		    id="pfa_report"
+            model="pfa.report.wizard"
+		    string="PFA Report"
+		    report_type="xlsx"
+		    name="kin_report.pfa_report"
+		    attachment_use="False"
+        />
+		<record id="pfa_excel_report" model="ir.actions.report.xml" >
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_hr_user')])]"  />
+        </record>
+
+
+
+<!-- Calling a function automatically from the view to the python file -->
+<!--../odoo-rebranded-9.0/addons/kin_sales/sale_view.xml:15-->
+<function  model="sale.order" name="hide_invoice_order_from_tree"  />
+
+
+       <!-- Creating an action menu to call a wizard -->
+        <record model="ir.values" id="sale_order_line_make_invoice">
+            <field name="model_id" ref="sale.model_sale_order_line" />
+            <field name="name">Invoice Orders</field>
+            <field name="key2">client_action_multi</field>
+            <field name="value" eval="'ir.actions.act_window,' + str(ref('action_view_sale_advance_payment_inv'))" />
+            <field name="key">action</field>
+            <field name="model">sale.order</field>
+        </record>
+
+
+<!--see: ../odoo-rebranded-9.0/addons/kin_report/report/custom_sales_quotation.xml:121-->
+<span  t-esc="'{:,.2f}'.format(line.price_unit)" />
+
+
+<!--../odoo-rebranded-9.0/addons/kin_hr/kin_report.xml:19-->
+ <report
+		    id="payslip_excel_report"
+		    model="payslip.report.parser"
+		    string="Payslip Excel Report"
+		    report_type="xlsx"
+		    name="kin_hr.report_payslip_report"
+		    file="kin_hr.report_payslip_report"
+		    attachment_use="False"
+        />
+		<record id="payslip_excel_report" model="ir.actions.report.xml" >
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_hr_user')])]"  />
+        </record>
+
+
+
+ <record model="ir.ui.menu" id="account.menu_finance">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_account_menu')])]"/>
+        </record>
+
+
+ <!-- Using widget -->
+  <record model="ir.ui.view" id="view_stock_quant_form_skyward_extend">
+            <field name="name">stock.quant.form.skyward.extend</field>
+            <field name="model">stock.quant</field>
+            <field name="inherit_id" ref="stock.view_stock_quant_form" />
+            <field name="arch" type="xml">
+                <field name="qty" position="attributes" >
+                   <attribute name="widget" >integer</attribute>
+                </field>
+            </field>
+        </record>
+
+
+ <record id="account.menu_action_account_payments_receivable" model="ir.ui.menu" >
+            <field name="name" >Customer's Payment Analysis</field>
+            <field name="sequence" >21</field>
+             <!--This will append the the new group to the existing ones-->
+		 <field name="groups_id" eval="[(4,  ref('group_show_customer_payment_analysis'))]"/>
+             <field name="groups_id"   eval="[(4, [ref('group_show_customer_payment_analysis'),ref('group_show_supplier_payment_analysis')])]"/>
+             <field name="groups_id" eval="[(4,ref('group_show_customer_payment_analysis')),(4,ref('group_show_supplier_payment_analysis'))]"  />
+            <!--This will completely replace the group with the new one-->
+     <field name="groups_id" eval="[(6, 0, [ref('group_show_customer_payment_analysis'),ref('group_show_customer_payment_analysis')])]"/>
+        </record>
+
+
+
+<!-- Hide a action menu -->
+<record id="action_report_loading_waybill" model="ir.actions.report.xml" >
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"  />
+        </record>
+
+
+<!-- overriding a rule -->
+    <delete model="ir.rule" id="base.res_partner_rule"/> <!-- IT IS NECESSARY TO DELETE, because the no-update on the parent module may not allow it to be overriding by writing -->
+	    <record model="ir.rule" id="base.res_partner_rule">
+          <record model="ir.rule" id="base.res_partner_rule">
+            <field name="name">res.partner company</field>
+            <field name="model_id" ref="model_res_partner"/>
+            <!--
+                Show partners from ancestors and descendants companies
+                (or company-less), this is usually a better default for
+                multicompany setups.
+            -->
+          <field name="perm_read" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="domain_force">['|','|',('company_id.child_ids','child_of',[user.company_id.id]),('company_id','child_of',[user.company_id.id]),('company_id','=',False)]</field>
+            <field name="active" eval="False"/>
+        </record>
+    <delete model="ir.rule" id="hr_expense.hr_expense_comp_rule"/>
+    <record id="hr_expense.hr_expense_comp_rule" model="ir.rule">
+            <field name="name">Expense multi company rule extend</field>
+            <field name="model_id" ref="model_hr_expense"/>
+            <field eval="True" name="global"/>
+        <field name="perm_read" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="domain_force">['|',('company_id', '=', False), ('company_id', 'child_of', [user.company_id.id])]</field>
+        </record>

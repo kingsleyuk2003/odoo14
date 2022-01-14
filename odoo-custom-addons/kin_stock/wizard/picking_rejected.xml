@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+
+        <record id="confirm_stock_picking_rejected_view" model="ir.ui.view">
+            <field name="name">Stock Items Rejected</field>
+            <field name="model">stock.picking.reject.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Stock Items Rejected">
+
+                    <group>
+                        <field name="msg"/>
+                    </group>
+                    <footer>
+                        <button name="action_wizard_reject_notice" string="Acknowledge Items Rejection" type="object" class="oe_highlight"/>
+                        or
+                        <button string="Cancel" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_stock_picking_reject_items" model="ir.actions.act_window">
+            <field name="name">Stock Items Rejected by Customer</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">stock.picking.reject.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <!--<field name="groups_id" eval="[(4,ref('kin_sales_double_validation.group_show_disapprove_btn'))]"/>-->
+        </record>
+
+
+
+
+    </data>
+</odoo>

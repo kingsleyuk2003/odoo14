@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+<record model="ir.module.category" id="module_category_stock_nexium">
+            <field name="name">Stock - Nexium</field>
+            <field name="description">Stock Related Access Rights for Nexium</field>
+            <!--<field name="sequence">7</field>-->
+        </record>
+
+		<record id="group_show_is_release_order_chk" model="res.groups">
+			<field name="name">Show Is Release Order Checkbox</field>
+			<field name="category_id" ref="module_category_stock_nexium"/>
+		</record>
+
+        <record id="group_show_is_tank_to_tank_chk" model="res.groups">
+			<field name="name">Show Is tank to Tank Checkbox</field>
+			<field name="category_id" ref="module_category_stock_nexium"/>
+		</record>
+
+
+</data>
+</odoo>

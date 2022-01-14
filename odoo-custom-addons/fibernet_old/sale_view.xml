@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+            <!--<menuitem name="Pre-Sales(CRM)" id="base.menu_base_partner" web_icon="sale,static/description/icon.png"-->
+            <!--groups="kin_crm.group_show_crm_menu" sequence="6"/>-->
+
+            <!--<menuitem name="CRM" id="base.menu_base_crm" web_icon="sale,static/description/icon.png"-->
+            <!--groups="kin_crm.group_show_crm_menu" sequence="6"/>-->
+         <!--<menuitem id="kkon_crm_menu" name="CRM" parent="base.menu_base_crm" sequence="4" />-->
+        <!--<menuitem name="Leads" id="kkon_menu_crm_leads" parent="kkon_crm_menu" sequence="1" action="crm.crm_lead_all_leads" />-->
+        <!--<menuitem id="kkon_menu_crm_opportunities" action="crm.action_your_pipeline" parent="kkon_crm_menu" sequence="4"/>-->
+        <!--<menuitem id="kkon_crm_lead_menu_activities" name="Next Activities" sequence="5" parent="kkon_crm_menu" action="crm.crm_lead_action_activities" />-->
+  <!--<menuitem id="menu_partner_kkon_form" parent="kkon_crm_menu" action="base.action_partner_form" sequence="6"/>-->
+
+ <menuitem action="sale.action_orders"
+            id="menu_sale_order_kkon" parent="account.menu_finance_receivables"
+            sequence="0" groups="base.group_sale_salesman,base.group_sale_manager"/>
+
+         <menuitem id="kkon_crm_config" name="KKON/FOB Structure Configuration" parent="base.menu_sale_config" sequence="5" />
+
+        <!-- Location -->
+        <record id="view_location_form" model="ir.ui.view">
+            <field name="name">location</field>
+            <field name="model">location</field>
+            <field name="arch" type="xml">
+                <form string="Location">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="code" />
+                        </group>
+                         <notebook>
+                            <page string="Base Stations">
+                                <field name="base_station_ids"   >
+                                    <tree string="Locations" editable="bottom" create="false" delete="false" >
+                                         <field name="name"/>
+                                         <field name="location_id" />
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="view_location_tree" model="ir.ui.view">
+            <field name="name">location.tree</field>
+            <field name="model">location</field>
+            <field name="arch" type="xml">
+                <tree string="Location">
+                    <field name="name"/>
+                    <field name="code" />
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="view_location_form_filter" model="ir.ui.view">
+            <field name="name">location.select</field>
+            <field name="model">location</field>
+            <field name="arch" type="xml">
+                <search string="Location">
+                    <field name="name" string="Location" filter_domain="['|',('name','ilike',self),('code','ilike',self)]"/>
+                    <field name="code" />
+                </search>
+            </field>
+        </record>
+
+
+         <record id="action_location" model="ir.actions.act_window">
+            <field name="name">Location</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">location</field>
+
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_location_form_filter"/>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Create Location
+                </p>
+            </field>
+        </record>
+ <menuitem id="menu_location" name="Location"  parent="kkon_crm_config" action="action_kkon_location"   sequence="1"/>
+
+        <!-- Base Stations -->
+         <record id="view_base_station_form" model="ir.ui.view">
+            <field name="name">base.station</field>
+            <field name="model">base.station</field>
+            <field name="arch" type="xml">
+                <form string="Location">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="location_id" />
+                        </group>
+
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="view_base_station_tree" model="ir.ui.view">
+            <field name="name">base.station.tree</field>
+            <field name="model">base.station</field>
+            <field name="arch" type="xml">
+                <tree string="Location">
+                    <field name="name"/>
+                    <field name="location_id" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_base_station_form_filter" model="ir.ui.view">
+            <field name="name">base.station.select</field>
+            <field name="model">base.station</field>
+            <field name="arch" type="xml">
+                <search string="Base Station">
+                    <field name="name" string="Base Station" filter_domain="['|',('name','ilike',self),('location_id','ilike',self)]"/>
+                    <field name="location_id" />
+                    <group expand="0" string="Group By" >
+                         <!--<filter string="Company" context="{'group_by':'company_id'}" groups="base.group_multi_company"/>-->
+                        <separator/>
+                        <filter string="Location" context="{'group_by':'location_id'}" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+         <record id="action_base_station" model="ir.actions.act_window">
+            <field name="name">Base Station</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">base.station</field>
+
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_base_station_form_filter"/>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Create Base Station
+                </p>
+            </field>
+        </record>
+
+        <menuitem id="menu_base_station" name="Base Station"  parent="kkon_crm_config"  action="action_base_station"  sequence="2"/>
+
+        <!-- Client Type -->
+        <record id="view_client_type_form" model="ir.ui.view">
+            <field name="name">client.type</field>
+            <field name="model">client.type</field>
+            <field name="arch" type="xml">
+                <form string="Client Type">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="view_client_type_tree" model="ir.ui.view">
+            <field name="name">client.type.tree</field>
+            <field name="model">client.type</field>
+            <field name="arch" type="xml">
+                <tree string="Client Type">
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+
+        <record id="view_client_type_form_filter" model="ir.ui.view">
+            <field name="name">client.type.select</field>
+            <field name="model">client.type</field>
+            <field name="arch" type="xml">
+                <search string="Client Type">
+                    <field name="name" string="Client Type" filter_domain="[('name','ilike',self)]"/>
+
+                </search>
+            </field>
+        </record>
+
+
+         <record id="action_client_type" model="ir.actions.act_window">
+            <field name="name">Client Type</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">client.type</field>
+
+            <field name="view_mode">tree,form</field>
+            <field name="search_view_id" ref="view_client_type_form_filter"/>
+            <field name="help" type="html">
+                <p class="oe_view_nocontent_create">
+                    Create Client Type
+                </p>
+            </field>
+        </record>
+ <menuitem id="menu_client_type" name="Client Type"  parent="kkon_crm_config" action="action_client_type"   sequence="3"/>
+
+        <menuitem action="base.action_partner_category_form" id="menu_partner_category_kkon_form" name="Partner Tags" sequence="3" parent="kkon_crm_config" />
+
+
+
+        <!-- Partner Extend -->
+         <record id="view_res_partner_kkon_extend" model="ir.ui.view">
+            <field name="name" >res.partner.kkon.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet" position="before">
+                    <header>
+                         <button name="btn_push_customer_ebilling" type="object"  string="Re-Push Ebilling Customer"   groups="kkon_modifications.group_push_ebilling_customer" />
+                    </header>
+                 </xpath>
+                <field name="fax" position="attributes" >
+                    <attribute name="invisible" >True</attribute>
+                </field>
+                 <field name="title" position="attributes" >
+                    <attribute name="attrs" >{'required': [('is_company', '=', False)]}</attribute>
+                </field>
+                <field name="ref" position="replace" />
+                  <field name="comment" position="replace" />
+                <field name="company_id" position="replace"  />
+                <field name="lang"  position="replace"  />
+                <field name="function" position="replace" />
+<!--                 <field name="category_id" position="attributes" >-->
+<!--                     <attribute name="string" >Service Type</attribute>-->
+<!--                 </field>-->
+                 <field name="category_id" position="replace" />
+
+                 <field name="phone" position="attributes" >
+                        <attribute name="attrs"  >{'required': [('is_company', '=', False),('customer','=',True)]} </attribute>
+                 </field>
+
+                 <field name="mobile" position="attributes" >
+                     <attribute name="attrs"  >{'required': [('is_company', '=', False),('customer','=',True)]} </attribute>
+                 </field>
+                 
+               
+
+                 <field name="street" position="attributes" >
+                      <attribute name="placeholder">Address ...</attribute>
+                       <attribute name="required">True</attribute>
+                </field> 
+
+                  <field name="type" position="before" >
+                        <field name="first_name"   />
+                        <field name="last_name"    /> 
+                  </field>
+
+                   <field name="website" position="before" >
+                         <field name="estate_id" options="{'no_open': True, 'no_create': True}" />
+                            <field name="city_cust"   />                   
+                            <field name="state_ng"   />
+                            <field name="gender"   />
+                            <field name="dob" />    
+                  </field>
+
+                     <!-- <field  name="title" position="after" >
+                        <field name="first_name" attrs="{'required' : [('is_company', '=', False)]}"  />
+                        <field name="last_name" attrs="{'required' : [('is_company', '=', False)]}"   />
+                        <field name="street" required="True" string="Address" />
+
+                            <field name="city_cust" required="True"  />                   
+                            <field name="state_ng" required="True"  />
+                            <field name="gender" attrs="{'required' : [('is_company', '=', False)]}"   />
+                            <field name="dob" />    
+                 </field> -->
+
+                <field name="website" position="after" >                
+                     <field name="is_upcountry" groups="kkon_modifications.group_upcountry_chk_kkon" />
+                     <field name="customer_type"  required="1"/>
+                    <field name="product_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="client_type_id"  options="{'no_open': True, 'no_create': True}"  />
+                    <field name="company_id" readonly="1" />
+                    <field name="ref" string="Client ID" readonly="1" />
+                    <field name="location_id"  options="{'no_open': True, 'no_create': True}" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="bandwidth" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="vlan" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="contact_person" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="cpe" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="ip_address" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="radio_ip_address" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="base_station_ip_address" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="subnet" attrs="{'invisible' : [('customer','=',False)]}"  />
+                     <field name="gateway" attrs="{'invisible' : [('customer','=',False)]}"  />
+                     <field name="indoor_wan" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="olt_id" options="{'no_open': True, 'no_create': True}" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="gpon" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="interface" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="serial_no" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="region_id" options="{'no_open': True, 'no_create': True}" attrs="{'invisible' : [('customer','=',False)]}"  />                    
+                    <field name="area_id" options="{'no_open': True, 'no_create': True}" attrs="{'invisible' : [('customer','=',False)]}"  />
+
+                    <field name="comment" />
+                    <field name="installation_date" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="reg_date" attrs="{'invisible' : [('customer','=',False)]}"   />
+                    <field name="last_logoff" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="expiration" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="config_status" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="active_cust" attrs="{'invisible' : [('customer','=',False)]}"  />
+                    <field name="ebilling_push" readonly="1" attrs="{'invisible' : [('customer','=',False)]}"   />
+                    <field name="ebilling_response" readonly="1" attrs="{'invisible' : [('customer','=',False)]}"  />
+
+
+                </field>
+            </field>
+         </record>
+
+
+
+        <record id="base.action_partner_form" model="ir.actions.act_window">
+            <field name="name">Customers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.partner</field>
+
+            <field name="view_mode">tree,form,kanban</field>
+            <field name="context">{"search_default_customer":1}</field>
+            <field name="search_view_id" ref="base.view_res_partner_filter"/>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to add a contact in your address book.
+              </p>
+            </field>
+        </record>
+
+<record id="view_partner_tree_sale_extend_kkon" model="ir.ui.view">
+            <field name="name">res.partner.sale.tree.kkon</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="kin_sales.view_partner_tree_sale_extend"/>
+            <field name="arch" type="xml">
+                        <field name="total_invoiced" position="replace"   />
+                        <field name="credit" position="replace"  />
+                        <field name="debit" position="replace"   />
+                         <field name="not_due_amount_receivable" position="replace"  />
+                        <field name="due_amount_receivable" position="replace"  />
+                        <field name="credit_limit" position="replace"   />
+                        <field name="allowed_credit" position="replace"   />
+
+            </field>
+        </record>
+
+        <!-- Ticket  -->
+            <record id="ticket_form_kkon" model="ir.ui.view">
+            <field name="name">kin.ticket.form.kkon</field>
+            <field name="model">kin.ticket</field>
+             <field name="inherit_id" ref="kin_helpdesk.ticket_form" />
+            <field name="arch" type="xml">
+                <field name="name" position="before" >
+                    <div class="oe_button_box" name="button_box" >
+                            <button name="action_view_order"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('order_count', '=', 0)]}" >
+                                <field  name="order_count" widget="statinfo" string="Order" />
+                            </button>
+                    </div>
+                </field>
+            </field>
+            </record>
+
+
+
+
+
+        <!-- Sales order -->
+
+        <record id="view_order_form_kkon_extend" model="ir.ui.view">
+            <field name="name">sale.order.form.kkon.extend</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form" />
+            <field name="arch" type="xml">
+
+                 <xpath expr="//button[@name='action_confirm'][@states='sent']" position="attributes" >
+                    <attribute name="groups" >kkon_modifications.group_show_confirm_btn</attribute>
+                     <attribute name="string" >Manager Make Order</attribute>
+                </xpath>
+                <xpath expr="//button[@name='action_confirm'][@states='draft']" position="attributes" >
+                    <attribute name="groups" >kkon_modifications.group_show_confirm_btn</attribute>
+                    <attribute name="string" >Manager Make Order</attribute>
+                </xpath>
+
+                <div  name="button_box" position="inside">
+                     <button type="object"  name="btn_view_payment_groups" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('payment_group_count', '=', 0)]}" >
+                            <field name="payment_group_count" widget="statinfo" string="Payments"/>
+                    </button>
+                 </div>
+
+                <xpath expr="//sheet/div[@name='button_box']" position="before">
+                    <div class="alert alert-warning alert-dismissable text-center o_form_header" attrs="{'invisible': [('show_alert_box_kkon', '!=', True)]}">
+                       <button name="close_alert_box" type="object" class="close" data-dismiss="modal"><span aria-hidden="true" class="fa fa-times"></span></button>
+                        <div>
+                            <strong><field name="alert_msg"  /></strong>
+                        </div>
+                         <field name="show_alert_box_kkon" invisible="1"/>
+                     </div>
+                 </xpath>
+
+                 <button name="action_cancel" position="before" >
+                        <!--<button name="action_send_to_manager" states="draft"  string="Send to Manager" class="btn-primary" type="object" groups="kin_sales_double_validation.group_show_send_to_manager"  />-->
+                     <!--<button name="action_send_for_confirm"  string="Send Accepted Quote for Conversion to Sales Order" class="btn-primary" type="object" attrs="{'invisible':[('state', '!=', 'to_accept')]}" context="{'show_sale': True}" groups="kin_sales_double_validation.group_show_send_for_validation_btn"/>-->
+
+                    <button  name="action_approve" string="Accountant Approve Order" class="btn-primary" type="object"  attrs="{'invisible':[('state', '!=', 'so_to_approve')]}" context="{'show_sale': True}" groups="kkon_modifications.group_show_approve_btn"/>
+                     <button name="%(action_disapprove_sale_orders)d"   string="Accountant Disapprove Order" class="btn-primary" type="action"  attrs="{'invisible':[('state', '!=', 'so_to_approve')]}" context="{'show_sale': True}" groups="kkon_modifications.group_show_disapprove_btn"/>
+                 </button>
+
+                 <button name="action_cancel"  type="object"  position="attributes">
+                     <attribute name="states">draft,sent,sale,so_to_approve,sale,no_sale</attribute>
+                 </button>
+                <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale,done" position="attributes">
+                    <attribute name="statusbar_visible" >draft,so_to_approve,sale,done</attribute>
+                </field>
+
+                <div class="oe_button_box" name="button_box" position="inside" >
+                            <button name="action_view_ticket"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('ticket_count', '=', 0)]}" >
+                                <field  name="ticket_count" widget="statinfo" string="Ticket" />
+                            </button>
+                    </div>
+
+                 <field name="partner_id" position="after" >
+                    <field name="is_upcountry" groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+
+                <field name="client_order_ref" position="after" >
+                    <field name="is_installation_ticket_close" readonly="1" />
+                </field>
+
+                <field name="partner_id" position="after" >
+                     <field name="street" readonly="1" />
+                     <field name="phone"  readonly="1"  />
+                     <field name="email" readonly="1" />
+                </field>
+
+                <group name="technical" position="after" >
+                    <group string="Approvals" >
+                         <field name="confirmed_by_user_id" />
+                    <field name="approved_by_user_id" />
+                    <field name="disapproved_by_user_id" />
+                    </group>
+
+                </group>
+
+                <field name="company_id" position="after"  >
+                    <field name="payment_group_id"  readonly="1" />
+                    <field name="is_free_installation" readonly="1" />
+                     <field name="ebilling_order_push" readonly="1"  />
+                    <field name="ebilling_order_response" readonly="1" />
+                     <field name="is_successful_ebilling_payment_receipt" readonly="1" />
+                    <field name="ebilling_payment_receipt_error_msg" readonly="1" />
+                    <field name="ebilling_order_manually_approved_pushed" readonly="1" />
+                </field>
+
+                 <field name="amount_total" position="after"  >
+                      <field name="total_amount_paid" readonly="1" />
+                        <field name="amount_balance" readonly="1" />
+                 </field>
+
+            </field>
+        </record>
+
+        <!--<record id="view_order_form_kkon_extend" model="ir.ui.view">-->
+            <!--<field name="name">sale.order.form.kkon.extend</field>-->
+            <!--<field name="model">sale.order</field>-->
+            <!--<field name="inherit_id" ref="kin_sales.view_order_form_extend" />-->
+            <!--<field name="arch" type="xml">-->
+                     <!--<button name="action_confirm" states="sent"  class="btn-primary" type="object" context="{'show_sale': True}" position="attributes" >-->
+                    <!--<attribute name="states"> </attribute>-->
+                    <!--<attribute name="attrs">{'invisible':[('state', '!=', 'waiting')]}</attribute>-->
+                    <!--<attribute name="groups">kin_sales_double_validation.group_show_confirm_btn</attribute>-->
+                <!--</button>-->
+                <!--<button name="action_confirm" states="draft" type="object" context="{'show_sale': True}" position="attributes" >-->
+                     <!--<attribute name="states"> </attribute>-->
+                <!--</button>-->
+            <!--</field>-->
+        <!--</record>-->
+
+         <record model="ir.ui.view" id="view_company_modifications">
+                    <field name="name">res.company.form.modifications</field>
+                    <field name="inherit_id" ref="base.view_company_form"/>
+                    <field name="model">res.company</field>
+                    <field name="arch" type="xml">
+                        <notebook position="inside">
+                            <page string="Extra Modifications">
+                                <group>
+                                    <field name="is_send_email_expiry_finish" />
+                                </group>
+                            </page>
+                        </notebook>
+                    </field>
+         </record>
+
+        <!-- Account payment Group -->
+        <record id="view_account_payment_extend_form" model="ir.ui.view">
+            <field name="name">account.payment.form.extend</field>
+            <field name="model">account.payment</field>
+            <field name="inherit_id" ref="account.view_account_payment_form" />
+            <field name="arch" type="xml">
+                <field name="move_id" position="after" >
+                    <field name="sale_id" readonly="1"/>
+                </field>
+            </field>
+        </record>
+
+
+    </data>
+</odoo>

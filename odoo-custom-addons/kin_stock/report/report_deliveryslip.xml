@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+      <template id="report_delivery_document_kin_stock" inherit_id="stock.report_delivery_document" >
+          <xpath expr="//div[@name='signature']" position="after" >
+              <br /><br />
+             <table class="table table-sm" name="signature_kinstock">
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="col-xs-6" >
+                                        <span>Received by ......................................................</span>
+                                    </div>
+                                    <div class="col-xs-6" >
+                                        <span>Delivered by ......................................................</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="col-xs-6" >
+                                        <span>Signature &amp; Date ..........................................</span>
+                                    </div>
+                                     <div class="col-xs-6" >
+                                        <span>Signature &amp; Date ..........................................</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+              </table>
+          </xpath>
+      </template>
+
+</odoo>

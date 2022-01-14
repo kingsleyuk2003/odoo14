@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="0">
+
+<!--        <record id="sales_order_cancel_transfer_journal" model="account.journal">-->
+<!--            <field name="name">Sales Order Cancellation</field>-->
+<!--            <field name="code">SOC</field>-->
+<!--            <field name="type">general</field>-->
+<!--            <field name="update_posted" eval="True" />-->
+<!--        </record>-->
+
+<!--        <record id="sales_order_transfer_journal" model="account.journal">-->
+<!--            <field name="name">Sales Order Transfer</field>-->
+<!--            <field name="code">SOT</field>-->
+<!--            <field name="type">general</field>-->
+<!--            <field name="update_posted" eval="True" />-->
+<!--        </record>-->
+
+        <record id="default_stock_location_loading" model="stock.location" >
+            <field name="name">Please Select a Location</field>
+            <field name="usage">view</field>
+<!--            <field name="is_default_option"   eval="True" />-->
+        </record>
+
+
+    </data>
+</openerp>

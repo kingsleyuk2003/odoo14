@@ -1,0 +1,29 @@
+<odoo>
+    <data>
+
+		<record id="mail_templ_assign_engineer_email" model="mail.template">
+			<field name="name" >Assign Engineer to Ticket</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('support_person_email')}</field>
+			<field name="subject">A New Ticket (${object.name}) has been Assigned to you</field>
+			<field name="email_to">${ctx.get('notify_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'product.template')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('notify_person_name')},</p>
+				<p>A New Ticket (${object.name}) has been assigned to you by ${ctx.get('support_person_name')}</p>
+				<p>Description</>
+				<p>${object.description}</p>
+				<p><a href="${ctx.get('url')}">follow the link to view the ticket details</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message</p>
+				]]>
+			</field>
+		</record>
+
+
+
+
+	</data>
+</odoo>

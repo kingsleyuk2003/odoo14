@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+<!--    <menuitem name="Sales &amp; Pre-Sales(CRM)" id="base.menu_base_partner" web_icon="sale,static/description/icon.png"-->
+<!--            groups="kin_crm.group_show_crm_menu" sequence="6"/>-->
+<!--    <menuitem id="base.menu_sales" name="Sales" parent="base.menu_base_partner" sequence="3"/>-->
+<!--    <menuitem id="crm_menu" name="Pre-Sales/CRM" parent="base.menu_base_partner" sequence="4" />-->
+<!--    <menuitem name="Leads" id="crm.menu_crm_leads" parent="crm_menu" sequence="1" action="crm.crm_lead_all_leads" />-->
+<!--    <menuitem id="crm.menu_crm_opportunities" action="crm.action_your_pipeline" string="Your Deals" parent="crm_menu" sequence="4"/>-->
+<!--    <menuitem id="crm.crm_lead_menu_activities" name="Next Activities" sequence="5"     parent="crm_menu" action="crm.crm_lead_action_activities" />-->
+
+
+        <record model="ir.ui.view" id="crm_case_form_view_leads_extend_kkontech">
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_case_form_view_leads" />
+            <field name="arch" type="xml">
+
+                <field name="partner_id" position="after" >
+                    <field name="is_company" />
+                    <field name="is_upcountry" groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+
+                 <field name="contact_name" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="mobile" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+
+                <field name="email_from" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                
+                <label for="street" position="replace" />
+                <field name="street" position="replace" />
+                <field name="company_id" position="after" >
+                     <field name="customer_type"  />
+                </field>
+                <field name="team_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+                 <field name="user_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+
+                <field name="partner_name" position="after" >
+                    <field name="first_name" attrs="{'required' : [('is_company', '=', False)]}"  />
+                    <field name="last_name" attrs="{'required' : [('is_company', '=', False)]}"   />
+                    <field name="street" required="True" string="Address" />
+                      <field name="is_estate" />
+                    <field name="estate_id"  attrs="{'required' : [('is_estate', '=', True)], 'invisible': [('is_estate', '=', False)]}" options="{'no_open': True, 'no_create': True}"  />
+                    <field name="city_cust" required="True"  />                   
+                    <field name="state_ng" required="True"  />
+                    <field name="gender" attrs="{'required' : [('is_company', '=', False)]}"   />
+                     <field name="dob"   attrs="{'required' : [('is_company', '=', False)]}"   />
+                </field>
+
+                 <field name="partner_name"  position="attributes" >
+                    <attribute name="attrs" >{'required' : [('is_company', '=', True)], 'invisible': [('is_company', '=', False)]}</attribute>
+                </field>
+
+              
+         
+
+
+            </field>
+    </record>
+
+    <record model="ir.ui.view" id="crm_case_form_view_oppor_extend_kkontech">
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_case_form_view_oppor" />
+            <field name="arch" type="xml">
+                <button name="log_next_activity_done" position="attributes" >
+                    <attribute name="groups" >kin_crm.group_show_crm_done_link</attribute>
+                </button>
+                <button name="cancel_next_activity" position="attributes" >
+                    <attribute name="groups" >kin_crm.group_show_crm_cancel_link</attribute>
+                </button>
+                <button name="action_set_won" position="before" >
+                      <button name="%(action_survey_ticket)d" class="oe_highlight"  string="Create Survey Ticket"   type="action"  attrs="{'invisible':['|',('is_survey_ticket_close', '!=', False),('ticket_count', '!=', 0)]}"   />
+                </button>
+                 <div class="oe_button_box" name="button_box" position="inside" >
+                            <button name="action_view_ticket"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('ticket_count', '=', 0)]}" >
+                                <field  name="ticket_count" widget="statinfo" string="Ticket" />
+                            </button>
+                    </div>
+                <field name="tag_ids" position="after" >
+                    <field name="is_survey_ticket_close" readonly="1" />
+                    <field name="customer_type" invisible="1" />
+                </field>
+                <field name="team_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+                 <field name="user_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+
+                 <field name="contact_name" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="mobile" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="email_from" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <label for="street" position="replace" />
+                <field name="street" position="replace" />
+
+
+                <field name="partner_id" position="after" >
+                    <field name="is_company"    />
+                    <field name="is_upcountry" groups="kkon_modifications.group_upcountry_chk_kkon" />
+                </field>
+
+
+                <field name="partner_name" position="after" >
+                    <field name="first_name" attrs="{'required' : [('is_company', '=', False)]}"  />
+                    <field name="last_name" attrs="{'required' : [('is_company', '=', False)]}"   />
+                    <field name="street" required="True"  string="Address" />
+                    <field name="is_estate" />
+                    <field name="estate_id"  attrs="{'required' : [('is_estate', '=', True)], 'invisible': [('is_estate', '=', False)]}" options="{'no_open': True, 'no_create': True}"  />
+                    <field name="city_cust" required="True"  />                   
+                    <field name="state_ng" required="True"  />
+                    <field name="gender" attrs="{'required' : [('is_company', '=', False)]}"   />
+                     <field name="dob"  attrs="{'required' : [('is_company', '=', False)]}"   />
+                </field>
+
+                <field name="partner_name"  position="attributes" >
+                    <attribute name="attrs" >{'required' : [('is_company', '=', True)], 'invisible': [('is_company', '=', False)]}</attribute>
+                </field>
+
+            </field>
+    </record>
+
+     <act_window id="crm.action_crm_send_mass_convert"
+            multi="True"
+            key2="client_action_multi" name=""
+            res_model="crm.lead2opportunity.partner.mass" src_model="crm.lead"
+            view_mode="form" target="new" view_type="form"
+            context="{'mass_convert' : True}"
+            view_id="crm.view_crm_lead2opportunity_partner_mass"
+            groups="base.group_sale_salesman"
+        />
+
+
+        <!--  MRC -->
+        <record model="ir.ui.view" id="crm_target_opportunity_tree_kkon">
+            <field name="name">Target Analysis Tree</field>
+            <field name="model">crm.target.opportunity</field>
+            <field name="inherit_id" ref="kin_crm.crm_target_opportunity_tree" />
+            <field name="arch" type="xml">
+                <field name="total_opportunity_target" position="attributes" >
+                             <attribute name="string" >Total MRC Target</attribute>
+                      </field>
+                    <field name="total_actual_won_opportunity_revenue"  position="attributes" >
+                         <attribute name="string" >Total Won MRC</attribute>
+                    </field>
+                     <field name="total_perc_opportunity_target_won" position="attributes"  >
+                          <attribute name="string" >Total Won MRC (%)</attribute>
+                     </field>
+
+            </field>
+        </record>
+
+        <record id="crm_target_opportunity_form_kkon" model="ir.ui.view">
+            <field name="name">crm.target.opportunity.kkon</field>
+            <field name="model">crm.target.opportunity</field>
+             <field name="inherit_id" ref="kin_crm.crm_target_opportunity_form" />
+            <field name="arch" type="xml">
+                      <field name="opportunity_target" position="attributes" >
+                             <attribute name="string" >MRC Target</attribute>
+                      </field>
+                    <field name="actual_won_opportunity_revenue"  position="attributes" >
+                         <attribute name="string" >Won MRC</attribute>
+                    </field>
+                     <field name="perc_opportunity_target_won" position="attributes"  >
+                          <attribute name="string" >Won MRC (%)</attribute>
+                     </field>
+                <field name="total_opportunity_target" position="attributes" >
+                             <attribute name="string" >Total MRC Target</attribute>
+                      </field>
+                    <field name="total_actual_won_opportunity_revenue"  position="attributes" >
+                         <attribute name="string" >Total Won MRC</attribute>
+                    </field>
+                     <field name="total_perc_opportunity_target_won" position="attributes"  >
+                          <attribute name="string" >Total Won MRC (%)</attribute>
+                     </field>
+            </field>
+        </record>
+
+         <record model="ir.ui.view" id="crm_user_target_tree_kkon">
+            <field name="name">CRM User Target Tree</field>
+            <field name="model">crm.user.target</field>
+              <field name="inherit_id" ref="kin_crm.crm_user_target_tree" />
+            <field name="arch" type="xml">
+                 <field name="target_opportunity"  position="attributes" >
+                     <attribute name="string" >MRC Target</attribute>
+                 </field>
+                 <field name="actual_won_opportunity_revenue"  position="attributes" >
+                     <attribute name="string" >MRC Won</attribute>
+                 </field>
+                <field name="perc_opportunity_target_won"  position="attributes" >
+                     <attribute name="string" >MRC Won (%)</attribute>
+                 </field>
+            </field>
+        </record>
+
+         <record model="ir.ui.view" id="crm_user_target_readonly_tree_kkon">
+            <field name="name">CRM User Target Tree Readonly</field>
+            <field name="model">crm.user.target</field>
+              <field name="inherit_id" ref="kin_crm.crm_user_target_readonly_tree" />
+            <field name="arch" type="xml">
+                <field name="target_opportunity"  position="attributes" >
+                     <attribute name="string" >MRC Target</attribute>
+                 </field>
+                <field name="actual_won_opportunity_revenue"  position="attributes" >
+                     <attribute name="string" >MRC Won</attribute>
+                 </field>
+                <field name="perc_opportunity_target_won"  position="attributes" >
+                     <attribute name="string" >MRC Won (%)</attribute>
+                 </field>
+            </field>
+        </record>
+
+        <record id="product_template_form_extend_kkon_view" model="ir.ui.view">
+                <field name="name">product.template.form.account.kkon</field>
+                <field name="model">product.template</field>
+                <field name="inherit_id" ref="product.product_template_form_view"/>
+                <field name="arch" type="xml">
+                    <div name="options" position="inside" >
+                          <field name="is_mrc" />
+                               <label for="is_mrc"/>
+                    </div>
+                </field>
+            </record>
+
+    </data>
+</odoo>

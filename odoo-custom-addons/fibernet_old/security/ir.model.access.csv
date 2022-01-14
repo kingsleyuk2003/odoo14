@@ -1,0 +1,31 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_kkon_location_user,kkon.location user,model_kkon_location,kin_crm.group_show_crm_menu,1,1,1,1
+access_base_station_user,base.station user,model_base_station,kin_crm.group_show_crm_menu,1,1,1,1
+access_client_type_user,client.type user,model_client_type,kin_crm.group_show_crm_menu,1,1,1,1
+access_kkon_location_helpdesk_user,kkon.location helpdesk user,model_kkon_location,kin_helpdesk.group_helpdesk_user,1,1,1,1
+access_kin_ticket_kkon_user,kin.ticket read,kin_helpdesk.model_kin_ticket,base.group_user,1,1,1,1
+access_kin_ticket_cost_kkon_user,kin.ticket.cost ticket user,kin_helpdesk.model_kin_ticket_cost,base.group_user,1,0,0,0
+access_sale_order_read_kkon_user,Sale.order read,sale.model_sale_order,kin_helpdesk.group_helpdesk_user,1,1,0,0
+access_sale_order_line_kkon_user,Sale.order.line read,sale.model_sale_order_line,kin_helpdesk.group_helpdesk_user,1,1,0,0
+access_account_invoice_kkon_user,account.invoice read,account.model_account_invoice,kin_helpdesk.group_helpdesk_user,1,1,1,1
+access_account_invoice_line_kkon_user,account.invoice.line kkon user,account.model_account_invoice_line,kin_helpdesk.group_helpdesk_user,1,1,1,1
+access_account_invoice_tax_kkon_user,account.invoice.tax kkon user,account.model_account_invoice_tax,kin_helpdesk.group_helpdesk_user,1,1,1,1
+access_stock_move_kkon_user,stock.move kkon user,stock.model_stock_move,base.group_user,1,1,1,1
+access_res_user_kkon_user,res.users user,base.model_res_users,base.group_user,1,1,0,0
+access_res_partner_kkon_user,res.partner user,base.model_res_partner,base.group_user,1,0,0,0
+access_base_station_helpdesk_user,base.station helpdesk user,model_base_station,kin_helpdesk.group_helpdesk_user,1,0,0,0
+access_kin_helpdesk_user_ticket_group,user.ticket.group kin helpdesk user,kin_helpdesk.model_user_ticket_group,base.group_sale_salesman,1,1,1,1
+access_kin_ticket_kkon_olt,kkon.olt read,model_kkon_olt,base.group_user,1,1,1,1
+access_kin_ticket_kkon_estate,kkon.estate user,model_kkon_estate,base.group_user,1,1,1,1
+access_kin_ticket_kkon_pl,kkon.pl read,model_kkon_pl,base.group_user,1,1,1,1
+access_kin_ticket_kkon_region,kkon.region read,model_kkon_region,base.group_user,1,1,1,1
+access_kin_ticket_kkon_area,kkon.area read,model_kkon_area,base.group_user,1,1,1,1
+access_kin_ticket_kkon_rssi,kkon.rssi read,model_kkon_rssi,base.group_user,1,1,1,1
+access_kin_hr_expense_group_kkon,hr.expense.group.kkon,model_hr_expense_group_kkon,base.group_user,1,1,1,1
+access_kkon_expense_type,kkon.expense.type,model_kkon_expense_type,base.group_user,1,0,0,0
+access_kkon_expense_type_admin,kkon.expense.type admin,model_kkon_expense_type,base.group_no_one,1,1,1,1
+access_kkon_emp_expense_group,kkon.emp.expense.group,model_emp_expense_group,base.group_user,1,1,1,1
+access_kin_ticket_kkon_complaint_type,kkon.complaint.type user,model_kkon_complaint_type,base.group_user,1,1,1,1
+access_kin_ticket_kkon_elapsed_hour_first,kkon.elapsed.hour.first user,model_kkon_elapsed_hour_first,base.group_user,1,1,1,1
+access_kin_ticket_kkon_elapsed_hour_second,kkon.elapsed.hour.second user,model_kkon_elapsed_hour_second,base.group_user,1,1,1,1
+access_kin_ticket_kkon_elapsed_hour_third,kkon.elapsed.hour.third user,model_kkon_elapsed_hour_third,base.group_user,1,1,1,1

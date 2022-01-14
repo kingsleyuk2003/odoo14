@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_extend_nexium" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.stock.nexium</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="30"/>
+            <field name="inherit_id" ref="base.res_config_settings_view_form" />
+            <field name="arch" type="xml">
+                <div class="app_settings_block" data-string="Inventory"  data-key="stock" groups="stock.group_stock_manager" position="inside" >
+                    <h2>Release Order Settings</h2>
+                    <div class="row mt16 o_settings_container" name="operations_setting_container_release_order">
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="attn"/>
+                                    <div class="text-muted">
+                                        Attn. To whom the release order is addressed to
+                                    </div>
+                                     <field name="attn"/>
+                                </div>
+                            </div>
+                            
+                             <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="role"/>
+                                    <div class="text-muted">
+                                       Role of the Attn
+                                    </div>
+                                     <field name="role"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="to_address"/>
+                                    <div class="text-muted">
+                                       Address of the Attn
+                                    </div>
+                                     <field name="to_address"/>
+                                </div>
+                            </div>
+                    </div>
+
+                    <h2>Tank to Tank Settings</h2>
+                    <div class="row mt16 o_settings_container" name="operations_setting_container_release_order">
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="attn_tank"/>
+                                    <div class="text-muted">
+                                        Attn. To whom the tank to tank transfer is addressed to
+                                    </div>
+                                     <field name="attn_tank"/>
+                                </div>
+                            </div>
+                            
+                             <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="role_tank"/>
+                                    <div class="text-muted">
+                                       Role of the Attn for the Tank to Tank Transfer
+                                    </div>
+                                     <field name="role_tank"/>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Release Order settings">                              
+                                <div class="o_setting_right_pane">
+                                    <label for="to_address_tank"/>
+                                    <div class="text-muted">
+                                       Address of the Attn for the tank to Tank Transfer
+                                    </div>
+                                     <field name="to_address_tank"/>
+                                </div>
+                            </div>
+                    </div>
+
+
+                </div>
+            </field>
+        </record>
+
+
+    </data>
+</odoo>

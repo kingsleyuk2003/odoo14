@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+    <template id="report_delivery_document_extend" inherit_id="stock.report_delivery_document" >
+                <br /><br />
+              <div name="other_signature">
+                  <div  class="row mt32 mb32" name="div_sign_picking" >
+                        <div class="col-xs-6" >
+                            <span>Reeived by ......................................................</span>
+                        </div>
+                        <div class="col-xs-6" >
+                            <span>Delivered by ......................................................</span>
+                        </div>
+                  </div>
+                 <br />
+                  <div  class="row mt32 mt32" name="div_sign_picking1" >
+                        <div class="col-xs-6" >
+                            <span>Signature &amp; Date ..........................................</span>
+                        </div>
+                         <div class="col-xs-6" >
+                            <span>Signature &amp; Date ..........................................</span>
+                        </div>
+                  </div>
+              </div>
+    </template>
+
+
+
+</odoo>

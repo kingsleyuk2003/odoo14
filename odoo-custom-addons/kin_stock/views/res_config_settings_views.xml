@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_extend" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.stock</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="30"/>
+            <field name="inherit_id" ref="base.res_config_settings_view_form" />
+            <field name="arch" type="xml">
+                <div class="app_settings_block" data-string="Inventory"  data-key="stock" groups="stock.group_stock_manager" position="inside" >
+                    <h2>Custom Settings</h2>
+                    <div class="row mt16 o_settings_container" name="operations_setting_container">
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Automatically create vendor bill on stock validation">
+                                <div class="o_setting_left_pane">
+                                    <field name="create_vendor_bill"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="create_vendor_bill"/>
+                                    <div class="text-muted">
+                                        Automatically create vendor bill on stock validation
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Automatically create customers invoices on stock validation">
+                                <div class="o_setting_left_pane">
+                                    <field name="create_customer_invoice"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="create_customer_invoice"/>
+                                    <div class="text-muted">
+                                        Automatically create customers invoice on stock validation
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Automatically post vendor bill on stock validation">
+                                <div class="o_setting_left_pane">
+                                    <field name="post_vendor_bill"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="post_vendor_bill"/>
+                                    <div class="text-muted">
+                                        Automatically post vendor bill on stock validation
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Automatically post customers invoices on stock validation">
+                                <div class="o_setting_left_pane">
+                                    <field name="post_customer_invoice"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="post_customer_invoice"/>
+                                    <div class="text-muted">
+                                        Automatically post customers invoice on stock validation
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6 o_setting_box"  title="Allow Transfer Done Qty. to be higher than Demanded Qty.">
+                                <div class="o_setting_left_pane">
+                                    <field name="allow_over_transfer"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="allow_over_transfer"/>
+                                    <div class="text-muted">
+                                        Allow Transfer Done Qty. to be higher than Demanded Qty.
+                                    </div>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+            </field>
+        </record>
+
+
+    </data>
+</odoo>

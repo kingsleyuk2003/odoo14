@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+
+        <record id="confirm_survey_ticket_view" model="ir.ui.view">
+            <field name="name">Survey Ticket</field>
+            <field name="model">survey.ticket.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Survey Ticket">
+                    <b>Please enter the Survey details, Contact details Address, Service Type and Bandwidth</b>
+                    <group>
+                        <field name="msg"/>
+                    </group>
+                    <footer>
+                        <button name="btn_survey_ticket" string="Create Survey Ticket" type="object" class="oe_highlight"/>
+                        or
+                        <button string="Cancel" class="oe_link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_survey_ticket" model="ir.actions.act_window">
+            <field name="name">Survey Ticket</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">survey.ticket.wizard</field>
+
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <!--<field name="groups_id" eval="[(4,ref('kin_sales_double_validation.group_show_disapprove_btn'))]"/>-->
+        </record>
+
+
+        <!--<record model="ir.values" id="sale_order_multiple_disapprove">-->
+            <!--<field name="model_id" ref="sale.model_sale_order" />-->
+            <!--<field name="name">Disapprove Sales Orders</field>-->
+            <!--<field name="key2">client_action_multi</field>-->
+            <!--<field name="value" eval="'ir.actions.act_window,' + str(ref('action_disapprove_sale_orders'))" />-->
+            <!--<field name="key">action</field>-->
+            <!--<field name="model">sale.order</field>-->
+        <!--</record>-->
+
+    </data>
+</odoo>

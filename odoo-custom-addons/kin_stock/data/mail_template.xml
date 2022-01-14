@@ -1,0 +1,220 @@
+<odoo>
+    <data>
+	  <record id="mail_templ_invoice_delivery" model="mail.template">
+			<field name="name" >Invoice Created after Delivery</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">A New draft invoice with source document (${ctx.get('origin')}) has been created for the customer (${ctx.get('partner_name')})  </field>
+			<field name="email_to">${ctx.get('accountant_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('accountant_name')},</p>
+				<p>A New Draft Invoice with Source Document Number (${ctx.get('origin')}) has been created. Crosscheck and validate the invoice </p>
+				<p><a href="${ctx.get('url')}">Follow the Link to See the New Draft Invoice</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+
+		<record id="mail_templ_invoice_delivery_refund" model="mail.template">
+			<field name="name" >Refund Invoice Created for Received Items</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">A New draft Refund Invoice with source document (${ctx.get('origin')}) has been created for the customer (${ctx.get('partner_name')}) </field>
+			<field name="email_to">${ctx.get('accountant_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('accountant_name')},</p>
+				<p>A New Draft Refund Invoice with Source Document Number (${ctx.get('origin')}) has been created. Crosscheck and validate the invoice </p>
+				<p><a href="${ctx.get('url')}">Follow the Link to See the New Draft Refund Invoice</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+
+		<record id="mail_templ_purchase_bill_created" model="mail.template">
+			<field name="name" >A Purchase Bill has been Created</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">A New Vendor Bill has been created for the goods (${ctx.get('picking_id')}) received from the supplier (${ctx.get('partner_name')}) </field>
+			<field name="email_to">${ctx.get('accountant_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('accountant_name')},</p>
+				<p>A New Vendor Bill for the received items - (${ctx.get('picking_id')}) with purchase order number - (${ctx.get('purchase_id')})  has been created. </p>
+				<p><a href="${ctx.get('url')}">Follow the link to see the vendor bill to be validated later</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_purchase_bill_created_refund" model="mail.template">
+			<field name="name" >A Refund Purchase Bill has been Created</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">A New Purchase Refund Vendor Bill has been created for returns (${ctx.get('picking_id')}) to the supplier (${ctx.get('partner_name')})</field>
+			<field name="email_to">${ctx.get('accountant_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('accountant_name')},</p>
+				<p>A New Refund Vendor Bill for the sent items - (${ctx.get('picking_id')}) with purchase order number - (${ctx.get('purchase_id')})  has been created. </p>
+				<p><a href="${ctx.get('url')}">Follow the link to see the refund vendor bill to be validated later</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+
+		<record id="mail_templ_purchase_stock_level_email_with_url" model="mail.template">
+			<field name="name" >Purchase Stock Level Alert with URL</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject"> Stock Level Alert for the Product (${ctx.get('product_name')}) with quantity (${ctx.get('qty')}) is lesser than or equal to the minimum quantity (${ctx.get('min_qty')})</field>
+			<field name="email_to">${ctx.get('purchase_stock_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'procurement.order')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('partner_name')},</p>
+				<p>The Product (${ctx.get('product_name')}) with quantity of ${ctx.get('qty')} , is lesser than or equal to the minimum set quantity of ${ctx.get('min_qty')}. Thus, a draft purchase order has been created to help in replenishing the stock. </p>
+				<p><a href="${ctx.get('url')}">Follow the link to validate the draft purchase order</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_purchase_stock_level_email" model="mail.template">
+			<field name="name" >Purchase Stock Level Alert</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject"> Stock Level Alert for the Product (${ctx.get('product_name')}) with quantity (${ctx.get('qty')}) is lesser than or equal to the minimum quantity (${ctx.get('min_qty')})</field>
+			<field name="email_to">${ctx.get('purchase_stock_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.warehouse.orderpoint')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('partner_name')},</p>
+				<p>The Product (${ctx.get('product_name')}) with quantity of ${ctx.get('qty')} , is lesser than or equal to the minimum set quantity of ${ctx.get('min_qty')}. </p>
+				<p>You may manually create a purchase order for ${ctx.get('product_name')}, to replenish the stock</p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_delivery_awaiting_pickup" model="mail.template">
+			<field name="name" >Delivery Order Awaiting Pickup</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('stock_person_email')}</field>
+			<field name="subject">Delivery Orders are Awaiting Pickup for the Sales Order (${object.origin})</field>
+			<field name="email_to">${ctx.get('notify_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('notify_person_name')},</p>
+				<p>Delivery Orders are awaiting pickup for the sales order (${object.origin}), validated by ${ctx.get('stock_person_name')}</p>
+				<p><a href="${ctx.get('url')}">Follow the Link to see the picking document</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message</p>
+				]]>
+			</field>
+		</record>
+
+
+		<record id="mail_templ_picking_shipped" model="mail.template">
+			<field name="name" >Stock Physically Shipped</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('stock_person_email')}</field>
+			<field name="subject">The Stock Items have been Physically Shipped for the Sales Order (${object.origin})</field>
+			<field name="email_to">${ctx.get('notify_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('notify_person_name')},</p>
+				<p>The Stock Items have been physically shipped for the sales order (${object.origin}), confirmed by ${ctx.get('stock_person_name')}</p>
+				<p><a href="${ctx.get('url')}">Follow the Link to see the picking document</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_picking_delivered" model="mail.template">
+			<field name="name" >Stock Physically Delivered</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('stock_person_email')}</field>
+			<field name="subject">The Stock Items have been Delivered for the Sales Order (${object.origin}), confirmed by ${ctx.get('stock_person_name')}</field>
+			<field name="email_to">${ctx.get('notify_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('notify_person_name')},</p>
+				<p>The Stock Items have been physically delivered to the customer, for the sales order (${object.origin}), confirmed by ${ctx.get('stock_person_name')}.  </p>
+				<p><a href="${ctx.get('url')}">Follow the Link to see the picking document</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_picking_rejection" model="mail.template">
+			<field name="name" >Stock Picking Rejected</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('stock_person_email')}</field>
+			<field name="subject">The Stock Items have been rejected for the Sales Order (${object.origin}), confirmed by ${ctx.get('stock_person_name')}</field>
+			<field name="email_to">${ctx.get('notify_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('notify_person_name')},</p>
+				<p>The Stock Items have been rejected by the customer, for the sales order (${object.origin}).  </p>
+				<p><b>Reason for Rejection</b></p>
+				<p>${ctx.get('reason_for_rejection')}</p>
+				<p><a href="${ctx.get('url')}">Follow the Link to see the picking document</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message</p>
+				]]>
+			</field>
+		</record>
+
+
+		<record id="mail_templ_quality_control" model="mail.template">
+			<field name="name" >Quality Control Notification</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject"> New Transfer Items into the Quality Control Location for Testing </field>
+			<field name="email_to">${ctx.get('qc_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'stock.picking')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('qc_person_name')},</p>
+				<p>Items from the picking document ${object.name} have been transferred into the Quality Control Area for Testing. Please go and get some samples for testing from the Inventory officer </p>
+				<p><a href="${ctx.get('url')}">Follow the Link to See the new items in the quality control location</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto generated message from ${object.env.user.company_id.name} ERP System</p>
+				]]>
+			</field>
+		</record>
+
+	</data>
+</odoo>

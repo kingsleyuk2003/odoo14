@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_cleanup_purge_line_user,cleanup.purge.line user,model_cleanup_purge_line,base.group_user,1,1,1,1
+access_cleanup_purge_line_column_user,cleanup.purge.line.column user,model_cleanup_purge_line_column,base.group_user,1,1,1,1
+access_cleanup_purge_line_data_user,cleanup_purge_line_data user,model_cleanup_purge_line_data,base.group_user,1,1,1,1
+access_cleanup_purge_line_menu_user,cleanup_purge_line_menu user,model_cleanup_purge_line_menu,base.group_user,1,1,1,1
+access_cleanup_purge_line_property_user,cleanup.purge.line.property user,model_cleanup_purge_line_property,base.group_user,1,1,1,1
+access_cleanup_purge_line_table_user,cleanup.purge.line.table user,model_cleanup_purge_line_table,base.group_user,1,1,1,1
+access_cleanup_create_indexes_line_user,cleanup.create_indexes.line user,model_cleanup_create_indexes_line,base.group_user,1,1,1,1
+access_cleanup_purge_line_user,cleanup.purge.line user,model_cleanup_purge_line,base.group_user,1,1,1,1
+access_cleanup_purge_line_user,cleanup.purge.line user,model_cleanup_purge_line,base.group_user,1,1,1,1

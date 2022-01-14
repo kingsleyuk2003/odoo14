@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+
+
+
+<record id="action_report_receipt" model="ir.actions.report">
+            <field name="name">Payment Receipt</field>
+            <field name="model">account.payment</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">kin_account.payment_receipt</field>
+            <field name="report_file">kin_account.payment_receipt</field>
+            <field name="print_report_name">'Payment Receipt - %s - %s' % (object.partner_id.name or '', object.name)</field>
+            <field name="binding_model_id" ref="model_account_payment"/>
+            <field name="binding_type">report</field>
+        </record>
+
+<template id="external_layout_standard_receipt"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto" >
+					 <p class="m-0" t-field="company.partner_id.street" />
+					  <p  class="m-0" t-field="company.partner_id.phone" />
+					   <p  class="m-0" t-field="company.partner_id.website" />
+				</div>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+          
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+<!-- 
+            <div class="text-center" style="border-top: 1px solid black;">
+                <ul class="list-inline mb4">
+                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem
+                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>
+                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>
+                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>
+                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>
+                </ul>
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> / <span class="topage"/>
+                </div>
+            </div> -->
+
+<!--			<div class="row border border-dark border-right-0 border-left-0 border-bottom-0"  >                       -->
+<!--					   <div  class="col-12 mt32 text-center"   >-->
+<!--							<span class="" >  <strong> Your energy. delivered!</strong></span>                           -->
+<!--					   </div>                          -->
+<!--                </div>				-->
+        </div>
+    </template>
+
+
+
+   <template id="receipt_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t t-if="company.external_report_layout_id" t-call="{{company.external_report_layout_id.key}}"><t t-raw="0"/></t>
+        <t t-else="else" t-call="kin_account.external_layout_standard_receipt"><t t-raw="0"/></t>
+    </template>
+
+    
+<template id="payment_receipt">
+ <t t-foreach="docs" t-as="o">
+	     <t t-call="web.html_container">
+			<t t-call="kin_account.receipt_layout">
+			<t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+			<div class="page">
+						<div class="row">
+							<div class="col-xs-12 text-center" >
+								<h3><b>
+									<span t-if="o.state == 'posted'">PAYMENT RECEIPT</span>
+									<span t-if="o.state == 'draft'">DRAFT RECEIPT</span>
+									<span t-if="o.state == 'posted'" t-field="o.name" /></b></h3>
+							</div>
+						</div>
+                <br />
+						<div class="row"  style="border-style:solid;border-width:2px;padding:10px;" >
+							<div class="col-xs-12">
+								<p>Date: <b><span t-field="o.date" /></b></p>
+								<p>Received from  <b><span t-field="o.partner_id.name" /></b></p>
+								<p>the sum of <b><span  t-esc="o.amount_to_text(o.amount)"/></b></p>
+								<p t-if="o.narration" >Narration: <span t-field="o.narration" /></p>
+								<p>Amount: <b><span t-field="o.amount" /></b> </p>
+                                <p  t-if="o.ref" >Reference: <b><span t-esc="o.ref" /></b></p>
+                                <p>Payment Method: <b><span t-esc="o.journal_id.name" /></b></p>
+								<p>FOR: <b><span t-field="o.company_id.name" /></b>  <img t-if="o.user_id.img_signature" t-att-src="'data:image/png;base64,%s' % o.user_id.img_signature" style="max-height: 14px;" /> <span  t-if="not o.user_id.img_signature" >....................</span></p>
+							</div>
+						</div>
+				
+			</div>
+			</t>
+		</t>
+	  </t>
+</template>
+
+
+
+</odoo>
