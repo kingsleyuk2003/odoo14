@@ -51,7 +51,7 @@
 		</record>
 
       <record id="group_show_submit_sale_to_manager" model="res.groups">
-        <field name="name">Show "Submit to Manager" Button</field>
+        <field name="name">Show "Submit" Button on Sales Order</field>
         <field name="category_id" ref="module_depot"/>
         <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
@@ -69,13 +69,13 @@
     </record>
 
     <record id="group_show_approve_atl" model="res.groups">
-        <field name="name">Show "ATL Awaiting Approval" Button</field>
+        <field name="name">Show "Approve ATL" Button</field>
         <field name="category_id" ref="module_depot"/>
         <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
-    <record id="group_show_approve_atl" model="res.groups">
-        <field name="name">Show "ATL Awaiting Approval" Button</field>
+    <record id="group_show_sale_reset" model="res.groups">
+        <field name="name">Show "Reset to Draft" Button</field>
         <field name="category_id" ref="module_depot"/>
         <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
@@ -107,6 +107,12 @@
 
     <record id="group_show_block_ticket_button" model="res.groups">
         <field name="name">Show "Block Ticket" Button</field>
+         <field name="category_id" ref="module_depot"/>
+        <field name="users" eval="[(4, ref('base.user_root'))]"/>
+    </record>
+
+     <record id="group_cancel_ticket_button" model="res.groups">
+        <field name="name">Show "Cancel" Button on Ticket/Waybill</field>
          <field name="category_id" ref="module_depot"/>
         <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
@@ -168,6 +174,11 @@
 
      <record id="group_is_loading_ticket_printed" model="res.groups">
 			<field name="name">Show "Is loading Ticket Printed" Check Box</field>
+			<field name="category_id" ref="module_depot"/>
+		</record>
+
+     <record id="group_show_vessel_on_po" model="res.groups">
+			<field name="name">Show "Vessel" field on Purchase Order</field>
 			<field name="category_id" ref="module_depot"/>
 		</record>
 

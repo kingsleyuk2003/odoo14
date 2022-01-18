@@ -40,7 +40,7 @@
                           </notebook>
                         <footer>
 
-                            <button default_focus="1" icon="gtk-execute" name="action_generate_transfer_order" context="{'is_create_transfer_wizard_btn':True}" string="Generate Transfer Order" type="object"  colspan="2" class="oe_highlight" />
+                            <button default_focus="1"  name="action_generate_transfer_order" context="{'is_create_transfer_wizard_btn':True}" string="Generate Transfer Order" type="object"  colspan="2" class="oe_highlight" />
                             or <button special="cancel" class="oe_link"  string="Cancel"  />
                         </footer>
                 </form>

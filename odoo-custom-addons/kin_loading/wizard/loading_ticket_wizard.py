@@ -76,21 +76,25 @@ class LoadingTicketWizard(models.TransientModel):
 
         ticket_remaining_qty = sale_order.order_line[0].ticket_remaining_qty
         if qty_ticket > ticket_remaining_qty:
-            raise UserError(_('The Requested Ticket Qty (%s). is more than the Un-Ticketed Qty. (%s)' % (qty_ticket,self.order_line_ids[0].ticket_remaining_qty)))
+            raise UserError(_('The Requested Ticket Qty (%s). is more than the Un-Ticketed Qty. (%s)' % (qty_ticket,ticket_remaining_qty)))
 
         res = False
         for line in self.ticket_qty_requested_ids:
             qty_requested = line.qty_requested
             ticket_count = line.ticket_count
             for x in range(ticket_count):
+                if len(sale_order.order_line) > 1:
+                    raise UserError('You cannot have more than one sales order line for a customer')
                 sale_order.order_line[0].product_ticket_qty = qty_requested
+                sale_order.order_line[0].ticket_created_qty += qty_requested
+                sale_order.order_line[0]._compute_procurement_qty()
                 res = sale_order.with_context(ctx).action_create_loading_ticket()
         if res:
             self.env.user.notify_info('LOADING TICKET(S) SUCESSFULLY CREATED')
             return sale_order.action_view_delivery()
         else:
             raise UserError(_(
-                "Sorry, No Requested Ticket Qty. was set for any of the product to be delivered"))
+                "Kindly check your parameters. The requested qty cannot be zero"))
 
 
 

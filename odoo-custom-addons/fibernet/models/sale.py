@@ -257,47 +257,44 @@ class SaleOrderExtend(models.Model):
                 raise UserError(_('At Least an Order Line is Required'))
         return res
 
-    
-    def action_view_ticket(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Ticket'),
-            'view_mode': 'tree,form',
-            'res_model': 'kin.ticket',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.ticket_ids])],
-            'target': 'new'
-        }
+
+
 
 
     def action_view_ticket(self):
         ticket_ids = self.mapped('ticket_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('kin_helpdesk.action_view_all_tickets')
-        list_view_id = imd.xmlid_to_res_id('kin_helpdesk.ticket_tree_view')
-        form_view_id = imd.xmlid_to_res_id('kin_helpdesk.ticket_form')
+        action = self.env["ir.actions.actions"]._for_xml_id("kin_helpdesk.action_view_all_tickets")
 
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
-                      [False, 'calendar'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-            'target': 'new',
-        }
         if len(ticket_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % ticket_ids.ids
+            action['domain'] = [('id', 'in', ticket_ids.ids)]
         elif len(ticket_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = ticket_ids.ids[0]
+            form_view = [(self.env.ref('kin_helpdesk.ticket_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = ticket_ids.id
         else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
+            action = {'type': 'ir.actions.act_window_close'}
+        #action['target'] = 'new'
+
+        context = {
+            #'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
+
+
+
+
 
     @api.depends('ticket_ids')
     def _compute_ticket_count(self):
@@ -316,32 +313,39 @@ class SaleOrderExtend(models.Model):
     #         for ticket in order.ticket_ids:
     #             ticket.unlink()
 
-    
+
+
     def btn_view_payment(self):
         payment_ids = self.mapped('payment_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('account.action_account_payments')
-        list_view_id = imd.xmlid_to_res_id('account.view_account_payment_tree')
-        form_view_id = imd.xmlid_to_res_id('account.view_account_payment_form')
+        action = self.env["ir.actions.actions"]._for_xml_id("account.action_account_payments")
 
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-            'target': 'new',
-        }
         if len(payment_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % payment_ids.ids
+            action['domain'] = [('id', 'in', payment_ids.ids)]
         elif len(payment_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = payment_ids.ids[0]
+            form_view = [(self.env.ref('account.view_account_payment_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = payment_ids.id
         else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
+            action = {'type': 'ir.actions.act_window_close'}
+        #action['target'] = 'new'
+
+        context = {
+            #'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
+
 
 
     @api.depends('payment_ids')

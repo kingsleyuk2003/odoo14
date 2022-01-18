@@ -68,6 +68,15 @@
                 <button name="action_view_stock_valuation_layers" position="attributes" >
                     <attribute name="groups" >kin_stock.group_show_valuation_stock_button</attribute>
                 </button>
+                <button name="action_cancel" position="attributes"  >
+                    <attribute name="confirm" >Are you sure you want to cancel this document? This action cannot be reset</attribute>
+                </button>
+                <field name="location_id" position="attributes">
+                    <attribute name="groups" >kin_stock.group_show_source_location</attribute>
+                </field>
+                <field name="location_dest_id" position="attributes">
+                    <attribute name="groups" >kin_stock.group_show_destination_location</attribute>
+                </field>
             </field>
         </record>
 

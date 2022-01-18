@@ -25,7 +25,6 @@
             <field name="name">Cancel Product Qty. Wizard</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">cancel.qty.wizard</field>
-
             <field name="view_mode">form</field>
             <field name="view_id" ref="view_cancel_qty_form" />
             <field name="target">new</field>

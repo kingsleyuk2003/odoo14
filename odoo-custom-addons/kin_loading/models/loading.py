@@ -18,7 +18,6 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 class StockLocation(models.Model):
     _inherit = 'stock.location'
 
-
     is_depot_type = fields.Boolean(string="Depot Type")
     is_indepot = fields.Boolean(string="Is In-Depot")
     is_exdepot = fields.Boolean(string="Is Ex-Depot")
@@ -31,8 +30,6 @@ class StockLocation(models.Model):
     is_internal_use_source_location = fields.Boolean(string="Is Internal Use Source Location")
     is_internal_use_destination_location = fields.Boolean(string="Is Internal Use Destination Location")
     is_internal_use_partner_id = fields.Many2one('res.partner',string='Internal Use Source Partner',help='The Company incurring the expense transfer')
-
-
 
 
 class StockMoveLoading(models.Model):
@@ -52,11 +49,10 @@ class StockMoveLoading(models.Model):
 
     @api.model
     def create(self, vals):
-        # location_dest_id = context.get('location_dest_id', False)
-        # if location_dest_id :
-        #     vals['location_dest_id'] = location_dest_id
+        location_dest_id = self.env.context.get('vessel_id',False)
+        if location_dest_id :
+            vals['location_dest_id'] = location_dest_id
         res = super(StockMoveLoading,self).create(vals)
-
         return res
 
 
@@ -126,77 +122,34 @@ class StockPickingExtend(models.Model):
         self.location_id = False
 
     
-    def action_police_report(self):
-        model_data_obj = self.env['ir.model.data']
-        action = self.env['ir.model.data'].xmlid_to_object(
-            'kin_loading.action_police_report')
-        form_view_id = model_data_obj.xmlid_to_res_id(
-            'kin_loading.view_police_report')
-
-        return {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[form_view_id, 'form']],
-            'target': action.target,
-            'domain': action.domain,
-            'context': {'the_active_ids': self.env.context['the_active_ids']},
-            'res_model': action.res_model,
-            'target': 'new'
-        }
 
     
     def action_ticket_recovered(self):
-        model_data_obj = self.env['ir.model.data']
-        action = self.env['ir.model.data'].xmlid_to_object(
-            'kin_loading.action_ticket_recovered')
-        form_view_id = model_data_obj.xmlid_to_res_id(
-            'kin_loading.view_ticket_recovered')
+        action = self.env["ir.actions.actions"]._for_xml_id("kin_loading.action_ticket_recovered")
 
         return {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[form_view_id, 'form']],
-            'target': action.target,
-            'domain': action.domain,
-            'res_model': action.res_model,
+            'name': action['name'],
+            'help': action['help'],
+            'type': action['type'],
+            'views': [(self.env.ref('kin_loading.view_ticket_recovered').id, 'form'),],
+            'target': action['target'],
+            'domain': action['domain'],
+            'res_model': action['res_model'],
             'target': 'new'
         }
+
+
 
 
 
 
     
     def action_cancel(self):
-
-        is_ticket_recovered = self.env.context.get('is_ticket_recovered', 'Nil')
-        is_police_report = self.env.context.get('is_police_report','Nil')
-        is_ticket_mistake = self.env.context.get('is_ticket_mistake','Nil')
-
-        if is_ticket_recovered == 'Nil' and is_police_report == 'Nil' and is_ticket_mistake == 'Nil':
-            return  self.action_ticket_recovered()
-
-        if is_ticket_recovered == True:
-            self.is_ticket_recovered = True
-            self.is_police_report = False
-            self.is_ticket_mistake = False
-
-        if is_police_report == True:
-            self.is_ticket_recovered = False
-            self.is_police_report = True
-            self.is_ticket_mistake = False
-
-        if is_ticket_mistake == True:
-            self.is_ticket_recovered = False
-            self.is_police_report = False
-            self.is_ticket_mistake = True
-
-
         res = super(StockPickingExtend,self).action_cancel()
         sale_order = self.sale_id
         if sale_order:
             for line in sale_order.order_line:
+                line.ticket_created_qty -= self.ticket_load_qty
                 line._compute_procurement_qty()
         return res
 
@@ -366,7 +319,7 @@ class StockPickingExtend(models.Model):
                         raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                         sale_order_line_id.product_id.name)))
 
-                    account = product_deferred_revenue_id.account_advance_id or product_deferred_revenue_id.categ_id.account_advance_id
+                    account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
                     if not account:
                         raise UserError(_(
                             'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
@@ -546,7 +499,7 @@ class StockPickingExtend(models.Model):
                 # #this one below dis npt work because it could not allow payment allocation after opening the invoice and also it could not allow making a zero total amout invoice to paid automatically
                 # inv_obj.action_move_create()
                 # inv_obj.invoice_validate()
-                inv_obj.signal_workflow('invoice_open')
+                inv_obj.action_post()
 
             inv_obj.sale_id = self.sale_id
             inv_obj.picking_id = self
@@ -692,8 +645,9 @@ class StockPickingExtend(models.Model):
     
     def write(self,vals):
         for rec in self :
-            location_id = vals.get('location_id',None)
-            location_dest_id = vals.get('location_dest_id', None)
+            location_id = vals.get('location_id',False)
+            location_dest_id = vals.get('location_dest_id', False)
+
             if location_id and rec.env['stock.location'].browse(location_id).is_exdepot :
                 rec.write({'is_loading_ticket':True, 'is_exdepot_ticket': True, 'is_throughput_ticket': False, 'is_internal_use_ticket' : False ,'is_indepot_ticket' : False , 'is_retail_station_ticket' : False })
             elif location_id and rec.env['stock.location'].browse(location_id).is_internal_use and rec.env['stock.location'].browse(location_dest_id).is_internal_use :
@@ -711,7 +665,7 @@ class StockPickingExtend(models.Model):
     def create(self, vals):
         authorization_code = self.env.context.get('authorization_code', False)
         loading_date = self.env.context.get('loading_date', False)
-        destination_id = self.env.context.get('location_dest_id',False)
+        destination_id = self.env.context.get('vessel_id',False)
 
         if destination_id :
             vals['location_dest_id'] = destination_id
@@ -912,15 +866,13 @@ class StockPickingExtend(models.Model):
     source_depot_type_id = fields.Many2one('stock.location',string="Source Location Type")
     dest_depot_type_id = fields.Many2one('stock.location', string="Destination Type")
     other_information = fields.Text(string = "Other Info.")
-    is_ticket_recovered = fields.Boolean(string="Is Ticket Recovered")
-    is_police_report = fields.Boolean(string="Is Police Report / Affidavit")
-    is_ticket_mistake = fields.Boolean(string="Is Ticket Mistake")
     is_loading_ticket_printed = fields.Boolean(string='Is loading Ticket Printed')
     is_waybill_printed = fields.Boolean(string='Is Waybill Printed')
     dpr_info_id = fields.Many2one('dpr.info',string='Receiving Address')
     dpr_status = fields.Selection(
         [('valid', 'Valid'),('expired', 'Expired'), ('renew','Under Renewal')],
          string='DPR Status',compute=_compute_dpr_info,store=True)
+
 
 
 
@@ -1395,6 +1347,8 @@ class AccountMoveExtend(models.Model):
         if self.sale_order_id:
             sale_order = self.sale_order_id
             sale_order.state = 'atl_awaiting_approval'
+            sale_order.is_has_advance_invoice = True
+            sale_order.is_cancelled_invoice = False
             sale_order.is_advance_invoice_validated = True
 
             # generate authorization code
@@ -1421,6 +1375,8 @@ class AccountMoveExtend(models.Model):
         res = super(AccountMoveExtend, self).write(vals)
         return res
 
+
+
     def button_draft(self):
         order = self.sale_order_id
         if self.is_advance_invoice :
@@ -1433,7 +1389,8 @@ class AccountMoveExtend(models.Model):
                 if picking.state != 'cancel':
                     raise UserError(_('Please first of all cancel all delivery orders for the sales order that is attached to this invoice, before this invoice can be reset'))
 
-
+            if order.state == 'atl_approved' and self.is_advance_invoice :
+                raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
             order.is_has_advance_invoice = True
             order.is_cancelled_invoice = True
             order.is_advance_invoice_validated = False
@@ -1450,13 +1407,14 @@ class AccountMoveExtend(models.Model):
         if order:
             for picking in order.picking_ids:
                 if picking.state != 'cancel':
-                    raise UserError(_('Please first of all cancel all delivery orders for the sales order that is attached to this invoice, before this invoice can be cancelled'))
-
-
+                    raise UserError(_('Please first of all cancel all loading tickets for the sales order that is attached to this invoice, before this invoice can be cancelled'))
+            if order.state == 'atl_approved' and self.is_advance_invoice :
+                raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
             order.is_has_advance_invoice = True
             order.is_cancelled_invoice = True
             order.is_advance_invoice_validated = False
         res = super(AccountMoveExtend,self).button_cancel()
+
         return res
 
     
@@ -1469,15 +1427,22 @@ class AccountMoveExtend(models.Model):
         return res
 
 
-    is_throughput_invoice = fields.Boolean(string='Throughput Invoice')
+
     truck_park_ticket_id = fields.Many2one('truck.park.ticket',string="Truck Park Ticket")
     throughput_receipt_id = fields.Many2one('kin.throughput.receipt',string="Throughput Receipt")
+    is_throughput_invoice = fields.Boolean(string='Throughput Invoice')
     is_has_advance_invoice = fields.Boolean(string="Is Has Advance invoice")
     is_advance_invoice = fields.Boolean(string="Is Advance invoice")
     sales_order_cancel_id = fields.Many2one('sale.order')
     sales_order_transfer_id = fields.Many2one('sale.order')
     is_transfer_invoice = fields.Boolean(string="Is Transfer invoice")
     sales_order_credit_transfer_id = fields.Many2one('sale.order')
+    is_from_inventory = fields.Boolean(string='Is From Inventory')
+    is_cancelled_remaining_order = fields.Boolean(string='Is Cancelled Remaining Order')
+    is_transfer_order = fields.Boolean(string='Is Transfer Order')
+
+    is_truck_park_ticket_invoice = fields.Boolean(string='Truck Park Ticket Invoice')
+
 
 
 class AccountMoveLineExtend(models.Model):
@@ -1561,161 +1526,222 @@ class SaleOrderLoading(models.Model):
 
         if mv_lines:
             move_id.write({'line_ids': mv_lines})
-            move_id.post()
+            move_id.action_post()
         return move_id
 
 
-    def create_customer_transfer_invoice(self,recipient_id):
-        inv_obj = self.env['account.move']
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        invoices = {}
+    def _prepare_transfer_invoice(self):
+        self.ensure_one()
+        sale_order = self
+        partner_id = self.partner_id
+        journal_id = self.env.ref('kin_loading.sales_order_cancel_transfer_journal')
+        if not journal_id:
+            raise UserError(_('The Sales Order Cancel Transfer Journal is not Present. Please contact the Admin.'))
+        partner_invoice_id = partner_id.address_get(['invoice'])['invoice']
+        move_type = self._context.get('default_move_type', 'out_refund')
+        invoice_vals = {
+            'ref': sale_order.client_order_ref or '',
+            'move_type': move_type,
+            'narration': sale_order.note,
+            'currency_id': sale_order.pricelist_id.currency_id.id,
+            'invoice_user_id': sale_order.user_id and sale_order.user_id.id,
+            'partner_id': partner_id.id,
+            'journal_id': journal_id.id,
+            'fiscal_position_id': (sale_order.fiscal_position_id or sale_order.fiscal_position_id.get_fiscal_position(
+                partner_invoice_id)).id,
+            'payment_reference': sale_order.name or '',
+            'invoice_origin': sale_order.name,
+            'invoice_line_ids': [],
+            'company_id': sale_order.company_id.id,
+            'user_id': sale_order.user_id and sale_order.user_id.id,
+            'team_id': sale_order.team_id.id,
+            'invoice_incoterm_id': self.env.company.incoterm_id and self.env.company.incoterm_id.id,
+            'is_transfer_invoice': True,
+        }
+        return invoice_vals
 
+
+
+    def _prepare_transfer_account_move_line(self, recipient_id, order_line=False, move=False):
+        self.ensure_one()
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        sale_order_line_id = order_line
+        transfer_requested_qty = sale_order_line_id.product_ticket_qty
+        qty_bal = sale_order_line_id.product_uom_qty - sale_order_line_id.transfer_created_qty - sale_order_line_id.ticket_created_qty - sale_order_line_id.cancelled_remaining_qty
+
+        if qty_bal == 0:
+            raise UserError(_('Sorry, No product Qty to Transfer'))
+
+        if transfer_requested_qty <= 0:
+            raise UserError(_('Requested Product Qty. cannot be equal to zero or lesser than zero.'))
+
+        if not float_is_zero(qty_bal, precision_digits=precision):
+
+            if qty_bal == 0:
+                raise UserError(_('Sorry, there is no remaining balance qty. to transfer.'))
+
+            if transfer_requested_qty > qty_bal:
+                raise UserError(
+                    (_('Sorry, you cannot transfer product qty. that is more that the remaining balance qty.')))
+
+            product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+            if not product_deferred_revenue_id:
+                raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
+                    sale_order_line_id.product_id.name)))
+
+            account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+            if not account:
+                raise UserError(_(
+                    'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
+                                    product_deferred_revenue_id.name, product_deferred_revenue_id.id,
+                                    product_deferred_revenue_id.categ_id.name))
+
+            fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
+            if fpos:
+                account = fpos.map_account(account)
+            ######### OR
+            # account = self.env['account.move.line'].get_invoice_line_account('out_invoice', sale_order_line_id.product_id, sale_order_line_id.order_id.fiscal_position_id, self.env.user.company_id)
+
+            default_analytic_account = self.env['account.analytic.default'].sudo().account_get(
+                product_id=sale_order_line_id.product_id.id,
+                partner_id=sale_order_line_id.order_id.partner_id.id,
+                user_id=sale_order_line_id.order_id.user_id.id,
+                date=date.today()
+            )
+
+            res = {
+                'name': 'Transferred product qty. value for %s, from %s to %s' % (
+                self.name, sale_order_line_id.order_id.partner_id.name.split('\n')[0][:64], recipient_id.name),
+                'display_type': False,
+                'product_id': product_deferred_revenue_id.id,
+                'product_uom_id': sale_order_line_id.product_uom.id,
+                'account_id': account.id,
+                'quantity': transfer_requested_qty,
+                'discount': sale_order_line_id.discount,
+                'price_unit': sale_order_line_id.price_unit,
+                'tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
+                'sale_line_ids': [(6, 0, [sale_order_line_id.id])],
+                'analytic_account_id': default_analytic_account and default_analytic_account.analytic_id.id or False,
+                'sequence': sale_order_line_id.sequence,
+                'ref': sale_order_line_id.order_id.name,
+            }
+
+        if not move:
+            return res
+
+        if self.currency_id == move.company_id.currency_id:
+            currency = False
+        else:
+            currency = move.currency_id
+
+        res.update({
+            'move_id': move.id,
+            'currency_id': currency and currency.id or False,
+            'date_maturity': move.invoice_date_due,
+            'partner_id': move.partner_id.id,
+        })
+        return res
+
+    def create_transfer_order(self, recipient_id, sale_order_line_id, transfer_requested_qty):
+        # create the transfer sales order
+        if not self.root_order_transfer_id:
+            tran_root_order_transfer_id = self
+        elif self.root_order_transfer_id:
+            tran_root_order_transfer_id = self.root_order_transfer_id
+        transfer_order_id = self.create({
+            'partner_id': recipient_id.id,
+            'partner_invoice_id': recipient_id.id,
+            'partner_shipping_id': recipient_id.id,
+            'pricelist_id': self.pricelist_id.id,
+            'client_order_ref': self.name,
+            'parent_sales_order_transfer_id': self.id,
+            'root_order_transfer_id': tran_root_order_transfer_id.id,
+            'order_line': [(0, 0, {
+                'name': sale_order_line_id.product_id.name,
+                'product_id': sale_order_line_id.product_id.id,
+                'discount': sale_order_line_id.discount,
+                'product_uom_qty': transfer_requested_qty,
+                'product_uom': sale_order_line_id.product_uom.id,
+                'price_unit': sale_order_line_id.price_unit,
+            })],
+        })
+        sale_order_line_id.product_ticket_qty = 0
+        sale_order_line_id.transfer_created_qty += transfer_requested_qty
+        sale_order_line_id.ticket_remaining_qty = sale_order_line_id.product_uom_qty - sale_order_line_id.ticket_created_qty - sale_order_line_id.transfer_created_qty
+        transfer_order_id.with_context({'parent_so': self}).action_confirm_main_sale()
+        transfer_order_id.is_transferred_order = True
+        #sale_order_line_id._compute_procurement_qty()
+        return transfer_order_id
+
+    def post_credit_transfer(self, order_line, recipient_id):
+        # post credit transfer
+        sale_order_line_id = order_line
+        transfer_requested_qty = sale_order_line_id.product_ticket_qty
         journal_id = self.env.ref('kin_loading.sales_order_transfer_journal')
         if not journal_id:
             raise UserError(_('The Sales Order Transfer Journal is not Present. Please contact the Admin.'))
-
-
         partner_id = self.partner_id or False
 
+        amt = transfer_requested_qty * sale_order_line_id.price_unit
+        credit_move_id = self.post_customer_credit_transfer_journal_entry(journal_id, partner_id, recipient_id, amt,
+                                                                          sale_order_line_id.product_id)
+        transfer_order_id = self.create_transfer_order(recipient_id, sale_order_line_id, transfer_requested_qty)
+        return transfer_order_id
+
+
+    def create_customer_transfer_invoice(self,recipient_id):
         # check if the advance invoice is validated
         for inv in self.invoice_ids:
             if inv.state == 'draft':
                 raise UserError(_(
-                    "Please contact the accountant to validate the invoice for %s, before transferring the product qty for the  order with ID: %s" % (
+                    "Please contact the accountant to validate the invoice for %s, before cancelling the the order with ID: %s" % (
                         self.partner_id.name, self.name)))
 
-        sale_order = self
-        invoice_vals = {
-            'name': sale_order.client_order_ref or '',
-            'origin': sale_order.name,
-            'type': 'out_refund',
-            'reference': sale_order.client_order_ref or self.name,
-            'account_id': partner_id.property_account_receivable_id.id,
-            'partner_id': partner_id.id,
-            'journal_id': journal_id.id,
-            'currency_id': sale_order.pricelist_id.currency_id.id,
-            'comment': sale_order.note,
-            'payment_term_id': sale_order.payment_term_id.id,
-            'fiscal_position_id': sale_order.fiscal_position_id.id or sale_order.partner_invoice_id.property_account_position_id.id,
-            'company_id': sale_order.company_id.id,
-            'user_id': sale_order.user_id and sale_order.user_id.id,
-            'team_id': sale_order.team_id.id,
-            'incoterms_id': sale_order.incoterm.id or False,
-            'is_transferred_order':True,
-
-        }
-        invoice = inv_obj.create(invoice_vals)
-
-        for sale_order_line_id in sale_order.order_line :
-            transfer_requested_qty = sale_order_line_id.product_ticket_qty
-            qty_bal =  sale_order_line_id.product_uom_qty - sale_order_line_id.transfer_created_qty - sale_order_line_id.ticket_created_qty -  sale_order_line_id.cancelled_remaining_qty
-
-            if qty_bal == 0 :
-                raise UserError(_('Sorry, No product Qty to Transfer'))
-
-            if transfer_requested_qty <= 0 :
-                raise UserError(_('Requested Product Qty. cannot be equal to zero or lesser than zero.'))
-
-            if not float_is_zero(qty_bal, precision_digits=precision):
-
-                if qty_bal == 0 :
-                    raise UserError(_('Sorry, there is no remaining balance qty. to transfer.'))
-
-
-                if transfer_requested_qty > qty_bal :
-                    raise UserError((_('Sorry, you cannot transfer product qty. that is more that the remaining balance qty.')))
-
-                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
-                if not product_deferred_revenue_id:
-                    raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (sale_order_line_id.product_id.name)))
-
-                account = product_deferred_revenue_id.account_advance_id or product_deferred_revenue_id.categ_id.account_advance_id
-                if not account:
-                    raise UserError(_(
-                        'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-                        product_deferred_revenue_id.name, product_deferred_revenue_id.id,
-                        product_deferred_revenue_id.categ_id.name))
-
-                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
-                if fpos:
-                    account = fpos.map_account(account)
-
-                default_analytic_account = self.env['account.analytic.default'].account_get(
-                    sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
-                    sale_order_line_id.order_id.user_id.id, date.today())
-                ######### OR
-                #account = self.env['account.move.line'].get_invoice_line_account('out_invoice', sale_order_line_id.product_id, sale_order_line_id.order_id.fiscal_position_id, self.env.user.company_id)
-
-                inv_line = {
-                    'name': 'Transferred product qty. value for %s, from %s to %s' % (self.name,sale_order.partner_id.name.split('\n')[0][:64],recipient_id.name),
-                    'account_id': account.id,
-                    'sequence': sale_order_line_id.sequence,
-                    'origin': sale_order_line_id.order_id.name,
-                    'account_id': account.id,
-                    'price_unit': sale_order_line_id.price_unit,
-                    'quantity': transfer_requested_qty,
-                    'discount': sale_order_line_id.discount,
-                    'uom_id': sale_order_line_id.product_uom.id,
-                    'product_id' : product_deferred_revenue_id.id,
-                    'invoice_line_tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
-                    'account_analytic_id': sale_order_line_id.order_id.project_id.id or default_analytic_account and default_analytic_account.analytic_id.id,
-                    'invoice_id': invoice.id,
-                    'sale_line_ids': [(6, 0, [sale_order_line_id.id])]
-                }
-                order_line = self.env['account.invoice.line'].create(inv_line)
-
+        # 1) Prepare invoice line vals
+        invoice_vals_list = []
+        invoice_vals = self._prepare_transfer_invoice()
+        qty_to_invoice = 0
+        qty_to_invoice += sum(self.order_line.mapped('product_ticket_qty'))
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        if not float_is_zero(qty_to_invoice, precision_digits=precision):
+            for line in self.order_line:
+                invoice_vals['invoice_line_ids'].append((0, 0, self._prepare_transfer_account_move_line(recipient_id,order_line=line)))
                 #post credit transfer
-                amt = transfer_requested_qty * sale_order_line_id.price_unit
-                credit_move_id = self.post_customer_credit_transfer_journal_entry(journal_id, partner_id, recipient_id, amt, sale_order_line_id.product_id)
+                transfer_order_id = self.post_credit_transfer(line,recipient_id)
+            invoice_vals_list.append(invoice_vals)
 
-                #create the transfer sales order
-                if not self.root_order_transfer_id :
-                    tran_root_order_transfer_id = self
-                elif self.root_order_transfer_id :
-                    tran_root_order_transfer_id = self.root_order_transfer_id
+        if not invoice_vals_list:
+            raise UserError(
+                _('There is no invoiceable line. The unticketed qty is likely zero. Try to cancel some Unloaded tickets, before you can proceed '))
 
-                transfer_order_id = self.create({
-                    'partner_id': recipient_id.id,
-                    'partner_invoice_id': recipient_id.id,
-                    'partner_shipping_id': recipient_id.id,
-                    'pricelist_id': self.pricelist_id.id,
-                    'client_order_ref': self.name,
-                    'parent_sales_order_transfer_id' :self.id,
-                    'root_order_transfer_id': tran_root_order_transfer_id.id,
-                    'order_line': [(0, 0, {
-                        'name':  sale_order_line_id.product_id.name,
-                        'product_id': sale_order_line_id.product_id.id,
-                        'discount': sale_order_line_id.discount,
-                        'product_uom_qty': transfer_requested_qty,
-                        'product_uom': sale_order_line_id.product_uom.id,
-                        'price_unit': sale_order_line_id.price_unit,
-                    })],
-                })
-                sale_order_line_id.product_ticket_qty = 0
-                sale_order_line_id.transfer_created_qty += transfer_requested_qty
-                sale_order_line_id.ticket_remaining_qty = sale_order_line_id.product_uom_qty - sale_order_line_id.ticket_created_qty - sale_order_line_id.transfer_created_qty
-                transfer_order_id.with_context({'parent_so':self}).action_confirm_main_sale()
-                transfer_order_id.is_transferred_order = True
-                # sale_order_line_id._compute_procurement_qty()
-        if invoice:
-            invoice.sales_order_transfer_id = self
+        # 3) Create invoices.
+        moves = self.env['account.move']
+        AccountMove = self.env['account.move'].with_context(
+            default_move_type='out_refund')
+        for vals in invoice_vals_list:
+            moves |= AccountMove.with_company(vals['company_id']).create(vals)
+            moves.invoice_date = fields.Datetime.now()
+            moves.sale_ids = self
+            moves.sales_order_transfer_id = self
 
             # Notify people
-            user_ids = []
-            group_obj = self.env.ref('kin_loading.group_notify_transferred_sales')
-            for user in group_obj.users:
-                user_ids.append(user.id)
-
-                self.message_unsubscribe_users(user_ids=user_ids)
-                self.message_subscribe_users(user_ids=user_ids)
-                self.message_post(_(
+            group_name = 'kin_loading.group_notify_transferred_sales'
+            msg = _(
                     'A Refund Invoice has been created by %s, for the Sales Order Transfer for customer %s, with Sales ID %s.') % (
-                                      self.env.user.name, self.partner_id.name, self.name),
-                                  subject='A Refund Invoice has been created for the Sales Order transfer',
-                                  subtype_xmlid='mail.mt_comment', force_send=False)
+                                      self.env.user.name, self.partner_id.name, self.name)
+            subject='A Refund Invoice has been created for the Sales Order transfer'
+            self.send_email(group_name, subject, msg)
+
+            # 4) Some moves might actually be refunds: convert them if the total amount is negative
+        # We do this after the moves have been created since we need taxes, etc. to know if the total
+        # is actually negative or not
+        moves.filtered(lambda m: m.currency_id.round(m.amount_total) < 0).action_switch_invoice_into_refund_credit_note()
+
+        return moves, transfer_order_id
 
 
-        return invoice, transfer_order_id
+
+
 
 
     def create_transfer_sale_order_throughput(self,recipient_id):
@@ -1839,6 +1865,9 @@ class SaleOrderLoading(models.Model):
     def create_transfer_sale_order(self):
         recipient_id = self.env.context.get('recipient_id', False)
 
+        if recipient_id == self.partner_id :
+            raise UserError('Sorry, you cannot transfer from %s to %s' % (self.partner_id.name, recipient_id.name))
+
         if self.is_internal_use_order :
             raise UserError(_('Sorry, No transfer for Internal Use operations'))
         if not recipient_id:
@@ -1849,44 +1878,51 @@ class SaleOrderLoading(models.Model):
 
         if not self.is_throughput_order :
             parent_tran_inv, transfer_order_id = self.create_customer_transfer_invoice(recipient_id)
-            parent_tran_inv.signal_workflow('invoice_open')
+            parent_tran_inv.action_post()
             for invoice in transfer_order_id.invoice_ids :
-                invoice.signal_workflow('invoice_open')
+                invoice.action_post()
                 invoice.is_transfer_invoice = True
+            transfer_order_id.atl_vessel_id = self.atl_vessel_id
+            transfer_order_id.atl_payment_mode_id = self.atl_payment_mode_id
+            transfer_order_id.atl_jetty_id = self.atl_jetty_id
+            transfer_order_id.action_atl_approval()
             #res = transfer_order_id.action_view_transfers()  #TODO this is not working. Check later
 
         self.env.user.notify_info('TRANSFER ORDER HAS BEEN CREATED.')
 
 
-
-
-
-    
     def btn_view_refund_invoice(self):
         invoice_ref_ids = self.mapped('invoice_ref_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('account.action_invoice_tree1')
-        list_view_id = imd.xmlid_to_res_id('account.invoice_tree')
-        form_view_id = imd.xmlid_to_res_id('account.invoice_form')
+        action = self.env["ir.actions.actions"]._for_xml_id("account.action_move_out_invoice_type")
 
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'], [False, 'calendar'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-            'target': 'new',
-        }
         if len(invoice_ref_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % invoice_ref_ids.ids
+            action['domain'] = [('id', 'in', invoice_ref_ids.ids)]
         elif len(invoice_ref_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = invoice_ref_ids.ids[0]
+            form_view = [(self.env.ref('account.view_move_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = invoice_ref_ids.id
         else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
+            action = {'type': 'ir.actions.act_window_close'}
+        #action['target'] = 'new'
+
+        context = {
+            #'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
+
+
 
 
     @api.depends('invoice_ref_ids')
@@ -1895,33 +1931,38 @@ class SaleOrderLoading(models.Model):
             rec.ref_count = len(rec.invoice_ref_ids)
 
 
-    
+
     def btn_view_transfer_invoice(self):
         invoice_tran_ids = self.mapped('invoice_tran_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('account.action_invoice_tree1')
-        list_view_id = imd.xmlid_to_res_id('account.invoice_tree')
-        form_view_id = imd.xmlid_to_res_id('account.invoice_form')
+        action = self.env["ir.actions.actions"]._for_xml_id("account.action_move_out_refund_type")
 
-        result = {
-                'name': action.name,
-                'help': action.help,
-                'type': action.type,
-                'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
-                          [False, 'calendar'], [False, 'pivot']],
-                'target': action.target,
-                'context': action.context,
-                'res_model': action.res_model,
-                'target': 'new',
-        }
         if len(invoice_tran_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % invoice_tran_ids.ids
+            action['domain'] = [('id', 'in', invoice_tran_ids.ids)]
         elif len(invoice_tran_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = invoice_tran_ids.ids[0]
+            form_view = [(self.env.ref('account.view_move_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state, view) for state, view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = invoice_tran_ids.id
         else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
+            action = {'type': 'ir.actions.act_window_close'}
+        # action['target'] = 'new'
+
+        context = {
+            # 'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
+
 
 
     @api.depends('invoice_tran_ids')
@@ -1930,24 +1971,36 @@ class SaleOrderLoading(models.Model):
             rec.tran_count = len(rec.invoice_tran_ids)
 
 
-    
     def btn_view_child_sales_orders(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Transferred Sales Orders'),
-            'view_type': 'form',
-            'view_mode': 'tree,form',
-            'res_model': 'sale.order',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.child_sale_order_transfer_ids])],
-            # 'context': context,
-            # 'view_id': self.env.ref('account.view_account_bnk_stmt_cashbox').id,
-            # 'res_id': self.env.context.get('cashbox_id'),
-            'target': 'new'
-        }
+        child_sale_order_transfer_ids = self.mapped('child_sale_order_transfer_ids')
+        action = self.env["ir.actions.actions"]._for_xml_id("sale.action_orders")
 
+        if len(child_sale_order_transfer_ids) > 1:
+            action['domain'] = [('id', 'in', child_sale_order_transfer_ids.ids)]
+        elif len(child_sale_order_transfer_ids) == 1:
+            form_view = [(self.env.ref('sale.view_order_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = child_sale_order_transfer_ids.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        #action['target'] = 'new'
+
+        context = {
+            #'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
 
     @api.depends('child_sale_order_transfer_ids')
     def _compute_cso_count(self):
@@ -2134,9 +2187,106 @@ class SaleOrderLoading(models.Model):
 
             return res
 
-    #Fore refunding the remaining cancelled order value to the customers account
-    def create_customer_refund_invoice(self,is_cancel_unloaded_unticketed_qty):
-        inv_obj = self.env['account.invoice']
+
+    def _prepare_refund_invoice(self):
+        self.ensure_one()
+        sale_order = self
+        partner_id = self.partner_id
+        journal_id = self.env.ref('kin_loading.sales_order_cancel_transfer_journal')
+        if not journal_id:
+            raise UserError(_('The Sales Order Cancel Transfer Journal is not Present. Please contact the Admin.'))
+
+        partner_invoice_id = partner_id.address_get(['invoice'])['invoice']
+        move_type = self._context.get('default_move_type','out_refund')
+        invoice_vals = {
+            'ref': sale_order.client_order_ref or '',
+            'move_type': move_type,
+            'narration': sale_order.note,
+            'currency_id': sale_order.pricelist_id.currency_id.id,
+            'invoice_user_id': sale_order.user_id and sale_order.user_id.id,
+            'partner_id': partner_id.id,
+            'journal_id': journal_id.id,
+            'fiscal_position_id': (sale_order.fiscal_position_id or sale_order.fiscal_position_id.get_fiscal_position(partner_invoice_id)).id,
+            # 'fiscal_position_id': sale_order.fiscal_position_id.id or sale_order.partner_invoice_id.property_account_position_id.id,
+            'payment_reference': sale_order.name or '',
+            'invoice_origin': sale_order.name ,
+            'invoice_line_ids': [],
+            'company_id': sale_order.company_id.id,
+            'user_id': sale_order.user_id and sale_order.user_id.id,
+            'team_id': sale_order.team_id.id,
+            'invoice_incoterm_id': self.env.company.incoterm_id and self.env.company.incoterm_id.id,
+            'is_cancelled_remaining_order': True,
+        }
+        return invoice_vals
+
+
+
+    def _prepare_account_move_line(self, order_line=False, move=False):
+        self.ensure_one()
+        sale_order_line_id = order_line
+        product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+        if not product_deferred_revenue_id:
+            raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
+                sale_order_line_id.product_id.name)))
+
+        account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+        if not account:
+            raise UserError(_(
+                'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
+                                product_deferred_revenue_id.name, product_deferred_revenue_id.id,
+                                product_deferred_revenue_id.categ_id.name))
+
+        fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
+        if fpos:
+            account = fpos.map_account(account)
+
+        default_analytic_account = self.env['account.analytic.default'].sudo().account_get(
+            product_id = sale_order_line_id.product_id.id,
+            partner_id = sale_order_line_id.order_id.partner_id.id,
+            user_id = sale_order_line_id.order_id.user_id.id,
+            date = datetime.today()
+        )
+
+        qty_bal = sale_order_line_id.ticket_remaining_qty
+        if qty_bal == 0:
+            raise UserError(_('Sorry, there is no remaining balance to cancel.'))
+        if qty_bal < 0:
+            raise UserError(_('Sorry, Qty Bal (%s) is < 0. Please contact your admin.' % (qty_bal)))
+
+        res = {
+            'display_type': False,
+            'sequence': 10,
+            'name': 'Cancelled Order for %s' % self.name.split('\n')[0][:64],
+            'product_id': product_deferred_revenue_id.id,
+            'product_uom_id': sale_order_line_id.product_uom.id,
+            'quantity': qty_bal,
+            'price_unit': sale_order_line_id.price_unit,
+            'tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
+            'discount': sale_order_line_id.discount,
+            'sale_line_ids': [(6, 0, [sale_order_line_id.id])],
+            'analytic_account_id': default_analytic_account and default_analytic_account.analytic_id.id,
+            # 'analytic_tag_ids': [(6, 0, self.analytic_tag_ids.ids)],
+            # 'purchase_line_id': self.id,
+        }
+        if not move:
+            return res
+
+        if self.currency_id == move.company_id.currency_id:
+            currency = False
+        else:
+            currency = move.currency_id
+
+        res.update({
+            'move_id': move.id,
+            'currency_id': currency and currency.id or False,
+            'date_maturity': move.invoice_date_due,
+            'partner_id': move.partner_id.id,
+        })
+        return res
+
+
+    #For refunding the remaining cancelled order value to the customers account
+    def create_customer_refund_invoice(self):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         invoices = {}
 
@@ -2153,110 +2303,64 @@ class SaleOrderLoading(models.Model):
                     "Please contact the accountant to validate the invoice for %s, before cancelling the the order with ID: %s" % (
                         self.partner_id.name, self.name)))
 
-        sale_order = self
-        invoice_vals = {
-            'name': sale_order.client_order_ref or '',
-            'origin': sale_order.name,
-            'type': 'out_refund',
-            'reference': sale_order.client_order_ref or self.name,
-            'account_id': partner_id.property_account_receivable_id.id,
-            'partner_id': partner_id.id,
-            'journal_id': journal_id.id,
-            'currency_id': sale_order.pricelist_id.currency_id.id,
-            'comment': sale_order.note,
-            'payment_term_id': sale_order.payment_term_id.id,
-            'fiscal_position_id': sale_order.fiscal_position_id.id or sale_order.partner_invoice_id.property_account_position_id.id,
-            'company_id': sale_order.company_id.id,
-            'user_id': sale_order.user_id and sale_order.user_id.id,
-            'team_id': sale_order.team_id.id,
-            'incoterms_id': sale_order.incoterm.id or False,
-            'is_cancelled_remaining_order':True,
-        }
-        invoice = inv_obj.create(invoice_vals)
-
         total_can_bal = 0
         total_tik_rem = 0
         unloaded_balance_qty = 0
-        for sale_order_line_id in sale_order.order_line :
-            # if is_cancel_unloaded_unticketed_qty == 'unloaded_cancel':
-            #     qty_bal = sale_order_line_id.ticket_remaining_qty - sale_order_line_id.transfer_created_qty - sale_order_line_id.cancelled_remaining_qty - sale_order_line_id.qty_delivered
-            # elif is_cancel_unloaded_unticketed_qty == 'unticketed_cancel':
-            qty_bal = sale_order_line_id.ticket_remaining_qty
 
-            if qty_bal == 0:
-                raise UserError(_('Sorry, there is no remaining balance to cancel.'))
-            if qty_bal < 0 :
-                raise UserError(_('Sorry, Qty Bal (%s) is < 0. Please contact your admin.' % (qty_bal)))
+        # 1) Prepare invoice line vals
+        invoice_vals_list = []
+        invoice_vals = self._prepare_refund_invoice()
+        qty_to_invoice = 0
+        qty_to_invoice += sum(self.order_line.mapped('ticket_remaining_qty'))
+        if not float_is_zero(qty_to_invoice, precision_digits=precision):
+            for line in self.order_line:
+                invoice_vals['invoice_line_ids'].append((0, 0, self._prepare_account_move_line(order_line=line)))
 
-            if not float_is_zero(qty_bal, precision_digits=precision):
+                #update the order line
+                qty_bal = line.ticket_remaining_qty
+                line.cancelled_remaining_qty += qty_bal
+                line.ticket_remaining_qty = line.product_uom_qty - line.ticket_created_qty - line.transfer_created_qty - line.cancelled_remaining_qty
+                total_can_bal += line.cancelled_remaining_qty
+                total_tik_rem += line.ticket_remaining_qty
+                line.product_ticket_qty = 0
+                unloaded_balance_qty = line.unloaded_balance_qty
 
-                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
-                if not product_deferred_revenue_id:
-                    raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
-                    sale_order_line_id.product_id.name)))
+            invoice_vals_list.append(invoice_vals)
 
-                account = product_deferred_revenue_id.account_advance_id or product_deferred_revenue_id.categ_id.account_advance_id
-                if not account:
-                    raise UserError(_(
-                        'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-                        product_deferred_revenue_id.name, product_deferred_revenue_id.id,
-                        product_deferred_revenue_id.categ_id.name))
+        if not invoice_vals_list:
+            raise UserError(
+                _('There is no invoiceable line. The unticketed qty is likely zero. Try to cancel some Unloaded tickets, before you can proceed '))
 
-                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
-                if fpos:
-                    account = fpos.map_account(account)
-
-                default_analytic_account = self.env['account.analytic.default'].account_get(
-                    sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
-                    sale_order_line_id.order_id.user_id.id, date.today())
-                ######### OR
-                #account = self.env['account.invoice.line'].get_invoice_line_account('out_invoice', sale_order_line_id.product_id, sale_order_line_id.order_id.fiscal_position_id, self.env.user.company_id)
-
-                inv_line = {
-                    'name': 'Cancelled Order for %s' % self.name.split('\n')[0][:64],
-                    'account_id': account.id,
-                    'sequence': sale_order_line_id.sequence,
-                    'origin': sale_order_line_id.order_id.name,
-                    'account_id': account.id,
-                    'price_unit': sale_order_line_id.price_unit,
-                    'quantity': qty_bal,
-                    'discount': sale_order_line_id.discount,
-                    'uom_id': sale_order_line_id.product_uom.id,
-                    'product_id':product_deferred_revenue_id.id,
-                    'invoice_line_tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
-                    'account_analytic_id': sale_order_line_id.order_id.project_id.id or default_analytic_account and default_analytic_account.analytic_id.id,
-                    'invoice_id': invoice.id,
-                    'sale_line_ids': [(6, 0, [sale_order_line_id.id])]
-                }
-                self.env['account.invoice.line'].create(inv_line)
-                sale_order_line_id.cancelled_remaining_qty += qty_bal
-                sale_order_line_id.ticket_remaining_qty = sale_order_line_id.product_uom_qty - sale_order_line_id.ticket_created_qty - sale_order_line_id.transfer_created_qty - sale_order_line_id.cancelled_remaining_qty
-                total_can_bal += sale_order_line_id.cancelled_remaining_qty
-                total_tik_rem += sale_order_line_id.ticket_remaining_qty
-                sale_order_line_id.product_ticket_qty = 0
-                #sale_order_line_id._compute_procurement_qty()
-                unloaded_balance_qty = sale_order_line_id.unloaded_balance_qty
-        if invoice:
-            if total_can_bal > 0 and total_tik_rem == 0  and unloaded_balance_qty == 0:
+        # 3) Create invoices.
+        moves = self.env['account.move']
+        AccountMove = self.env['account.move'].with_context(
+            default_move_type='out_refund')
+        for vals in invoice_vals_list:
+            moves |= AccountMove.with_company(vals['company_id']).create(vals)
+            moves.invoice_date = fields.Datetime.now()
+            moves.action_post()
+            moves.sale_ids = self
+            moves.sales_order_cancel_id = self
+            if total_can_bal > 0 and total_tik_rem == 0 and unloaded_balance_qty == 0:
                 self.is_cancelled_order = True
                 self.action_done()
-            invoice.sales_order_cancel_id = self
 
-            # Notify people
-            user_ids = []
-            group_obj = self.env.ref('kin_loading.group_notify_cancelled_sales')
-            for user in group_obj.users:
-                user_ids.append(user.id)
+            # 4) Some moves might actually be refunds: convert them if the total amount is negative
+        # We do this after the moves have been created since we need taxes, etc. to know if the total
+        # is actually negative or not
+        moves.filtered(lambda m: m.currency_id.round(m.amount_total)
+                       < 0).action_switch_invoice_into_refund_credit_note()
 
-                self.message_unsubscribe_users(user_ids=user_ids)
-                self.message_subscribe_users(user_ids=user_ids)
-                self.message_post(_(
-                    'A Sales Order Remaining Qty. from %s has been Cancelled and a Refund Invoice has been created for the customer %s, with Sales ID %s.') % (
-                                      self.env.user.name, self.partner_id.name, self.name),
-                                  subject='A Sales Order Remaining order qty has been cancelled with a corresponding refund invoice',
-                                  subtype_xmlid='mail.mt_comment', force_send=False)
+        # Notify people
+        group_name = 'kin_loading.group_notify_cancelled_sales'
+        msg = _('A Sales Order Remaining Qty. from %s has been Cancelled and a Refund Invoice has been created for the customer %s, with Sales ID %s.') % (
+                                  self.env.user.name, self.partner_id.name, self.name)
+        subject='A Sales Order Remaining order qty has been cancelled with a corresponding refund invoice'
+        self.send_email(group_name, subject, msg)
 
-        return invoice
+        return moves
+
+
 
     # 
     # def post_deferred_revenue_transfer_journal_entry(self):
@@ -2302,7 +2406,7 @@ class SaleOrderLoading(models.Model):
     #                 if qty_bal == 0 :
     #                         raise UserError(_('Sorry, there is no remaining balance to cancel.'))
 
-    #             account = sale_order_line_id.product_id.account_advance_id or sale_order_line_id.product_id.categ_id.account_advance_id
+    #             account = sale_order_line_id.product_id.account_unearned_revenue_id or sale_order_line_id.product_id.categ_id.account_unearned_revenue_id
     #             if not account:
     #                 raise UserError(_(
     #                     'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
@@ -2312,7 +2416,7 @@ class SaleOrderLoading(models.Model):
     #             fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
     #             if fpos:
     #                 account = fpos.map_account(account)
-    #             account = sale_order_line_id.product_id.account_advance_id or sale_order_line_id.product_id.categ_id.account_advance_id
+    #             account = sale_order_line_id.product_id.account_unearned_revenue_id or sale_order_line_id.product_id.categ_id.account_unearned_revenue_id
     #             default_analytic_account = self.env['account.analytic.default'].account_get(
     #                 sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
     #                 sale_order_line_id.order_id.user_id.id, date.today())
@@ -2343,7 +2447,7 @@ class SaleOrderLoading(models.Model):
     #
     #     if mv_lines:
     #         move_id.write({'line_ids': mv_lines})
-    #         move_id.post()
+    #         move_id.action_post()
     #         self.is_cancelled_order = True
     #
     #         # Notify people
@@ -2374,15 +2478,17 @@ class SaleOrderLoading(models.Model):
             raise UserError(
                 _('Advance Payment Invoice for this Sales Order has been Cancelled. Please contact the admin'))
 
+        to_cancel_tickets = ''
         if is_cancel_unloaded_unticketed_qty == 'unloaded_cancel' :
             for picking in self.picking_ids:
                 if picking.state not in  ['cancel','done']:
-                    raise UserError(_(
-                        'Please cancel the Delivery Order/loading Ticket with ID: %s, that is attached to this Sales Order.' % (picking.name)))
+                    to_cancel_tickets += picking.name + '\n'
+            if to_cancel_tickets :
+                raise UserError(_(
+                        'Kindly cancel the loading Ticket(s) with the following ID(s), before you can cancel the sales order: %s' % (to_cancel_tickets)))
         elif is_cancel_unloaded_unticketed_qty == 'select_one' :
             raise UserError(_('Please Select one of the Cancellation Type Below'))
-        inv = self.create_customer_refund_invoice(is_cancel_unloaded_unticketed_qty)
-        inv.signal_workflow('invoice_open')
+        inv = self.create_customer_refund_invoice()
 
         return
 
@@ -2548,11 +2654,11 @@ class SaleOrderLoading(models.Model):
         inv.sale_order_id = self
         inv.is_advance_invoice = True
         self.is_has_advance_invoice = True
+        self.advance_invoice_id = inv
+        self.state = 'atl_awaiting_approval'
         if is_post_invoice_before_delivery:
             inv.action_post()
-        else :
-            self.state = 'atl_awaiting_approval'
-        return
+        return inv
 
 
     def action_submit_to_manager(self):
@@ -2566,14 +2672,24 @@ class SaleOrderLoading(models.Model):
 
 
     def action_atl_approval(self):
+        if not self.atl_vessel_id:
+            raise UserError('Kindly fill in the vessel field in the Authority to Load tab below')
+        if not self.atl_jetty_id:
+            raise UserError('Kindly fill in the jetty field in the Authority to Load tab below ')
+        #check if advance invoice has not been deleted
+        if not self.advance_invoice_id :
+            raise UserError('Sorry, you have to cancel this document and start afresh. The advance invoice linked to this order has been deleted. So you cannot approve an ATL without an advance invoice')
         # check if the advance invoice is validated
         for inv in self.invoice_ids:
-            if inv.state == 'draft':
+            if inv.state != 'posted':
                 raise UserError(_(
-                    "Please contact the accountant to validate the invoice for %s, before this order (%s) can be authorized to load" % (
+                    "Kindly contact the accountant to post the invoice for %s, before this order (%s) can be authorized to load" % (
                         self.partner_id.name, self.name)))
 
         self.state = 'atl_approved'
+        self.is_has_advance_invoice = True
+        self.is_cancelled_invoice = False
+        self.is_advance_invoice_validated = True
         user_name = self.env.user.name
         #send email to user/dispatch officer, notifying them to create loading tickets
         self.send_email(grp_name='kin_loading.group_receive_atl_approved',
@@ -2589,6 +2705,10 @@ class SaleOrderLoading(models.Model):
         is_po_check = self.env['ir.config_parameter'].sudo().get_param('is_po_check', default=False)
 
         customer = self.partner_id
+
+        #check the number of lines
+        if len(self.order_line) > 1 :
+            raise UserError(_('Only one product can be ordered at a time'))
 
         # is PO Check
         if is_po_check:
@@ -2661,12 +2781,16 @@ class SaleOrderLoading(models.Model):
             if rec.is_throughput_order:
                 raise UserError(_('Sorry, Throughput Order cannot be deleted'))
 
-        return super(SaleOrderLineLoading, self).unlink()
+        return super(SaleOrderLoading, self).unlink()
 
 
     
     def action_cancel(self):
-        res = super(SaleOrderLineLoading,self).action_cancel()
+        res = super(SaleOrderLoading,self).action_cancel()
+        self.advance_invoice_id.unlink()
+        self.is_has_advance_invoice = False
+        self.is_cancelled_invoice = True
+        self.is_advance_invoice_validated = False
 
         if self.is_throughput_order :
             raise UserError(_('Sorry, Transfer is not allowed for Throughput Order'))
@@ -2698,50 +2822,29 @@ class SaleOrderLoading(models.Model):
         self.disapproved_by_user_id = self.env.user
         self.state = 'no_sale'
 
-        # Send Email
-        company_email = self.env.user.company_id.email.strip()
-        disapprove_person_email = self.disapproved_by_user_id.partner_id.email.strip()
-        disapprove_person_name = self.disapproved_by_user_id.name
+        # Send email to sales person
+        partn_ids = []
+        user = self.user_id
+        user_name = user.name
+        partn_ids.append(user.partner_id.id)
 
-        if company_email and disapprove_person_email:
-            # Custom Email Template
-            mail_template = self.env.ref('kin_loading.mail_templ_sale_disapproved')
-            ctx = {}
-            ctx.update({'sale_id': self.id})
-            the_url = self._get_sale_order_url('sale', 'menu_sale_order', 'action_orders', ctx)
+        if partn_ids:
+            self.message_follower_ids.unlink()
+            msg = _("Sales Order has been Disapproved with reason: %s" % (reason_for_dispproval))
+            subject = 'Sales Order (%s) has been Disapproved for %s' % (self.name, self.atl_partner_id.name) ,
+            self.message_post(
+                body=msg,
+                subject=subject, partner_ids=partn_ids,
+                subtype_xmlid='mail.mt_comment', force_send=False)
 
-            user_ids = []
-            group_obj = self.env.ref('kin_loading.group_receive_disapprove_sale_order_email')
-            for user in group_obj.users:
-                if user.partner_id.email and user.partner_id.email.strip():
-                    user_ids.append(user.id)
-                    ctx = {'system_email': company_email,
-                           'disapprove_person_name': disapprove_person_name,
-                           'disapprove_person_email': disapprove_person_email,
-                           'notify_person_email': user.partner_id.email,
-                           'notify_person_name': user.partner_id.name,
-                           'url': the_url,
-                           'reason_for_dispproval': reason_for_dispproval,
-                           }
-                    mail_template.with_context(ctx).send_mail(self.id, force_send=False)
-
-            if user_ids:
-                self.message_subscribe_users(user_ids=user_ids)
-                # For Similar Odoo Kind of Email. Works fine
-                # self.message_post( _("Sales Order has been Disapproved with reason: " + reason_for_dispproval + "") ,subject='Please See the Disapproved Sales Order', subtype_xmlid='mail.mt_comment', force_send=False)
-
-                # Just Log the Note Only
-                self.message_post(_("Sales Order has been Disapproved with reason: " + reason_for_dispproval + ""),
-                                  subject='Please See the Disapproved Sales Order')
+        #send email to group
+        group_name = 'kin_loading.group_receive_disapprove_sale_order_email'
+        self.send_email(group_name, subject, msg)
 
 
-
-
-    
-    def action_cancel(self):
-        self.is_has_advance_invoice = False
-        self.is_advance_invoice_validated = False
-        return  super(SaleOrderLoading,self).action_cancel()
+    def action_reset(self):
+        self.action_cancel()
+        self.state = 'draft'
 
 
     def action_create_advance_invoice(self):
@@ -2801,7 +2904,7 @@ class SaleOrderLoading(models.Model):
                     raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                     sale_order_line_id.product_id.name)))
 
-                account = product_deferred_revenue_id.account_advance_id or product_deferred_revenue_id.categ_id.account_advance_id
+                account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
                 if not account:
                     raise UserError(_('Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (product_deferred_revenue_id.name, product_deferred_revenue_id.id, product_deferred_revenue_id.categ_id.name))
 
@@ -2884,7 +2987,7 @@ class SaleOrderLoading(models.Model):
     root_order_transfer_id = fields.Many2one('sale.order',string='Root Transfer Sales Order')
     root_customer_id = fields.Many2one('res.partner', related='root_order_transfer_id.partner_id', store=True,
                                        string='Root Transfer Customer Name')
-    advance_invoice_id = fields.Many2one('account.move',string="Invoice")
+    advance_invoice_id = fields.Many2one('account.move',string="Advance Invoice")
     state = fields.Selection([
         ('draft', 'Quotation'),
         ('sent', 'Quotation Sent'),
@@ -2940,9 +3043,6 @@ class SaleOrderLineLoading(models.Model):
             line = line.with_company(line.company_id)
             if line.state not in ['sale','atl_approved'] or not line.product_id.type in ('consu','product'):
                 continue
-            qty = line._get_qty_procurement(previous_product_uom_qty)
-            if float_compare(qty, line.product_uom_qty, precision_digits=precision) >= 0:
-                continue
 
             group_id = line._get_procurement_group()
             if not group_id:
@@ -2960,7 +3060,7 @@ class SaleOrderLineLoading(models.Model):
                     group_id.write(updated_vals)
 
             values = line._prepare_procurement_values(group_id=group_id)
-            product_qty = line.product_uom_qty - qty
+            product_qty = line.product_ticket_qty
 
             line_uom = line.product_uom
             quant_uom = line.product_id.uom_id
@@ -2996,7 +3096,7 @@ class SaleOrderLineLoading(models.Model):
 
     def _prepare_invoice_line(self, **optional_values):
         self.ensure_one()
-        deferred_revenue = self.product_id.account_unearned_revenue_id.id
+        deferred_revenue = self.product_id.product_deferred_revenue_id.account_unearned_revenue_id.id
         if not deferred_revenue:
             raise UserError(_('Please contact the Administrator to set the Unearned revenue account for %s', self.product_id.name))
 
@@ -3004,6 +3104,7 @@ class SaleOrderLineLoading(models.Model):
             'display_type': self.display_type,
             'sequence': self.sequence,
             'name': self.name,
+            'product_id' : self.product_id.product_deferred_revenue_id.id,
             'account_id':deferred_revenue,
             'product_uom_id': self.product_uom.id,
             'quantity': self.product_uom_qty,
@@ -3109,19 +3210,17 @@ class SaleOrderLineLoading(models.Model):
         qty = 0.0
         for line in self:
             qty += line.product_uom_qty
-            line.ticket_created_qty = 0
-            line.ticket_remaining_qty = line.product_uom_qty - line.transfer_created_qty -line.cancelled_remaining_qty
+            line.ticket_remaining_qty = line.product_uom_qty - line.ticket_created_qty - line.transfer_created_qty -line.cancelled_remaining_qty
             line.unloaded_balance_qty = line.ticket_created_qty - line.qty_delivered
             line.balance_qty = line.ticket_remaining_qty + line.unloaded_balance_qty
             line.balance_amt = line.balance_qty * line.price_unit
 
 
-    ticket_created_qty = fields.Float(string='Ticketed Qty.', digits=dp.get_precision('Product Unit of Measure'),
-                                      compute='_compute_procurement_qty',default=0.0,store=True)
+    ticket_created_qty = fields.Float(string='Ticketed Qty.', digits=dp.get_precision('Product Unit of Measure'),default=0.0,store=True)
     transfer_created_qty = fields.Float(string='Transferred Qty.', digits=dp.get_precision('Product Unit of Measure'),
                                        default=0.0)
     product_ticket_qty = fields.Float(string='Requested Qty.', digits=dp.get_precision('Product Unit of Measure'),default=0.0,store=True)
-    ticket_remaining_qty = fields.Float(string='UnTicketed Qty.', compute='_compute_procurement_qty',digits=dp.get_precision('Product Unit of Measure'),default=0.0,store=True, help="Ordered Qty. - Transferred Qty. - Cancelled Qty. - Ticketed Qty.")
+    ticket_remaining_qty = fields.Float(string='UnTicketed Qty.', compute='_compute_procurement_qty',digits=dp.get_precision('Product Unit of Measure'),default=0.0,store=True, help="Ordered Qty. - Ticketed Qty. - Transferred Qty. - Cancelled Qty. ")
     cancelled_remaining_qty = fields.Float(string='Cancelled Qty.',
                                         digits=dp.get_precision('Product Unit of Measure'), default=0.0)
     unloaded_balance_qty = fields.Float(string='Unloaded Ticketed Qty.', compute='_compute_procurement_qty', digits=dp.get_precision('Product Unit of Measure'),
@@ -3361,6 +3460,35 @@ class ThroughputReceipt(models.Model):
         self.invoice_count = len(self.invoice_id)
 
 
+    def action_view_invoice(self):
+        invoices = self.mapped('invoice_ids')
+        action = self.env["ir.actions.actions"]._for_xml_id("account.action_move_out_invoice_type")
+        if len(invoices) > 1:
+            action['domain'] = [('id', 'in', invoices.ids)]
+        elif len(invoices) == 1:
+            form_view = [(self.env.ref('account.view_move_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = invoices.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+
+        context = {
+            'default_move_type': 'out_invoice',
+        }
+        if len(self) == 1:
+            context.update({
+                'default_partner_id': self.partner_id.id,
+                'default_partner_shipping_id': self.partner_shipping_id.id,
+                'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+                'default_invoice_origin': self.mapped('name'),
+                'default_user_id': self.user_id.id,
+            })
+        action['context'] = context
+        return action
+
 
     def action_view_invoice(self):
         invoice_id = self.mapped('invoice_id')
@@ -3592,7 +3720,7 @@ class InternalUse(models.Model):
 
         if partn_ids:
             self.message_post(
-                _(msg),
+                body=_(msg),
                 subject='%s' % msg, partner_ids=partn_ids)
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
@@ -3708,6 +3836,8 @@ class ProductProductLoading(models.Model):
     ], string='White Product')
 
     account_unearned_revenue_id = fields.Many2one('account.account',string='Unearned Revenue Account' )
+    is_deferred_revenue = fields.Boolean(string='Is Deferred Revenue')
+    product_deferred_revenue_id = fields.Many2one('product.template', string='Product Deferred Revenue')
 
 
 class Vessel(models.Model):
@@ -3734,7 +3864,7 @@ class Vessel(models.Model):
             # 'context': context,
             # 'view_id': self.env.ref('account.view_account_bnk_stmt_cashbox').id,
             # 'res_id': self.env.context.get('cashbox_id'),
-            'target': 'new'
+
         }
 
     # name = fields.Char('Tank No.')
@@ -3760,6 +3890,21 @@ class PaymentMode(models.Model):
     _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin', 'utm.mixin']
 
     name = fields.Char(string='Name')
+
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
+
+    def button_confirm(self):
+        if not self.vessel_id :
+            raise UserError('Kindly set the vessel for the product receipt')
+        ctx = {
+            'vessel_id': self.vessel_id.stock_location_tmpl_id.id
+        }
+        res = super(PurchaseOrder, self.with_context(ctx)).button_confirm()
+        return res
+
+
+    vessel_id = fields.Many2one('vessel', string='Vessel', default=lambda self: self.env.ref('kin_loading.default_vessel_location'))
 
 
 

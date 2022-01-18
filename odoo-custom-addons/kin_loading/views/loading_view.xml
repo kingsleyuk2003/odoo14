@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <menuitem action="sale.action_orders"
+            id="menu_sale_order" parent="account.menu_finance_receivables"
+            sequence="0" groups="account.group_account_invoice"/>
 
         <menuitem id="menu_root_dispatch_operation" name="Depot Operations" parent="stock.menu_stock_root" sequence="1" groups="group_depot_officer,group_depot_manager" />
         <menuitem id="menu_dispatch_operation" name="Reports" parent="menu_root_dispatch_operation" sequence="1000"  />
@@ -164,6 +167,10 @@
             <field name="inherit_id" ref="sale.view_order_form" />
             <field name="arch" type="xml">
 
+                <xpath expr="//form" position="attributes" >
+                    <attribute name="duplicate">0</attribute>
+                </xpath>
+
                 <div position="inside" name="button_box">
                      <button type="object"  name="btn_view_refund_invoice" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('ref_count', '=', 0)]}"  groups="account.group_account_user" >
                          <field name="ref_count" widget="statinfo" string="Refund Invoice"/>
@@ -182,18 +189,21 @@
                      </button>
                  </div>
 
+
                 <button name="action_cancel"  type="object"  position="attributes">
-                     <attribute name="states">draft,sent,sale,so_to_approve,sale,no_sale</attribute>
+                     <attribute name="states">draft,sent,sale,so_to_approve,sale,no_sale,atl_awaiting_approval</attribute>
                  </button>
+
 
                  <button name="action_cancel"  position="before" >
                      <button name="action_atl_approval" states="atl_awaiting_approval" context="{'show_sale': True}"  string="Approve ATL" class="btn-primary" type="object" groups="kin_loading.group_show_approve_atl"   />
-                     <button name="action_submit_to_manager" states="draft,sent" context="{'show_sale': True}"  string="Submit to Manager" class="btn-primary" type="object" groups="kin_loading.group_show_submit_sale_to_manager"   />
+                     <button name="action_submit_to_manager" states="draft,sent" context="{'show_sale': True}"  string="Submit" class="btn-primary" type="object" groups="kin_loading.group_show_submit_sale_to_manager"   />
                       <button name="action_confirm_main_sale" states="so_to_approve" context="{'show_sale': True}"  string="Approve Sales Order" class="btn-primary" type="object" groups="kin_loading.group_show_confirm_main_sale"   />
                        <button name="%(action_disapprove_sale_orders)d"   string="Disapprove Sales Order" class="btn-primary" type="action"  attrs="{'invisible':[('state', '!=', 'so_to_approve')]}" context="{'show_sale': True}" groups="kin_loading.group_show_disapprove_btn"/>
                         <button name="action_ticket_wizard" states="atl_approved" context="{'is_load_ticket_btn':True}"  string="Create Loading Ticket" class="btn-primary" type="object" groups="kin_loading.group_show_create_loading_ticket"  />
                       <button  name="%(action_cancel_qty)d" states="atl_approved"  string="Cancel Remaining Product Qty."  type="action" groups="kin_loading.group_show_cancel_remaining_order"    />
                       <button name="action_transfer_wizard" states="atl_approved" context="{'is_order_transfer_btn':True}"  string="Transfer Product Qty."  type="object" groups="kin_loading.group_show_transfer_order"  />
+                          <button name="action_reset" states="no_sale,atl_awaiting_approval"   string="Reset to Draft" type="object" groups="kin_loading.group_show_sale_reset"   />
                  </button>
                 <xpath expr="//button[@name='action_confirm'][1]" position="attributes" >
                     <attribute name="string" >Confirm Other Sale</attribute>
@@ -229,14 +239,14 @@
                  <group name="sale_info" position="after">
                       <group name="order_status" string="Order Status and Source">
                             <field name="is_has_advance_invoice" readonly="1" />
-                            <field name="is_advance_invoice_validated" readonly="1" />
-                            <field name="is_cancelled_invoice" readonly="1" />
+                           <field name="advance_invoice_id" readonly="1" />
+                          <field name="is_advance_invoice_validated" readonly="1" />
+                          <field name="is_cancelled_invoice" readonly="1" />
                             <field name="is_cancelled_order" readonly="1" />
                           <field name="is_transferred_order" readonly="1" />
                           <field name="parent_sales_order_transfer_id" readonly="1"/>
                           <field name="root_order_transfer_id" readonly="1" />
                           <field name="root_customer_id" readonly="1" />
-                          <field name="advance_invoice_id" readonly="1" />
                           <field name="is_throughput_order" readonly="1" />
                           <field name="throughput_receipt_source_id" readonly="1" />
                            <field name="is_internal_use_order" readonly="1" />
@@ -249,15 +259,19 @@
                      </group>
                  </group>
 
+                <field name="order_line" position="attributes" >
+                    <attribute name="attrs" >{'readonly': [('state', 'not in', ['draft'])]}</attribute>
+                </field>
+
                 <page name="order_lines" position="before" >
-                    <page name="atl" string="Authority to Load"  attrs="{'invisible': [('state', 'not in', ['atl_awaiting_approval','atl_approved','sale'])]}" >
-                        <group>
+                    <page name="atl" string="Authority to Load"  attrs="{'invisible': [('state', 'not in', ['atl_awaiting_approval','atl_approved','sale'])], 'readonly': [('state', 'in', ['atl_approved','cancel'])]}" >
+                        <group col="4" >
                             <field name="atl_partner_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_product_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_qty" />
-                            <field name="atl_payment_mode_id"  options = "{'no_open':True,'no_create':True}" />
-                            <field name="atl_vessel_id" options = "{'no_open':True,'no_create':True}"  attrs="{'required': [('state', 'in', ['atl_awaiting_approval','atl_approved','sale'])]}" />
-                            <field name="atl_jetty_id" options = "{'no_open':True,'no_create':True}"  attrs="{'required': [('state', 'in', ['atl_awaiting_approval','atl_approved','sale'])]}"  />
+                            <field name="atl_payment_mode_id"  options = "{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}" />
+                            <field name="atl_vessel_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
+                            <field name="atl_jetty_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
                         </group>
                     </page>
                 </page>
@@ -452,9 +466,21 @@
             <field name="model">account.move</field>
             <field name="inherit_id" ref="account.view_move_form" />
             <field name="arch" type="xml">
-                   <field name="ref" position="after" >
-                    <field name="sales_order_credit_transfer_id" readonly="1" string="Sales Order Credit Transfer ID" />
-                </field>
+                 <group id="other_tab_group" position="inside">
+                    <group string="Depot Info." id="sale_info" >
+                         <field name="sales_order_credit_transfer_id" readonly="1" string="Sales Order Credit Transfer ID" />
+                           <field name="is_has_advance_invoice" readonly="1" />
+                   <field name="is_advance_invoice" readonly="1" />
+                       <field name="sales_order_cancel_id" readonly="1" />
+                       <field name="sales_order_transfer_id" readonly="1" />
+                       <field name="is_transfer_invoice" readonly="1" />
+                       <field name="is_from_inventory" readonly="1" />
+                       <field name="is_cancelled_remaining_order" readonly="1" />
+                       <field name="is_transfer_order" readonly="1" />
+                       <field name="is_throughput_invoice" readonly="1" />
+                       <field name="throughput_receipt_id" readonly="1" />
+                    </group>
+                </group>
             </field>
          </record>
 
@@ -539,7 +565,6 @@
          <record id="view_picking_depot_form" model="ir.ui.view">
             <field name="name">stock.picking.form.depot</field>
             <field name="model">stock.picking</field>
-            <field eval="11" name="priority"/>
             <field name="arch" type="xml">
                 <form string="Transfer">
                 <header>
@@ -553,7 +578,7 @@
                     <button name="%(action_block_ticket)d" string="Block Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', True)]}"   confirm="Loading Ticket will be Blocked from being Dispatched" />
                      <button name="%(action_unblock_ticket)d" string="UnBlock Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', False)]}" confirm="Loading Ticket will be Un-Blocked" />
                     <button name="%(stock.act_stock_return_picking)d" string="Reverse" states="done" type="action" groups="base.group_user"/>
-                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" string="Cancel" groups="base.group_user" type="object"/>
+                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" confirm="WAIT !!! Be very sure of what you about to do, before you do it. Cancellation will nullify this document, and it cannot be restored. Are you sure you want to proceed?" string="Cancel" groups="kin_loading.group_cancel_ticket_button" type="object"/>
 <!--                    <button name="do_unreserve" string="Unreserve" groups="base.group_user" type="object" attrs="{'invisible': [('quant_reserved_exist', '=', False)]}"/>-->
 <!--                    <button name="do_prepare_partial" attrs="{'invisible': ['|', ('launch_pack_operations', '=', True), '|', ('state', 'not in', ('assigned', 'partially_available')), ('pack_operation_ids', '!=', [])]}"-->
 <!--                            string="Reset Operations" type="object"/>-->
@@ -612,8 +637,10 @@
                     <notebook>
                       <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                         <group col="4" string="Ticket and WayBill Details"  >
+
                             <field name="is_loading_ticket"   invisible="1" />
 <!--                            <field name="authorization_form_no" />-->
+                            <field name="ticket_load_qty" />
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
@@ -688,9 +715,6 @@
                         <group col="4"   >
                              <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
-                            <field name="is_ticket_recovered"  readonly="1" />
-                            <field name="is_police_report" readonly="1" />
-                            <field name="is_ticket_mistake" readonly="1" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
                             <field name="block_date" readonly="1" />
@@ -761,8 +785,8 @@
                                     </templates>
                                 </kanban>
                             </field>
-                            <field name="move_lines_related" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting', 'done'))]}" readonly="1" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"/>
-                            <field name="pack_operation_exist" invisible="1"/>
+<!--                            <field name="move_lines_related" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting', 'done'))]}" readonly="1" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"/>-->
+<!--                            <field name="pack_operation_exist" invisible="1"/>-->
                             <field name="note" placeholder="Add an internal note..." class="oe_inline"/>
                         </page>
                         <page string="Additional Info" name="extra">
@@ -849,7 +873,6 @@
          <record id="view_picking_throughput_form" model="ir.ui.view">
             <field name="name">stock.picking.form.throughput</field>
             <field name="model">stock.picking</field>
-            <field eval="11" name="priority"/>
             <field name="arch" type="xml">
                 <form string="Transfer">
                 <header>
@@ -863,7 +886,7 @@
                     <button name="%(action_block_ticket)d" string="Block Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', True)]}"   confirm="Loading Ticket will be Blocked from being Dispatched" />
                      <button name="%(action_unblock_ticket)d" string="UnBlock Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', False)]}" confirm="Loading Ticket will be Un-Blocked" />
                     <button name="%(stock.act_stock_return_picking)d" string="Reverse" states="done" type="action" groups="base.group_user"/>
-                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" string="Cancel" groups="base.group_user" type="object"/>
+                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" confirm="WAIT !!! Be very sure of what you about to do, before you do it. Cancellation will nullify this document, and it cannot be restored. Are you sure you want to proceed?" string="Cancel" groups="kin_loading.group_cancel_ticket_button" type="object"/>
 <!--                    <button name="do_unreserve" string="Unreserve" groups="base.group_user" type="object" attrs="{'invisible': [('quant_reserved_exist', '=', False)]}"/>-->
 <!--                    <button name="do_prepare_partial" attrs="{'invisible': ['|', ('launch_pack_operations', '=', True), '|', ('state', 'not in', ('assigned', 'partially_available')), ('pack_operation_ids', '!=', [])]}"-->
 <!--                            string="Reset Operations" type="object"/>-->
@@ -997,9 +1020,6 @@
                         <group col="4"   >
                             <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
-                            <field name="is_ticket_recovered"  readonly="1" />
-                            <field name="is_police_report" readonly="1" />
-                            <field name="is_ticket_mistake" readonly="1" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
                             <field name="block_date" readonly="1" />
@@ -1274,7 +1294,6 @@
          <record id="view_picking_internal_use_form" model="ir.ui.view">
             <field name="name">stock.picking.form.internal.use</field>
             <field name="model">stock.picking</field>
-            <field eval="11" name="priority"/>
             <field name="arch" type="xml">
                 <form string="Transfer">
                 <header>
@@ -1288,7 +1307,7 @@
                     <button name="%(action_block_ticket)d" string="Block Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', True)]}"   confirm="Loading Ticket will be Blocked from being Dispatched" />
                      <button name="%(action_unblock_ticket)d" string="UnBlock Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', False)]}" confirm="Loading Ticket will be Un-Blocked" />
                     <button name="%(stock.act_stock_return_picking)d" string="Reverse" states="done" type="action" groups="base.group_user"/>
-                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" string="Cancel" groups="base.group_user" type="object"/>
+                    <button name="action_cancel" states="assigned,confirmed,partially_available,draft,waiting" confirm="WAIT !!! Be very sure of what you about to do, before you do it. Cancellation will nullify this document, and it cannot be restored. Are you sure you want to proceed?" string="Cancel" groups="kin_loading.group_cancel_ticket_button" type="object"/>
 <!--                    <button name="do_unreserve" string="Unreserve" groups="base.group_user" type="object" attrs="{'invisible': [('quant_reserved_exist', '=', False)]}"/>-->
 <!--                    <button name="do_prepare_partial" attrs="{'invisible': ['|', ('launch_pack_operations', '=', True), '|', ('state', 'not in', ('assigned', 'partially_available')), ('pack_operation_ids', '!=', [])]}"-->
 <!--                            string="Reset Operations" type="object"/>-->
@@ -1422,9 +1441,6 @@
                         <group col="4"   >
                             <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
-                            <field name="is_ticket_recovered"  readonly="1" />
-                            <field name="is_police_report" readonly="1" />
-                            <field name="is_ticket_mistake" readonly="1" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
                             <field name="block_date" readonly="1" />
@@ -1748,8 +1764,15 @@
             <field name="arch" type="xml">
                 <field name="categ_id" position="after">
                    <field name="white_product" />
-                    <field name="account_unearned_revenue_id" />
+                    <field name="account_unearned_revenue_id"  />
+                     <field name="product_deferred_revenue_id" domain="[('is_deferred_revenue','=',True)]" />
                 </field>
+                <div name="options" position="inside" >
+                         <div>
+                             <field name="is_deferred_revenue"/>
+                             <label for="is_deferred_revenue"/>
+                         </div>
+                    </div>
             </field>
         </record>
 
@@ -1770,7 +1793,7 @@
                              <field name="name" required="1" />
                             <field name="location_id" />
                             <field name="usage" required="1" />
-                            <field name="product_id" required="1" />
+                            <field name="product_id" required="1" domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  />
                             <field name="product_uom" required="1" />
                         </group>
                         <notebook>
@@ -1946,6 +1969,21 @@
 
 
 
+        <!-- Purchase Form -->
+         <record id="purchase_order_form_depot_extend" model="ir.ui.view">
+            <field name="name">purchase.order.form.depot.extend</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes" >
+                    <attribute name="duplicate">0</attribute>
+                </xpath>
+                <field name="partner_ref" position="after" >
+                     <field name="vessel_id" options ="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_vessel_on_po" />
+                </field>
+
+            </field>
+         </record>
 
 
 

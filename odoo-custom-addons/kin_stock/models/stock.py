@@ -16,8 +16,20 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
     _order = 'name desc'
 
+    def write(self, vals):
+        location_id = vals.get('location_id', False)
+        location_dest_id = vals.get('location_dest_id', False)
 
+        if location_id :
+            for move_line in self.move_line_ids:
+                move_line.location_id = location_id
 
+        if location_dest_id:
+            for move_line in self.move_line_ids:
+                move_line.location_dest_id = location_dest_id
+
+        res = super(StockPicking, self).write(vals)
+        return res
 
     def button_validate(self):
         #check if the quantity done is more than the qty demanded
@@ -141,3 +153,15 @@ class StockPicking(models.Model):
     po_count = fields.Integer(compute="_compute_po_count", string='# of Purchase Orders', copy=False, default=0, store=True)
     sale_id = fields.Many2one('sale.order', copy=False,)
     so_count = fields.Integer(compute="_compute_so_count", string='# of Sales Orders', copy=False, default=0, store=True)
+    location_id = fields.Many2one('stock.location', "Source Location",
+        default=lambda self: self.env['stock.picking.type'].browse(
+            self._context.get('default_picking_type_id')).default_location_src_id,
+        check_company=True, readonly=True, required=True,
+        states={'draft': [('readonly', False)], 'waiting': [('readonly', False)], 'confirmed': [('readonly', False)],
+                'assigned': [('readonly', False)]})
+    location_dest_id = fields.Many2one('stock.location', "Destination Location",
+        default=lambda self: self.env['stock.picking.type'].browse(
+            self._context.get('default_picking_type_id')).default_location_dest_id,
+        check_company=True, readonly=True, required=True,
+        states={'draft': [('readonly', False)], 'waiting': [('readonly', False)], 'confirmed': [('readonly', False)],
+                'assigned': [('readonly', False)]})

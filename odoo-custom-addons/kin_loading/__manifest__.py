@@ -33,6 +33,7 @@ Loading Process for the Oil and Gas Industry
         'wizard/block_ticket_wizard.xml',
         'wizard/unblock_ticket_wizard.xml',
         'wizard/loading_programme_wizard_view.xml',
+        'views/loading_view.xml',
     ],
     'test':[],
     'installable': True,
