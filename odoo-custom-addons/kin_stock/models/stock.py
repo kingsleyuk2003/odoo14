@@ -33,7 +33,7 @@ class StockPicking(models.Model):
 
     def button_validate(self):
         #check if the quantity done is more than the qty demanded
-        for move in self.move_ids_without_package :
+        for move in self.move_ids_without_package : # dont use move_line_ids. it fails for internal transfer
             quantity_done = round(move.quantity_done,2)
             quantity_demanded = round(move.product_uom_qty,2)
 

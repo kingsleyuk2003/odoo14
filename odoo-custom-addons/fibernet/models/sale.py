@@ -9,8 +9,8 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from dateutil.relativedelta import relativedelta
-
-
+import requests, logging
+from odoo.tools.misc import format_amount
 
 class location(models.Model):
     _name = 'location'
@@ -413,28 +413,101 @@ class SaleOrderExtend(models.Model):
 class ResPartnerExtend(models.Model):
     _inherit = 'res.partner'
 
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
 
-    @api.model
-    def create(self, vals):
-        # is_parent_id = vals.get('parent_id',False)
-        # if not is_parent_id :
-        #     vals['ref'] = self.env['ir.sequence'].next_by_code('fn_code')
-        res = super(ResPartnerExtend,self).create(vals)
-        return res
+        for user in group_obj.users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
 
-    
-    def write(self, vals):
-        res = super(ResPartnerExtend, self).write(vals)
-        # for rec in self:
-        #     is_parent_id = rec.parent_id
-        #     client_id = rec.ref
-        #     if not is_parent_id and not client_id :
-        #         vals['ref'] = self.env['ir.sequence'].next_by_code('fn_code')
-        return res
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                              force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
-    
+    def _get_self_care_payload(self):
+        if not self.ref:
+            raise UserError('Kindly set the client ID')
+        if not self.state_ng:
+            raise UserError('Kindly set the Client State')
+        if not self.city_cust:
+            raise UserError('Kindly set the client city')
+        if not self.street:
+            raise UserError('Kindly set the client address')
+        if not self.name:
+            raise UserError('Kindly set the client company or Fullname')
+        if not self.lastname and self.company_type == 'person':
+            raise UserError('Kindly set the client Lastname')
+        if not self.firstname and self.company_type == 'person':
+            raise UserError('Kindly set the client Firstname')
+        if not self.phone:
+            raise UserError('Kindly set the client phone number')
+        if not self.email:
+            raise UserError('Kindly set the client email address')
+        if not self.expiration_date:
+            raise UserError('Kindly set the client service expiration date')
+        if not self.product_id:
+            raise UserError('Kindly set the client service package')
+        if not self.ip_address:
+            raise UserError('Kindly set the client IP address')
+        if not self.amount:
+            raise UserError('Kindly set the client service package amount')
 
+        payload = {
+            'username': self.ref or 'nil',
+            'key': 1899,
+            'state': self.state_ng or 'nil',
+            'city': self.city_cust or 'nil' ,
+            'address': self.street or 'nil',
+            'company': self.name or 'nil',
+            'lastname': self.lastname or 'nil',
+            'password': 'nil',
+            'firstname': self.firstname or 'nil',
+            'phone': self.phone or 'nil',
+            'email': self.email or 'nil',
+            'expiration': self.expiration_date or 'nil',
+            'plan': self.product_id.name or 'nil',
+            'ipaddress': self.ip_address or 'nil',
+            'amount': self.amount or 'nil' ,
+        }
+        return payload
+
+
+    def action_create_customer_selfcare(self):
+        if not self.customer_rank:
+            raise UserError('This is to be applied to customers only')
+        payload = self._get_self_care_payload()
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                raise UserError(response.text)
+            else:
+                self.env.cr.execute("update res_partner set selfcare_push = True, selfcare_response = '%s' where id = %s" % (response.text, self.id))
+                # send email
+                grp_name = 'fibernet.group_receive_push_selfcare_customer_email'
+                subject = 'Existing Customer Re-Pushed'
+                msg = _('%s has Pushed a new Customer (%s) to the selfcare Service') % (
+                                self.env.user.name, self.name)
+                self.send_email(grp_name, subject, msg)
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            raise UserError('ERP while communicating with selfcare has encountered the following error: %s' % (e))
+
+
+    def btn_push_customer_selfcare(self):
+        self.action_create_customer_selfcare()
+
+
+    firstname = fields.Char(string='First Name')
+    lastname = fields.Char(string='Last Name')
     product_id = fields.Many2one('product.product', string='Package',tracking=True)
+    amount = fields.Float(string='Package Amount')
     location_id = fields.Many2one('location',string='Location',tracking=True)
     base_station_id = fields.Many2one('base.station',string='Base Station',tracking=True)
     bandwidth = fields.Char(string='Bandwidth',tracking=True)
@@ -458,11 +531,7 @@ class ResPartnerExtend(models.Model):
         ('active', 'Active'),('disabled','Disabled'),
         ('expired', 'Expired')
     ], string='Status',tracking=True)
-
-
-
     gender = fields.Selection([('male','Male'),('female','Female'),('not_set','Not Set')], string='Gender',tracking=True)
-
     city_cust = fields.Char(string='City',tracking=True)
     dob = fields.Date(string="DOB",tracking=True)
     expiration_date = fields.Date(string="Expiration Date",tracking=True)
@@ -513,9 +582,11 @@ class ResPartnerExtend(models.Model):
     ], string='State',tracking=True)
     user_id = fields.Many2one('res.users', string='Salesperson',  default=lambda self: self.env.user,
                               help='The internal user in charge of this contact.')
+    selfcare_push = fields.Boolean(string='Selfcare Pushed')
+    selfcare_response = fields.Char(string='Selfcare Response')
 
 
-from odoo.tools.misc import format_amount
+
 
 class AccountPayment(models.Model):
     _inherit = 'account.payment'
@@ -641,6 +712,14 @@ class Prospect(models.Model):
 
     def btn_reset(self):
         self.state = 'new'
+
+    @api.model
+    def create(self,vals):
+        request_ticket_id = vals.get('request_ticket_id', False)
+        if not request_ticket_id :
+            raise UserError('Sorry, you cannot create a prospect from here. This can only be created from CSC support team')
+        res = super(Prospect, self).create(vals)
+        return res
 
     name = fields.Char(string='Name', tracking=True)
     address = fields.Char(string='Address',tracking=True)

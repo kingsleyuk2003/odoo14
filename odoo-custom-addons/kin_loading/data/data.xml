@@ -20,8 +20,8 @@
             <field name="usage">view</field>
         </record>
 
-        <record id="default_vessel_location"  model="vessel" >
-            <field name="name">Please Select a Vessel</field>
+        <record id="default_depot_location"  model="depot" >
+            <field name="name">Please Select a Depot</field>
             <field name="usage">view</field>
         </record>
 

@@ -16,7 +16,9 @@
             <field name="arch" type="xml">
                  <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
+                     <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
                 </field>
+
                    <button name="action_rfq_send" states="draft" type="object" context="{'send_rfq':True}" class="oe_highlight" position="attributes">
                        <attribute name="groups" >kin_purchase.group_show_send_rfq_by_email_button</attribute>
                    </button>
@@ -69,6 +71,19 @@
                     <button name="button_unlock" type="object"  states="done" groups="purchase.group_purchase_manager" position="attributes">
                         <attribute name="groups" >kin_purchase.group_show_unlock_purchase_button</attribute>
                     </button>
+
+                 <xpath expr="//field[@name='order_line']/form/group/group/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/tree/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/kanban/field[@name='product_id']" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </xpath>
+
 
             </field>
         </record>

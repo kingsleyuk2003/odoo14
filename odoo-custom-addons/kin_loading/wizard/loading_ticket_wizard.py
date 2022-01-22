@@ -56,8 +56,8 @@ class LoadingTicketWizard(models.TransientModel):
                 # 'recipient_id' :self.recipient_id,
                  'is_throughput_so' : sale_order.is_throughput_order,
                'is_internal_use_so': sale_order.is_internal_use_order,
-                'sale_order' : sale_order
-               # 'location_dest_id':self.recipient_id.property_stock_customer.id,
+                'sale_order' : sale_order,
+               'atl_depot_id': sale_order.atl_depot_id.stock_location_tmpl_id.id,
             }
 
         if is_generate_loading_date :

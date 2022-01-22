@@ -161,6 +161,7 @@
                             <field name="gpon_level"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                          <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be diapproved -->
                           <field name="wifi_ssid"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="expiration_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
                             <field name="splitter_box_code"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="region_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                            <field name="installation_approver_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -315,7 +316,7 @@
                                 <field name="indoor_wan" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="comment" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                  <field name="status" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
-                                <field name="expiration_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+
                             </group>
 
                   </page>

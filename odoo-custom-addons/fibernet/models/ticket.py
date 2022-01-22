@@ -1082,6 +1082,15 @@ class Ticket(models.Model):
             if not self.ip_address:
                 raise UserError(_('Please set the Customer IP Address in the Activation Form Tab below'))
 
+            if not self.expiration_date :
+                raise UserError('Please set the expiration date for this service in the activation tab below')
+
+            #push new customer to selfcare
+            if not self.order_id :
+                raise UserError('No Sales Order for this Ticket')
+            self.partner_id.amount = self.order_id.amount_total
+            self.partner_id.action_create_customer_selfcare()
+
             self.partner_id.status = 'active'
             self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
             # Send email to the customer after activation from NOC for the installation ticket
@@ -1196,6 +1205,7 @@ class Ticket(models.Model):
                 'olt_id' : vals.get('olt_id', self.partner_id.olt_id),
                 'status' : vals.get('status', self.partner_id.status),
                 'ref' : vals.get('ref', self.partner_id.ref),
+                'expiration_date' : vals.get('expiration_date', self.partner_id.expiration_date),
            }
             self.partner_id.write(cust_vals)
 

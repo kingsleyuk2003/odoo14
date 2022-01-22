@@ -35,6 +35,37 @@ class StockLocation(models.Model):
 class StockMoveLoading(models.Model):
     _inherit = 'stock.move'
 
+    def _assign_picking(self):
+        """ Try to assign the moves to an existing picking that has not been
+        reserved yet and has the same procurement group, locations and picking
+        type (moves should already have them identical). Otherwise, create a new
+        picking to assign them to. """
+        Picking = self.env['stock.picking']
+        grouped_moves = groupby(sorted(self, key=lambda m: [f.id for f in m._key_assign_picking()]), key=lambda m: [m._key_assign_picking()])
+        for group, moves in grouped_moves:
+            moves = self.env['stock.move'].concat(*list(moves))
+            new_picking = False
+            # Could pass the arguments contained in group but they are the same
+            # for each move that why moves[0] is acceptable
+            picking = False
+            if picking:
+                if any(picking.partner_id.id != m.partner_id.id or
+                        picking.origin != m.origin for m in moves):
+                    # If a picking is found, we'll append `move` to its move list and thus its
+                    # `partner_id` and `ref` field will refer to multiple records. In this
+                    # case, we chose to  wipe them.
+                    picking.write({
+                        'partner_id': False,
+                        'origin': False,
+                    })
+            else:
+                new_picking = True
+                picking = Picking.create(moves._get_new_picking_values())
+
+            moves.write({'picking_id': picking.id})
+            moves._assign_picking_post_process(new=new_picking)
+        return True
+
     def write(self,vals):
         res = super(StockMoveLoading, self).write(vals)
         picking_id = vals.get('picking_id',False)
@@ -49,7 +80,10 @@ class StockMoveLoading(models.Model):
 
     @api.model
     def create(self, vals):
-        location_dest_id = self.env.context.get('vessel_id',False)
+        location_id = self.env.context.get('atl_depot_id', False)
+        location_dest_id = self.env.context.get('depot_id', False)
+        if location_id :
+            vals['location_id'] = location_id
         if location_dest_id :
             vals['location_dest_id'] = location_dest_id
         res = super(StockMoveLoading,self).create(vals)
@@ -111,6 +145,8 @@ class StockPickingExtend(models.Model):
     #         waybill_action_template.ir_values_id.sudo().unlink()
     #
     #     return True
+
+
 
     @api.onchange('dest_depot_type_id')
     def onchange_dest_depot_type_id(self):
@@ -211,6 +247,78 @@ class StockPickingExtend(models.Model):
         self.is_waybill_printed = True
         return self.env['report'].get_action(self, 'kin_loading.report_loading_waybill')
 
+    def button_validate(self):
+        # Clean-up the context key at validation to avoid forcing the creation of immediate
+        # transfers.
+        ctx = dict(self.env.context)
+        ctx.pop('default_immediate_transfer', None)
+        self = self.with_context(ctx)
+
+        # Sanity checks.
+        pickings_without_moves = self.browse()
+        pickings_without_quantities = self.browse()
+        pickings_without_lots = self.browse()
+        products_without_lots = self.env['product.product']
+        for picking in self:
+            if not picking.move_lines and not picking.move_line_ids:
+                pickings_without_moves |= picking
+
+            picking.message_subscribe([self.env.user.partner_id.id])
+            picking_type = picking.picking_type_id
+            precision_digits = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+            no_quantities_done = all(float_is_zero(move_line.qty_done, precision_digits=precision_digits) for move_line in picking.move_line_ids.filtered(lambda m: m.state not in ('done', 'cancel')))
+            no_reserved_quantities = all(float_is_zero(move_line.product_qty, precision_rounding=move_line.product_uom_id.rounding) for move_line in picking.move_line_ids)
+            if no_reserved_quantities and no_quantities_done:
+                pickings_without_quantities |= picking
+
+            if picking_type.use_create_lots or picking_type.use_existing_lots:
+                lines_to_check = picking.move_line_ids
+                if not no_quantities_done:
+                    lines_to_check = lines_to_check.filtered(lambda line: float_compare(line.qty_done, 0, precision_rounding=line.product_uom_id.rounding))
+                for line in lines_to_check:
+                    product = line.product_id
+                    if product and product.tracking != 'none':
+                        if not line.lot_name and not line.lot_id:
+                            pickings_without_lots |= picking
+                            products_without_lots |= product
+
+        if not self._should_show_transfers():
+            if pickings_without_moves:
+                raise UserError(_('Please add some items to move.'))
+            if pickings_without_quantities:
+                raise UserError(self._get_without_quantities_error_message())
+            if pickings_without_lots:
+                raise UserError(_('You need to set a Vessel name for products %s.') % ', '.join(products_without_lots.mapped('display_name')))
+        else:
+            message = ""
+            if pickings_without_moves:
+                message += _('Transfers %s: Please add some items to move.') % ', '.join(pickings_without_moves.mapped('name'))
+            if pickings_without_quantities:
+                message += _('\n\nTransfers %s: You cannot validate these transfers if no quantities are reserved nor done. To force these transfers, switch in edit more and encode the done quantities.') % ', '.join(pickings_without_quantities.mapped('name'))
+            if pickings_without_lots:
+                message += _('\n\nTransfers %s: You need to set a Vessel name for products %s.') % (', '.join(pickings_without_lots.mapped('name')), ', '.join(products_without_lots.mapped('display_name')))
+            if message:
+                raise UserError(message.lstrip())
+
+        # Run the pre-validation wizards. Processing a pre-validation wizard should work on the
+        # moves and/or the context and never call `_action_done`.
+        if not self.env.context.get('button_validate_picking_ids'):
+            self = self.with_context(button_validate_picking_ids=self.ids)
+        res = self._pre_action_done_hook()
+        if res is not True:
+            return res
+
+        # Call `_action_done`.
+        if self.env.context.get('picking_ids_not_to_backorder'):
+            pickings_not_to_backorder = self.browse(self.env.context['picking_ids_not_to_backorder'])
+            pickings_to_backorder = self - pickings_not_to_backorder
+        else:
+            pickings_not_to_backorder = self.env['stock.picking']
+            pickings_to_backorder = self
+        pickings_not_to_backorder.with_context(cancel_backorder=True)._action_done()
+        pickings_to_backorder.with_context(cancel_backorder=False)._action_done()
+        return True
+
 
     def check_backorder(self, cr, uid, picking, context=None):
         res = super(StockPickingExtend,self).check_backorder(cr, uid, picking, context)
@@ -267,9 +375,9 @@ class StockPickingExtend(models.Model):
                 raise UserError(_('Sorry, Dispatch cannot be validated and invoice cannot be generated, since no sales order line is linked to the stock move') )
 
             if not float_is_zero(picking_line.product_qty, precision_digits=precision):
-                account = sale_order_line_id.product_id.property_account_income_id or sale_order_line_id.product_id.categ_id.property_account_income_categ_id
+                account = sale_order_line_id.product_id.property_account_income_id
                 if not account:
-                    raise UserError(_('Please define income account for this product: "%s" (id:%d) - or for its category: "%s".') % (sale_order_line_id.product_id.name, sale_order_line_id.product_id.id, sale_order_line_id.product_id.categ_id.name))
+                    raise UserError(_('Please define income account for this product: "%s" (id:%d) ') % (sale_order_line_id.product_id.name, sale_order_line_id.product_id.id))
 
                 fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
                 if fpos:
@@ -319,12 +427,11 @@ class StockPickingExtend(models.Model):
                         raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                         sale_order_line_id.product_id.name)))
 
-                    account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+                    account = product_deferred_revenue_id.account_unearned_revenue_id
                     if not account:
                         raise UserError(_(
-                            'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-                            product_deferred_revenue_id.name, product_deferred_revenue_id.id,
-                            product_deferred_revenue_id.categ_id.name))
+                            'Please define unearned revenue account for this product: "%s" (id:%d) ') % (
+                            product_deferred_revenue_id.name, product_deferred_revenue_id.id))
 
                     fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
                     if fpos:
@@ -368,70 +475,55 @@ class StockPickingExtend(models.Model):
 
 
     
-    def do_new_transfer(self):
-
-        if self.picking_type_code != 'outgoing':
-            for pack_operation in self.pack_operation_product_ids:
-                if pack_operation.qty_done <= 0 :
-                    raise UserError(_('Qty Done should be Set on the lines'))
-
-        if self.picking_type_code == 'outgoing' and self.is_loading_ticket  :
-            order = self.sale_id
-            if order.is_cancelled_order:
-                raise UserError(_('The Sales Order for this Ticket has been Cancelled, so this ticket cannot be dispatched. Please contact the Admin'))
-
-            if len(order.invoice_ids) == 0 and not order.is_throughput_order and not order.is_internal_use_order :
-                raise UserError(_('No Advance Payment Invoice for this Order. Please Contact the Admin'))
-
-            if not order.is_has_advance_invoice and not order.is_throughput_order and not order.is_internal_use_order :
-                raise UserError(_('No Advance Payment Invoice. Please Contact the Admin'))
-
-            if order.is_cancelled_invoice:
-                raise UserError(
-                        _('Advance Payment Invoice for this Sales Order attached to this loading ticket, has been Cancelled. Please contact the admin'))
-
-            if not order.is_advance_invoice_validated and not order.is_throughput_order and not order.is_internal_use_order :
-                    raise UserError(_(
-                        "Please contact the accountant to validate the invoice before dispatching the goods for the sales order: %s, belonging to %s" % (
-                            order.name, order.partner_id.name)))
-
-            if not self.loading_programme_id :
-                raise UserError(_(
-                    'The loading ticket is not included in any of the loading programme'))
-
-            is_ttcl_passed = False
-            is_ttcl_approved = False
-            for ttcl in  self.tarmac_truck_check_list_ids:
-                if ttcl.is_passed :
-                    is_ttcl_passed = True
-                if ttcl.state == 'approve':
-                    is_ttcl_approved = True
-
-            if not is_ttcl_passed:
-                raise UserError(_(
-                    'The Truck attached to this ticket has not passed the tarmac trucking inspection. '))
-
-            if not is_ttcl_approved:
-                raise UserError(_(
-                    'The Tarmac trucking inspection has not been approved for the truck attached to the ticket'))
-
-            if not self.loaded_date:
-                raise UserError(_('Please set the Loaded Date below before validating this record'))
-
-            if not self.truck_no:
-                raise UserError(_('Please set the Truck Number below before validating this record'))
-
-            if not self.receiving_station_address:
-                raise UserError(_('Please set the Receiving Station Address below before validating this record'))
-
-            if not self.dpr_no:
-                raise UserError(_('Please set the DPR Number below before validating this record'))
-
-            if not self.location_addr_id:
-                raise UserError(_('Please set the Location below before validating this record'))
-
-
-        return super(StockPickingExtend,self).do_new_transfer()
+    # def do_new_transfer(self):
+    #
+    #     if self.picking_type_code != 'outgoing':
+    #         for pack_operation in self.pack_operation_product_ids:
+    #             if pack_operation.qty_done <= 0 :
+    #                 raise UserError(_('Qty Done should be Set on the lines'))
+    #
+    #     if self.picking_type_code == 'outgoing' and self.is_loading_ticket  :
+    #         order = self.sale_id
+    #         if order.is_cancelled_order:
+    #             raise UserError(_('The Sales Order for this Ticket has been Cancelled, so this ticket cannot be dispatched. Please contact the Admin'))
+    #
+    #         if len(order.invoice_ids) == 0 and not order.is_throughput_order and not order.is_internal_use_order :
+    #             raise UserError(_('No Advance Payment Invoice for this Order. Please Contact the Admin'))
+    #
+    #         if not order.is_has_advance_invoice and not order.is_throughput_order and not order.is_internal_use_order :
+    #             raise UserError(_('No Advance Payment Invoice. Please Contact the Admin'))
+    #
+    #         if order.is_cancelled_invoice:
+    #             raise UserError(
+    #                     _('Advance Payment Invoice for this Sales Order attached to this loading ticket, has been Cancelled. Please contact the admin'))
+    #
+    #         if not order.is_advance_invoice_validated and not order.is_throughput_order and not order.is_internal_use_order :
+    #                 raise UserError(_(
+    #                     "Please contact the accountant to validate the invoice before dispatching the goods for the sales order: %s, belonging to %s" % (
+    #                         order.name, order.partner_id.name)))
+    #
+    #         if not self.loading_programme_id :
+    #             raise UserError(_(
+    #                 'The loading ticket is not included in any of the loading programme'))
+    #
+    #
+    #         if not self.loaded_date:
+    #             raise UserError(_('Please set the Loaded Date below before validating this record'))
+    #
+    #         if not self.truck_no:
+    #             raise UserError(_('Please set the Truck Number below before validating this record'))
+    #
+    #         if not self.receiving_station_address:
+    #             raise UserError(_('Please set the Receiving Station Address below before validating this record'))
+    #
+    #         if not self.dpr_no:
+    #             raise UserError(_('Please set the DPR Number below before validating this record'))
+    #
+    #         if not self.location_addr_id:
+    #             raise UserError(_('Please set the Location below before validating this record'))
+    #
+    #
+    #     return super(StockPickingExtend,self).do_new_transfer()
 
 
     def do_transfer_load(self, cr, uid, ids, context=None):
@@ -575,8 +667,6 @@ class StockPickingExtend(models.Model):
             if self.is_block_ticket :
                 raise UserError(_("Sorry, Ticket is currently blocked and cannot be Dispatched"))
 
-            if not self.is_correct_truck_no :
-                raise UserError(_("Sorry, Truck No. is not correct."))
 
             if not self.is_exdepot_ticket and self.picking_type_code == 'outgoing' and self.sale_id and self.ticket_load_qty != self.total_dispatch_qty  :
                 raise UserError(_('The Total Dispatched Qty. Must be Equal the Requested Ticket Load Qty. Please Check your Compartment Qty.'))
@@ -665,7 +755,11 @@ class StockPickingExtend(models.Model):
     def create(self, vals):
         authorization_code = self.env.context.get('authorization_code', False)
         loading_date = self.env.context.get('loading_date', False)
-        destination_id = self.env.context.get('vessel_id',False)
+        location_id = self.env.context.get('atl_depot_id', False)
+        destination_id = self.env.context.get('depot_id',False)
+
+        if location_id :
+            vals['location_id'] = location_id
 
         if destination_id :
             vals['location_dest_id'] = destination_id
@@ -676,7 +770,7 @@ class StockPickingExtend(models.Model):
         if loading_date :
             #vals['min_date'] = loading_date.strftime('%Y-%m-%d') # This works too, but i wanted date object to be assigned directly to min_date
             vals['min_date'] = loading_date
-            vals['initial_loading_date'] = loading_date.strftime('%Y-%m-%d')
+
 
         is_load_ticket_btn = self.env.context.get('is_load_ticket_btn', False)
         if is_load_ticket_btn:
@@ -684,7 +778,7 @@ class StockPickingExtend(models.Model):
             vals['is_loading_ticket'] =  True
             vals['is_indepot_ticket'] = True
             vals['source_depot_type_id'] = default_location.id
-            vals['location_id'] = default_location.id
+
 
             if vals['is_indepot_ticket'] :
                 in_depot_default_source_location = self.env['stock.location'].search([('is_default_in_depot_source_location', '=', True)], limit=1)
@@ -721,9 +815,6 @@ class StockPickingExtend(models.Model):
         return res
 
 
-    @api.onchange('truck_park_ticket_id')
-    def onchange_truck_park_ticket(self):
-        self.truck_no = self.truck_park_ticket_id.truck_no
 
 
     @api.depends('comp1_vol','comp2_vol','comp3_vol','comp4_vol','comp5_vol','comp6_vol','comp7_vol','comp8_vol')
@@ -740,10 +831,13 @@ class StockPickingExtend(models.Model):
     
     def action_assign(self):
         is_other_sale = self.env.context.get('is_other_sale',False)
+        is_load_ticket_btn = self.env.context.get('is_load_ticket_btn', False)
         # if not is_other_sale and not self.source_depot_type_id.is_depot_type and self.picking_type_code != 'incoming' and not self.is_throughput_ticket:
         #     raise UserError(_('Please Select a Source Location Type'))
         if self.source_depot_type_id.is_throughput_parent_view and not is_other_sale and self.source_depot_type_id.is_depot_type and self.picking_type_code != 'incoming' and not self.is_throughput_ticket :
             raise UserError(_('Sorry, Throughput operation is not allowed in In Depot Operation, because it will lead to zero value posting for the stock movement'))
+        if is_load_ticket_btn :
+            return
         res = super(StockPickingExtend, self).action_assign()
         return res
 
@@ -820,8 +914,6 @@ class StockPickingExtend(models.Model):
     comp7_vol = fields.Float('7')
     comp8_vol = fields.Float('8')
     ticket_id = fields.Char(related='name',string="Ticket")
-    # dispatch_officer_id = fields.Many2one('res.users',string='Dispatch Officer')
-    # dispatch_date = fields.Date(string='Dispatch Date')
     # supervisor_id = fields.Many2one('res.users', string="Supervisor's  Name")
     # supervisor_date = fields.Date(string="Supervisor's Date")
     driver_id = fields.Many2one('res.partner', string="Driver's  Name")
@@ -830,13 +922,7 @@ class StockPickingExtend(models.Model):
     # customer_rep_date = fields.Date(string="Customer's Date")
     picking_type_code = fields.Selection('stock.picking.type',related='picking_type_id.code',string='Picking Type',store=True)
     is_depot_manager_approve = fields.Boolean('Depot Manager Approved')
-    meter_id = fields.Many2one('loading.meter',string='Meter No.')
-    loader_date = fields.Date("Loader's Date")
-    truck_time_in = fields.Datetime(string='Truck Time In')
-    totalizer_open = fields.Float(string='Totalizer Open')
-    totalizer_close = fields.Float(string='Totalizer Close')
-    truck_time_out = fields.Datetime(string='Truck Time Out')
-    remark = fields.Text('Remark')
+
 
     is_loading_ticket = fields.Boolean('Loading Ticket')
     is_indepot_ticket = fields.Boolean('In-Depot Ticket')
@@ -844,8 +930,6 @@ class StockPickingExtend(models.Model):
     is_throughput_ticket = fields.Boolean('Throughput Ticket')
     is_internal_use_ticket = fields.Boolean('Internal Use Ticket')
     is_retail_station_ticket = fields.Boolean('Retail Station Ticket')
-    is_carry_over = fields.Boolean('Is Carried Over')
-    initial_loading_date = fields.Date('Initial Loading Date')
     lp_ids = fields.Many2many('stock.picking', 'lp_ticket',  'picking_id','loading_prog_id',
                               string='Loading Program Lines', ondelete='restrict')
     valid_driver_license = fields.Char(string="Valid Driver's License")
@@ -860,9 +944,8 @@ class StockPickingExtend(models.Model):
     unblock_reason = fields.Text(string="UnBlock Reason")
     unblock_date = fields.Datetime('UnBlocked Date')
     unblock_user_id = fields.Many2one('res.users', string="UnBlocked By")
-    is_correct_truck_no = fields.Boolean(string="Is Correct Truck No.")
     total_dispatch_qty = fields.Float(string="Total Dispatched Qty.",compute="_compute_ticket_param",store=True)
-    ticket_load_qty = fields.Float(string="Requested Ticket Load Qty.",compute="_compute_ticket_param",store=True)
+    ticket_load_qty = fields.Float(string="Ticket Qty.",compute="_compute_ticket_param",store=True)
     source_depot_type_id = fields.Many2one('stock.location',string="Source Location Type")
     dest_depot_type_id = fields.Many2one('stock.location', string="Destination Type")
     other_information = fields.Text(string = "Other Info.")
@@ -925,7 +1008,6 @@ class LoadingProgramme(models.Model):
     #             for picking in picking_carry_overs:
     #                 partner = picking.partner_id
     #                 product = picking.move_lines[0].product_id
-    #                 picking.is_carry_over = True
     #                 lines += [(0, 0, {
     #                         'customer_id': partner,
     #                         'customer_address': partner.street,
@@ -1013,8 +1095,6 @@ class LoadingProgramme(models.Model):
             raise UserError("Please add tickets to Programme Lines")
 
         for line in self.ticket_ids:
-            if not line.truck_no :
-                raise UserError(_('Please ensure that the ticket - %s has a Truck Number. You may set the truck number on the ticket') % (line.name))
             if line.dpr_status == 'expired' :
                 raise UserError(_('Please ensure the DPR license for the receiving address on the ticket - %s is valid or under renewal status, before you can proceed.') % (line.name))
         self.check_blocked_tickets()
@@ -1180,16 +1260,7 @@ class LoadingProgramme(models.Model):
                                   subject='A New Truck Check List has been Created ', subtype_xmlid='mail.mt_comment', force_send=False)
 
 
-    def _get_count_tarmac_truck_checklist(self):
-        self.update({
-            'ttcl_count': len(set(self.tarmac_truck_check_list_ids))
-        })
 
-
-    def _get_count_truck_checklist(self):
-        self.update({
-            'tcl_count': len(set(self.truck_check_list_ids))
-        })
 
     
     def action_view_truck_check_list(self):
@@ -1214,40 +1285,6 @@ class LoadingProgramme(models.Model):
         elif len(truck_check_list_ids) == 1:
             result['views'] = [(form_view_id, 'form')]
             result['res_id'] = truck_check_list_ids.ids[0]
-        else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
-
-
-
-    def _get_count_tarmac_truck_checklist(self):
-        self.update({
-            'ttcl_count': len(set(self.tarmac_truck_check_list_ids))
-        })
-
-    
-    def action_view_tarmac_truck_check_list(self):
-        tarmac_truck_check_list_ids = self.mapped('tarmac_truck_check_list_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('kin_loading.action_tarmac_truck_check_list_form')
-        list_view_id = imd.xmlid_to_res_id('kin_loading.view_tarmac_truck_check_list_tree')
-        form_view_id = imd.xmlid_to_res_id('view_tarmac_truck_check_list_form')
-
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
-                      [False, 'calendar'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-        }
-        if len(tarmac_truck_check_list_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % tarmac_truck_check_list_ids.ids
-        elif len(tarmac_truck_check_list_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = tarmac_truck_check_list_ids.ids[0]
         else:
             result = {'type': 'ir.actions.act_window_close'}
         return result
@@ -1331,8 +1368,6 @@ class LoadingProgrammeLines(models.Model):
     ticket_id = fields.Many2one('stock.picking',string='Loading Ticket',required=True)
     customer_address = fields.Char( string='Address')
     location_addr_id = fields.Many2one('res.country.state',  string="Location")
-    is_carry_over = fields.Boolean(related='ticket_id.is_carry_over',string='Is Carried Over')
-    initial_loading_date = fields.Date(related='ticket_id.initial_loading_date',string='Initial Loading Date')
     state = fields.Selection(related='ticket_id.state',string='State')
     lp_id = fields.Many2one('loading.programme', string='Loading Programme')
 
@@ -1428,7 +1463,6 @@ class AccountMoveExtend(models.Model):
 
 
 
-    truck_park_ticket_id = fields.Many2one('truck.park.ticket',string="Truck Park Ticket")
     throughput_receipt_id = fields.Many2one('kin.throughput.receipt',string="Throughput Receipt")
     is_throughput_invoice = fields.Boolean(string='Throughput Invoice')
     is_has_advance_invoice = fields.Boolean(string="Is Has Advance invoice")
@@ -1589,12 +1623,11 @@ class SaleOrderLoading(models.Model):
                 raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                     sale_order_line_id.product_id.name)))
 
-            account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+            account = product_deferred_revenue_id.account_unearned_revenue_id
             if not account:
                 raise UserError(_(
-                    'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-                                    product_deferred_revenue_id.name, product_deferred_revenue_id.id,
-                                    product_deferred_revenue_id.categ_id.name))
+                    'Please define unearned revenue account for this product: "%s" (id:%d) ') % (
+                                    product_deferred_revenue_id.name, product_deferred_revenue_id.id))
 
             fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
             if fpos:
@@ -1882,7 +1915,7 @@ class SaleOrderLoading(models.Model):
             for invoice in transfer_order_id.invoice_ids :
                 invoice.action_post()
                 invoice.is_transfer_invoice = True
-            transfer_order_id.atl_vessel_id = self.atl_vessel_id
+            transfer_order_id.atl_depot_id = self.atl_depot_id
             transfer_order_id.atl_payment_mode_id = self.atl_payment_mode_id
             transfer_order_id.atl_jetty_id = self.atl_jetty_id
             transfer_order_id.action_atl_approval()
@@ -2060,7 +2093,7 @@ class SaleOrderLoading(models.Model):
             'help': action.help,
             'type': action.type,
             'views': [[form_view_id, 'form']],
-            'target': 'current',
+            'target': 'new',
             'context': {'show_sale': True},
             'res_model': action.res_model,
         }
@@ -2145,19 +2178,17 @@ class SaleOrderLoading(models.Model):
             'help': action.help,
             'type': action.type,
             'view_mode': action.view_mode,
-            'target': action.target,
+            'target': 'new',
             'context': action.context,
             'res_model': action.res_model,
         }
-
         pick_ids = sum([order.picking_ids.ids for order in self], [])
-
-        if len(pick_ids) > 1:
+        if len(pick_ids) > 0:
             result['domain'] = "[('id','in',[" + ','.join(map(str, pick_ids)) + "])]"
-        elif len(pick_ids) == 1:
-            form_id = form.id if form else False
-            result['views'] = [(form_id, 'form')]
-            result['res_id'] = pick_ids[0]
+        # elif len(pick_ids) == 1:
+        #     form_id = form.id if form else False
+        #     result['views'] = [(form_id, 'form')]
+        #     result['res_id'] = pick_ids[0]
         return result
 
     
@@ -2185,7 +2216,7 @@ class SaleOrderLoading(models.Model):
 
             res =  order.order_line._action_launch_stock_rule()
 
-            return res
+        return res
 
 
     def _prepare_refund_invoice(self):
@@ -2229,12 +2260,11 @@ class SaleOrderLoading(models.Model):
             raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                 sale_order_line_id.product_id.name)))
 
-        account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+        account = product_deferred_revenue_id.account_unearned_revenue_id
         if not account:
             raise UserError(_(
-                'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-                                product_deferred_revenue_id.name, product_deferred_revenue_id.id,
-                                product_deferred_revenue_id.categ_id.name))
+                'Please define unearned revenue account for this product: "%s" (id:%d)') % (
+                                product_deferred_revenue_id.name, product_deferred_revenue_id.id))
 
         fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
         if fpos:
@@ -2406,17 +2436,16 @@ class SaleOrderLoading(models.Model):
     #                 if qty_bal == 0 :
     #                         raise UserError(_('Sorry, there is no remaining balance to cancel.'))
 
-    #             account = sale_order_line_id.product_id.account_unearned_revenue_id or sale_order_line_id.product_id.categ_id.account_unearned_revenue_id
+    #             account = sale_order_line_id.product_id.account_unearned_revenue_id
     #             if not account:
     #                 raise UserError(_(
-    #                     'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-    #                                 sale_order_line_id.product_id.name, sale_order_line_id.product_id.id,
-    #                                 sale_order_line_id.product_id.categ_id.name))
+    #                     'Please define unearned revenue account for this product: "%s" (id:%d)') % (
+    #                                 sale_order_line_id.product_id.name, sale_order_line_id.product_id.ide))
     #
     #             fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
     #             if fpos:
     #                 account = fpos.map_account(account)
-    #             account = sale_order_line_id.product_id.account_unearned_revenue_id or sale_order_line_id.product_id.categ_id.account_unearned_revenue_id
+    #             account = sale_order_line_id.product_id.account_unearned_revenue_id
     #             default_analytic_account = self.env['account.analytic.default'].account_get(
     #                 sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
     #                 sale_order_line_id.order_id.user_id.id, date.today())
@@ -2672,8 +2701,8 @@ class SaleOrderLoading(models.Model):
 
 
     def action_atl_approval(self):
-        if not self.atl_vessel_id:
-            raise UserError('Kindly fill in the vessel field in the Authority to Load tab below')
+        if not self.atl_depot_id:
+            raise UserError('Kindly fill in the depot field in the Authority to Load tab below')
         if not self.atl_jetty_id:
             raise UserError('Kindly fill in the jetty field in the Authority to Load tab below ')
         #check if advance invoice has not been deleted
@@ -2904,9 +2933,9 @@ class SaleOrderLoading(models.Model):
                     raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                     sale_order_line_id.product_id.name)))
 
-                account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+                account = product_deferred_revenue_id.account_unearned_revenue_id
                 if not account:
-                    raise UserError(_('Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (product_deferred_revenue_id.name, product_deferred_revenue_id.id, product_deferred_revenue_id.categ_id.name))
+                    raise UserError(_('Please define unearned revenue account for this product: "%s" (id:%d) ') % (product_deferred_revenue_id.name, product_deferred_revenue_id.id))
 
                 fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
                 if fpos:
@@ -3018,12 +3047,12 @@ class SaleOrderLoading(models.Model):
     stock_move_count = fields.Integer(compute="_compute_stock_move_count", string='# of Throughput Stock Moves', copy=False,
                                       default=0)
     stock_move_ids = fields.One2many('stock.move', 'throughput_so_transfer_movement_id', string='Throughput Stock Moves Entry(s)')
-    vessel_id = fields.Many2one('vessel',string='Vessel')
+
     atl_partner_id = fields.Many2one('res.partner', related='partner_id', string='Customer')
     atl_product_id = fields.Many2one('product.product', compute="_compute_atl_fields", string='Product')
     atl_qty = fields.Float(compute="_compute_atl_fields", string='Quantity')
     atl_payment_mode_id = fields.Many2one('payment.mode',  string='Mode of Payment')
-    atl_vessel_id = fields.Many2one('vessel', string='Vessel')
+    atl_depot_id = fields.Many2one('depot', string='Depot')
     atl_jetty_id = fields.Many2one('jetty', string='Jetty')
 
 
@@ -3153,57 +3182,6 @@ class SaleOrderLineLoading(models.Model):
         return result
 
 
-    # Procurement order in this context means delivery order stock picking record
-    def _action_procurement_create_loading_ticket(self):
-        """
-        Create procurements based on quantity ordered. If the quantity is increased, new
-        procurements are created. If the quantity is decreased, no automated action is taken.
-        """
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        new_procs = self.env['procurement.order']  # Empty recordset
-        for line in self:
-            if line.state != 'sale' or not line.product_id._need_procurement():
-                continue
-
-            loading_ticket_qty = line.product_ticket_qty
-            # It means loading ticket is not yet ready to be created
-            if loading_ticket_qty == 0:
-                continue
-
-            qty = 0.0
-            for proc in line.procurement_ids:
-                if proc.state != 'cancel':
-                    qty += proc.product_qty
-
-
-            # Test if items have been completely delivered(procured)
-            remaining_qty = line.product_uom_qty - qty
-
-            loading_ticket_qty = float_round(loading_ticket_qty, precision_digits=precision)
-            remaining_qty = float_round(remaining_qty, precision_digits=precision)
-            if  loading_ticket_qty > remaining_qty:
-                if remaining_qty < 0:
-                    remaining_qty = 0
-                raise UserError(_(
-                    "Sorry, you can only create a loading ticket for the remaining %s %s of sold %s ") % (remaining_qty,line.product_uom.name,line.product_id.name))
-
-            #If no delivery order(procurement order in the procurement group), then create the procurement group
-            if not line.order_id.procurement_group_id:
-                vals = line.order_id._prepare_procurement_group()
-                line.order_id.procurement_group_id = self.env["procurement.group"].create(vals)
-
-            # recipient_id = self.env.context.get('recipient_id', False)
-            vals = line._prepare_order_line_procurement(group_id=line.order_id.procurement_group_id.id)
-            vals['product_qty'] = loading_ticket_qty
-            # vals['partner_dest_id'] = recipient_id.id
-            new_proc = self.env["procurement.order"].create(vals)
-            # for move in new_proc.move_ids:
-            #     move.partner_id = recipient_id
-            #     move.picking_partner_id = recipient_id
-            line.product_ticket_qty = 0.0
-            new_procs += new_proc
-        new_procs.run()
-        return new_procs
 
     @api.depends('product_uom_qty','qty_delivered','transfer_created_qty','cancelled_remaining_qty')
     def _compute_procurement_qty(self):
@@ -3562,12 +3540,11 @@ class ThroughputReceipt(models.Model):
         # lines = []
         #
         # if not float_is_zero(1, precision_digits=precision):
-        #     account = self.product_id.property_account_income_id or self.product_id.categ_id.property_account_income_categ_id
+        #     account = self.product_id.property_account_income_id
         #     if not account:
         #         raise UserError(
-        #             _('Please define income account for this product: "%s" (id:%d) - or for its category: "%s".') % (
-        #             self.product_id.name, self.product_id.id,
-        #             self.product_id.categ_id.name))
+        #             _('Please define income account for this product: "%s" (id:%d)') % (
+        #             self.product_id.name, self.product_id.id))
         #
         #
         #     default_analytic_account = self.env['account.analytic.default'].account_get(
@@ -3840,8 +3817,8 @@ class ProductProductLoading(models.Model):
     product_deferred_revenue_id = fields.Many2one('product.template', string='Product Deferred Revenue')
 
 
-class Vessel(models.Model):
-    _name = 'vessel'
+class Depot(models.Model):
+    _name = 'depot'
     _inherit = ['portal.mixin', 'mail.thread', 'mail.activity.mixin', 'utm.mixin']
     _inherits = {'stock.location': 'stock_location_tmpl_id'}
 
@@ -3868,13 +3845,14 @@ class Vessel(models.Model):
         }
 
     # name = fields.Char('Tank No.')
-    product_id = fields.Many2one('product.product', string='Product')
-    product_uom = fields.Many2one('uom.uom', related='product_id.uom_id', string='Unit')
+    #product_id = fields.Many2one('product.product', string='Product')
+   # product_uom = fields.Many2one('uom.uom', related='product_id.uom_id', string='Unit')
     stock_location_count = fields.Integer(compute="_compute_stock_location_count", string='# of Stock Locations',
                                           copy=False, default=0)
     stock_location_tmpl_id = fields.Many2one('stock.location', 'Stock Location Template', required=True,ondelete="cascade", select=True, auto_join=True)
+    sale_order_ids = fields.One2many('sale.order','atl_depot_id', string='Sales Orders')
+    purchase_order_ids = fields.One2many('purchase.order', 'depot_id', string='Purchase Orders')
 
-    sale_order_ids = fields.One2many('sale.order','vessel_id', string='Sales Orders')
 
 
 class Jetty(models.Model):
@@ -3895,17 +3873,48 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     def button_confirm(self):
-        if not self.vessel_id :
-            raise UserError('Kindly set the vessel for the product receipt')
+        if not self.depot_id :
+            raise UserError('Kindly set the depot for the product receipt')
         ctx = {
-            'vessel_id': self.vessel_id.stock_location_tmpl_id.id
+            'depot_id': self.depot_id.stock_location_tmpl_id.id
         }
         res = super(PurchaseOrder, self.with_context(ctx)).button_confirm()
         return res
 
+    depot_id = fields.Many2one('depot', string='Depot')
 
-    vessel_id = fields.Many2one('vessel', string='Vessel', default=lambda self: self.env.ref('kin_loading.default_vessel_location'))
+
+class DRPInfo(models.Model):
+    _name = 'dpr.info'
+    _rec_name = 'address'
+    _description = 'DRP Information'
+
+    customer_id = fields.Many2one('res.partner',string='Customer')
+    address = fields.Char(string='Receiving Address')
+    location = fields.Char(string='Location')
+    dpr_no = fields.Char('DPR No.')
+    dpr_expiry_date = fields.Date('DPR Expiry Date')
+    dpr_state = fields.Char(string='State')
+    station_code = fields.Char('Station Code')
+    picking_ids = fields.One2many('stock.picking','dpr_info_id',string='Stock Pickings')
 
 
+
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
+
+    def send_mass_email_sot(self):
+        company_email = self.env.user.company_id.email.strip()
+
+        for partner in self:
+            partner_email = partner.email or False
+
+            if company_email and partner_email:
+                mail_template = partner.env.ref('kin_loading.mail_templ_sot_email')
+                mail_template.send_mail(partner.id, force_send=False)
+        return
+
+    throughput_location_id = fields.Many2one('stock.location',string='Throughput Location')
+    dpr_info_ids = fields.One2many('dpr.info','customer_id',string='DPR Informations')
 
 

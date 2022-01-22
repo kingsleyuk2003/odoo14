@@ -9,6 +9,20 @@
 		 <field name="groups_id" eval="[(6, 0, [ref('group_show_sales_configuration')])]"/>
         </record>
 
+         <record model="ir.ui.menu" id="sale.menu_sale_invoicing">
+		    <field name="groups_id" eval="[(6, 0, [ref('group_show_to_invoice_menu_sale')])]"/>
+        </record>
+
+         <record model="ir.ui.menu" id="sale.product_menu_catalog">
+		    <field name="groups_id" eval="[(6, 0, [ref('group_show_product_menu_sale')])]"/>
+        </record>
+
+        <menuitem id="sale.menu_sale_order"
+            name="Sales Orders"
+            action="sale.action_orders"
+            parent="sale.sale_order_menu"
+            sequence="2" groups="sales_team.group_sale_salesman"/>
+
 
         <record id="view_sale_order_form_kin_sales" model="ir.ui.view">
             <field name="name">sale.order.form.kin.sales</field>
@@ -45,6 +59,7 @@
                 <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                    'res_partner_search_mode': 'customer'
                 </field>
 
                 <xpath expr="//field[@name='order_line']/form/group/group/field[@name='product_id']" position="attributes" >
@@ -59,11 +74,13 @@
                      <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
                 </xpath>
 
-
                 <field name="date_order" position="attributes" >
                     <attribute name="groups" >sales_team.group_sale_salesman</attribute>
                 </field>
 
+                <field name="order_line" position="attributes" >
+                    <attribute name="attrs" >{'readonly': [('state', 'not in', ['draft'])]}</attribute>
+                </field>
 
             </field>
         </record>

@@ -12,6 +12,16 @@
 			<field name="category_id" ref="module_category_fibernet_modifications"/>
     </record>
 
+	<record id="group_push_selfcare_customer" model="res.groups">
+        <field name="name">Show "Repush Selfcare Customer" button</field>
+        <field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
+    <record id="group_receive_push_selfcare_customer_email" model="res.groups">
+        <field name="name">Receive Repush Selfcare Email Notification</field>
+        <field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
     <record id="group_receive_quotation_confirmed_email_to_approve" model="res.groups">
 			<field name="name">Receive "Sale Order Requires Approval or Disapproval" Email Notification</field>
 			<field name="comment" >The people that should be notified will get an email when a quotation is confirmed/converted to sale order and it requires approval and disapproval from the accountant</field>

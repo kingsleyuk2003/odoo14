@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+
+
+
         <menuitem action="sale.action_orders"
             id="menu_sale_order" parent="account.menu_finance_receivables"
             sequence="0" groups="account.group_account_invoice"/>
@@ -22,7 +25,8 @@
         <menuitem id="menu_root_throughput_operation" name="Throughput Operations" parent="menu_root_dispatch_operation" sequence="4" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
         <menuitem id="menu_root_internal_use_operation" name="Internal Use Transfer Operations" parent="menu_root_dispatch_operation" sequence="5" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
 
-         <menuitem id="menu_root_atl" name="Authority to Load" parent="stock.menu_stock_warehouse_mgmt" sequence="5" groups="group_depot_officer,group_depot_manager" />
+         <menuitem id="menu_root_atl" name="Authority to Load" parent="stock.menu_stock_config_settings" sequence="5" groups="group_depot_officer,group_depot_manager" />
+         <menuitem name="Vessels" action="stock.action_production_lot_form" id="stock.menu_action_production_lot_form" parent="menu_root_atl" groups="stock.group_production_lot" sequence="0" />
 
         <!-- All Transfers -->
         <record id="action_all_transfers_view_tree" model="ir.actions.act_window.view">
@@ -55,8 +59,7 @@
                             </h1>
                         </div>
                         <group col="4" >
-                                <field name="programme_date" string="Date and Time" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
-
+                            <field name="programme_date" string="Date and Time" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
                         </group>
                          <notebook>
                             <page string="Loading Tickets"  >
@@ -185,7 +188,7 @@
                          <field name="cso_count" widget="statinfo" string="Transferred Sales Orders"/>
                      </button>
                      <button type="object"  name="btn_view_stock_moves" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('stock_move_count', '=', 0)]}"  groups="stock.group_stock_manager" >
-                                <field name="stock_move_count" widget="statinfo" string="Stock Moves"/>
+                         <field name="stock_move_count" widget="statinfo" string="Stock Moves"/>
                      </button>
                  </div>
 
@@ -219,7 +222,7 @@
                      <field name="transfer_created_qty" readonly="1" optional="hide" />
                      <field name="cancelled_remaining_qty" readonly="1" optional="hide" />
                      <field name="ticket_remaining_qty" optional="hide" />
-                     <field name="ticket_created_qty"  optional="hide"  />
+                     <field name="ticket_created_qty" readonly="1"  optional="hide"  />
 
                 </xpath>
                 <xpath expr="//tree/field[@name='qty_delivered']" position="after" >
@@ -259,18 +262,16 @@
                      </group>
                  </group>
 
-                <field name="order_line" position="attributes" >
-                    <attribute name="attrs" >{'readonly': [('state', 'not in', ['draft'])]}</attribute>
-                </field>
 
-                <page name="order_lines" position="before" >
+
+                <page name="order_lines" position="after" >
                     <page name="atl" string="Authority to Load"  attrs="{'invisible': [('state', 'not in', ['atl_awaiting_approval','atl_approved','sale'])], 'readonly': [('state', 'in', ['atl_approved','cancel'])]}" >
                         <group col="4" >
                             <field name="atl_partner_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_product_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_qty" />
                             <field name="atl_payment_mode_id"  options = "{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}" />
-                            <field name="atl_vessel_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
+                            <field name="atl_depot_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
                             <field name="atl_jetty_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
                         </group>
                     </page>
@@ -368,7 +369,6 @@
 <!--            <field name="res_model">sale.order.line</field>-->
 <!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
 <!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_throughput_order','=',False),('is_internal_use_order','=',False)]</field>-->
-<!--            <field name="view_type" >form</field>-->
 <!--            <field name="view_mode">tree,pivot,graph</field>-->
 <!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
 <!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
@@ -385,7 +385,6 @@
 <!--            <field name="res_model">sale.order.line</field>-->
 <!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
 <!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_throughput_order','=',True)]</field>-->
-<!--            <field name="view_type" >form</field>-->
 <!--            <field name="view_mode">tree,pivot,graph</field>-->
 <!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
 <!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
@@ -402,7 +401,6 @@
 <!--            <field name="res_model">sale.order.line</field>-->
 <!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
 <!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_internal_use_order','=',True)]</field>-->
-<!--            <field name="view_type" >form</field>-->
 <!--            <field name="view_mode">tree,pivot,graph</field>-->
 <!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
 <!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
@@ -504,7 +502,6 @@
 <!--                        <field name="sales_order_cancel_id" readonly="1" />-->
 <!--                        <field name="sales_order_transfer_id" readonly="1" />-->
 <!--                    <field name="is_transfer_invoice" readonly="1" />-->
-<!--                    <field name="truck_park_ticket_id" readonly="1" />-->
 <!--                     <field name="throughput_receipt_id" readonly="1" />-->
 <!--                </field>-->
 <!--            </field>-->
@@ -571,7 +568,7 @@
                     <button name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button name="action_assign" states="confirmed,waiting" string="Check Availability and Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
 <!--                    <button name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="kin_stock.group_force_availability_button"/>-->
-                    <button name="do_new_transfer" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
+                    <button name="button_validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
 <!--                    <button name="do_print_picking" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>-->
                     <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight" attrs="{'invisible': [('state', 'not in', ('partially_available','confirmed','waiting'))]}" type="object" groups="kin_loading.group_show_ticket_print_button"  />
                      <button name="btn_print_waybill" string="Print Waybill" states="done" class="oe_highlight" type="object" groups="kin_loading.group_show_waybill_print_button"  />
@@ -602,51 +599,48 @@
 <!--                        </button>-->
                     </div>
                     <h1 class="hidden-xs">
-<!--                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>-->
-                             <field name="name" attrs="{'readonly': [('state', 'in', ['done'])]}" />
+                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
                     </h1>
-                    <group class="hidden-xs">
-<!--                        <group>-->
-<!--                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>-->
-<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"  domain="[('location_id','=',source_depot_type_id)]" />-->
-<!--                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_dest_id" domain="[('location_id','=',dest_depot_type_id)]" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>-->
-<!--                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>-->
-<!--                        </group>-->
 
-<!--                        <group>-->
-<!--                             <field name="operation_type" invisible="1" />-->
-<!--                            <field name="min_date"/>-->
-<!--                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>-->
-<!--                           <field name="truck_park_ticket_id" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="tarmac_truck_check_list_ids" widget="many2many_tags" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="product_id" />-->
-<!--                            <field name="ticket_load_qty" />-->
-<!--                            <field name="total_dispatch_qty" />-->
-<!--                            <field name="is_correct_truck_no" />-->
-<!--                            <label for="owner_id" groups="stock.group_tracking_owner"/>-->
-<!--                            <div groups="stock.group_tracking_owner">-->
-<!--                                <field name="owner_id"/>-->
-<!--                                <button name="action_assign_owner" string="Assign Owner" type="object" attrs="{'invisible': ['|',('pack_operation_exist', '=', False),('state', 'not in', ('draft','assigned','confirmed'))]}"-->
-<!--                                    class="oe_link oe_edit_only"/>-->
-<!--                            </div>-->
-<!--                        </group>-->
+                    <group class="hidden-xs">
+                        <group>
+                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
+<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
+                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />
+<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_dest_id" groups="kin_loading.group_show_dest_location" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>
+                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>
+                        </group>
+                         <field name="picking_type_code" invisible="1" />
+                        <group>
+                            <field name="date"/>
+                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>
+                        </group>
                     </group>
                     <notebook>
-                      <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
-                        <group col="4" string="Ticket and WayBill Details"  >
+                        <page string="Other Checks">
+                            <group>
 
-                            <field name="is_loading_ticket"   invisible="1" />
-<!--                            <field name="authorization_form_no" />-->
+
+                            <field name="move_line_nosuggest_ids" />
+    <field name="move_line_ids_without_package" />
+                            <field name="move_ids_without_package"  />
+                             </group>
+                        </page>
+                      <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
+                       <field name="is_loading_ticket"   invisible="1" />
+                          <group col="4" string="Ticket and WayBill Details"  >
+                             <field name="product_id" />
                             <field name="ticket_load_qty" />
+                            <field name="total_dispatch_qty" />
+<!--                            <field name="authorization_form_no" />-->
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_state"  />
                              <field name="station_code"  />
-<!--                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />-->
+                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
@@ -689,30 +683,12 @@
                         <group>
                             <field name="other_information" />
                         </group>
-                        <!--<group col="4"  string="Approvals and Date" >-->
-                             <!--<field name="dispatch_officer_id" />-->
-                             <!--<field name="dispatch_date" />-->
-                             <!--<field name="supervisor_id" />-->
-                             <!--<field name="supervisor_date" />-->
-                            <!--<field name="driver_id" />-->
-                             <!--<field name="driver_date" />-->
-                            <!--<field name="customer_rep_id" />-->
-                             <!--<field name="customer_rep_date" />-->
-                        <!--</group>-->
+
                     </page>
-                     <page string="Loader's Information" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}">
-                        <group col="4"   >
-                            <field name="meter_id" />
-                            <field name="loader_date" />
-                            <field name="truck_time_in" />
-                            <field name="truck_time_out" />
-                            <field name="totalizer_open" />
-                            <field name="totalizer_close" />
-                            <field name="remark" />
-                        </group>
-                    </page>
+
+
                     <page string="Ticket Status" attrs="{'invisible': [('is_loading_ticket', '=', True),('is_exdepot_ticket', '=', True),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
-                        <group col="4"   >
+                        <group col="4"  string="States" >
                              <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
                             <field name="is_block_ticket" readonly="1" />
@@ -730,83 +706,18 @@
                             <field name="is_retail_station_ticket" readonly="1" />
 
                         </group>
+                        <group col="4"  string="Approvals and Date" >
+                             <field name="dispatch_officer_id" />
+                             <field name="dispatch_date" />
+                            <field name="driver_id" />
+                            <field name="supervisor_officer_id" />
+                            <field name="supervisor_date" />
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
                     </page>
-                     <page string="Operations" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting'))]}">
-<!--                            <button name="do_prepare_partial" type="object" string="Recompute" attrs="{'invisible': [('recompute_pack_op','=', False)]}"/>-->
-<!--                            <field name="recompute_pack_op" invisible="1"/>-->
-<!--                            <field name="pack_operation_ids" invisible="1"/>-->
 
-                            <field name="picking_type_entire_packs" invisible="1"/>
-<!--                            <field name="pack_operation_pack_ids" options="{'reload_on_button': True}" attrs="{'invisible': [('pack_operation_pack_ids', '=', []), ('picking_type_entire_packs', '=', False)]}" context="{'default_picking_id': id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_picking_id': id}" groups="stock.group_tracking_lot">-->
-<!--                                <tree editable="bottom" decoration-muted="qty_done&gt;0">-->
-<!--                                    <field name="package_id" required="1" string="Package To Move" domain="[('location_id', '=', location_id)]"/>-->
-<!--                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>-->
-<!--                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>-->
-<!--                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>-->
-<!--                                    <field name="state" invisible="1"/>-->
-<!--                                    <field name="qty_done" invisible="1"/>-->
-<!--                                    <field name="lots_visible" invisible="1"/>-->
-<!--                                    <field name="processed_boolean"/>-->
-<!--                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil"-->
-<!--                                            states="confirmed,assigned,waiting,partially_available" groups="base.group_no_one"/>-->
-<!--                                </tree>-->
-<!--                            </field>-->
-<!--                            <button class="oe_link oe_right" name="put_in_pack" type="object" string="&#8627;Put in Pack" attrs="{'invisible': [('state', 'in', ('done', 'cancel'))]}" groups="stock.group_tracking_lot"/>-->
-                        </page>
-                        <page string="Initial Demand" groups="kin_loading.group_show_initial_demand_page" >
-<!--                            <field name="move_lines" attrs="{'invisible': [('state', 'not in', ('draft', 'confirmed', 'waiting'))]}" options="{'reload_on_button': True}" mode="tree,kanban" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}">-->
-                               <field name="move_lines" >
-                                    <kanban class="o_kanban_mobile">
-                                    <field name="product_id"/>
-                                    <field name="availability"/>
-                                    <field name="product_uom_qty"/>
-                                    <field name="product_uom" options="{'no_open': True, 'no_create': True}"/>
-                                    <field name="location_dest_id"/>
-                                    <templates>
-                                        <t t-name="kanban-box">
-                                            <div t-attf-class="oe_kanban_card oe_kanban_global_click">
-                                                <div class="row">
-                                                    <div class="col-xs-12">
-                                                        <strong><span><t t-esc="record.product_id.value"/></span></strong>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-xs-8 text-muted">
-                                                        <span><t t-esc="record.availability.value"/> on <t t-esc="record.product_uom_qty.value"/> <t t-esc="record.product_uom.value"/></span>
-                                                    </div>
-                                                    <div class="col-xs-4 text-muted">
-                                                        <span class="pull-right text-right"><t t-esc="record.location_dest_id.value"/></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </t>
-                                    </templates>
-                                </kanban>
-                            </field>
-<!--                            <field name="move_lines_related" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting', 'done'))]}" readonly="1" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"/>-->
-<!--                            <field name="pack_operation_exist" invisible="1"/>-->
-                            <field name="note" placeholder="Add an internal note..." class="oe_inline"/>
-                        </page>
-                        <page string="Additional Info" name="extra">
-                            <group>
-                                <group>
-                                    <field name="move_type"/>
-                                    <field name="is_carry_over" />
-                                     <field name="initial_loading_date" />
-                                    <field name="picking_type_id" invisible="1" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
-                                    <field name="picking_type_code" invisible="1"/>
-<!--                                    <field name="quant_reserved_exist" invisible="1"/>-->
-                                </group>
-                                <group>
-                                    <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                    <field name="group_id"/>
-                                    <field name="priority"/>
-                                </group>
-                            </group>
-                        </page>
                     </notebook>
+
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" widget="mail_followers"/>
@@ -820,7 +731,7 @@
             <field name="name">stock.picking.tree.depot</field>
             <field name="model">stock.picking</field>
             <field name="arch" type="xml">
-                <!--                decoration-danger="state not in ('cancel', 'done') and min_date &lt; current_date"-->
+                <!--                decoration-danger="state not in ('cancel', 'done') and scheduled_date &lt; current_date"-->
                 <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" string="Picking list">
                      <field name="ticket_id" />
 <!--                    <field name="name"/>-->
@@ -830,7 +741,7 @@
                     <field name="product_id"  />
                     <field name="ticket_load_qty"  />
                     <field name="date" invisible="1"/>
-<!--                    <field name="min_date"/>-->
+<!--                    <field name="scheduled_date"/>-->
                     <field name="origin"/>
                     <field name="group_id" invisible="1"/>
                     <field name="backorder_id"/>
@@ -845,26 +756,16 @@
             <field name="name">In Depot Dispatch Transfers</field>
             <field name="res_model">stock.picking</field>
             <field name="type">ir.actions.act_window</field>
-
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('vpicktree_depot')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('view_picking_depot_form')})]"/>
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">['|',('is_indepot_ticket', '=', True),('is_exdepot_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
 <!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
         </record>
 
-         <record id="action_depot_view_tree" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">tree</field>
-             <field name="view_id" ref="vpicktree_depot" />
-            <field name="act_window_id" ref="action_depot_dispatch"/>
-        </record>
-
-         <record id="action_depot_view_form" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">form</field>
-             <field name="view_id" ref="view_picking_depot_form" />
-            <field name="act_window_id" ref="action_depot_dispatch"/>
-        </record>
 
         <menuitem id="menu_depot_form" name="In Depot Loading Ticket / Waybill" parent="menu_root_in_depot_operation" sequence="2" action="action_depot_dispatch"/>
 
@@ -879,7 +780,7 @@
                     <button name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button name="action_assign" states="confirmed,waiting" string="Check Availability and Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
 <!--                    <button name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="kin_stock.group_force_availability_button"/>-->
-                    <button name="do_new_transfer" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
+                    <button name="button_validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
 <!--                    <button name="do_print_picking" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>-->
                     <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight" attrs="{'invisible': [('state', 'not in', ('partially_available','confirmed','waiting'))]}" type="object" groups="kin_loading.group_show_ticket_print_button"  />
                      <button name="btn_print_waybill" string="Print Waybill" states="done" class="oe_highlight" type="object" groups="kin_loading.group_show_waybill_print_button"  />
@@ -909,49 +810,38 @@
 <!--                        </button>-->
                     </div>
                     <h1 class="hidden-xs">
-<!--                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>-->
-                        <field name="name" attrs="{'readonly': [('state', 'in', ['done'])]}" />
+                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
                     </h1>
-<!--                    <group class="hidden-xs">-->
-<!--                        <group>-->
-<!--                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>-->
-<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"  domain="[('location_id','=',source_depot_type_id)]" />-->
-<!--                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_dest_id" domain="[('location_id','=',dest_depot_type_id)]" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>-->
-<!--                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>-->
-<!--                        </group>-->
-
-<!--                        <group>-->
-<!--                             <field name="operation_type" invisible="1" />-->
-<!--&lt;!&ndash;                            <field name="min_date"/>&ndash;&gt;-->
-<!--                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>-->
-<!--                           <field name="truck_park_ticket_id" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="tarmac_truck_check_list_ids" widget="many2many_tags" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="product_id" />-->
-<!--                            <field name="ticket_load_qty" />-->
-<!--                            <field name="total_dispatch_qty" />-->
-<!--                            <field name="is_correct_truck_no" />-->
-<!--                            <label for="owner_id" groups="stock.group_tracking_owner"/>-->
-<!--                            <div groups="stock.group_tracking_owner">-->
-<!--                                <field name="owner_id"/>-->
-<!--&lt;!&ndash;                                <button name="action_assign_owner" string="Assign Owner" type="object" attrs="{'invisible': ['|',('pack_operation_exist', '=', False),('state', 'not in', ('draft','assigned','confirmed'))]}"&ndash;&gt;-->
-<!--&lt;!&ndash;                                    class="oe_link oe_edit_only"/>&ndash;&gt;-->
-<!--                            </div>-->
-<!--                        </group>-->
-<!--                    </group>-->
+                    <group class="hidden-xs">
+                        <group>
+                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
+<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
+                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />
+<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_dest_id" groups="kin_loading.group_show_dest_location" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>
+                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>
+                        </group>
+                         <field name="picking_type_code" invisible="1" />
+                        <group>
+                            <field name="date"/>
+                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>
+                        </group>
+                    </group>
                     <notebook>
+                         <field name="is_loading_ticket"   invisible="1" />
                       <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                         <group col="4" string="Ticket and WayBill Details"  >
-                            <field name="is_loading_ticket"   invisible="1" />
+                            <field name="product_id" />
+                            <field name="ticket_load_qty" />
+                            <field name="total_dispatch_qty" />
 <!--                            <field name="authorization_form_no" />-->
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_state"  />
                              <field name="station_code"  />
-<!--                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />-->
+                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
@@ -994,31 +884,13 @@
                         <group>
                             <field name="other_information" />
                         </group>
-                        <!--<group col="4"  string="Approvals and Date" >-->
-                             <!--<field name="dispatch_officer_id" />-->
-                             <!--<field name="dispatch_date" />-->
-                             <!--<field name="supervisor_id" />-->
-                             <!--<field name="supervisor_date" />-->
-                            <!--<field name="driver_id" />-->
-                             <!--<field name="driver_date" />-->
-                            <!--<field name="customer_rep_id" />-->
-                             <!--<field name="customer_rep_date" />-->
-                        <!--</group>-->
+
                     </page>
-                     <page string="Loader's Information" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}">
-                        <group col="4"   >
-                            <field name="meter_id" />
-                            <field name="loader_date" />
-                            <field name="truck_time_in" />
-                            <field name="truck_time_out" />
-                            <field name="totalizer_open" />
-                            <field name="totalizer_close" />
-                            <field name="remark" />
-                        </group>
-                    </page>
+
                     <page string="Ticket Status" attrs="{'invisible': [('is_loading_ticket', '=', True),('is_exdepot_ticket', '=', True),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
-                        <group col="4"   >
-                            <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
+
+                        <group col="4"  string="States" >
+                             <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
@@ -1033,83 +905,20 @@
                             <field name="is_throughput_ticket" readonly="1" />
                              <field name="is_internal_use_ticket" readonly="1" />
                             <field name="is_retail_station_ticket" readonly="1" />
+
+                        </group>
+                        <group col="4"  string="Approvals and Date" >
+                             <field name="dispatch_officer_id" />
+                             <field name="dispatch_date" />
+                            <field name="driver_id" />
+                            <field name="supervisor_officer_id" />
+                            <field name="supervisor_date" />
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
                     </page>
-                     <page string="Operations" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting'))]}">
-<!--                            <button name="do_prepare_partial" type="object" string="Recompute" attrs="{'invisible': [('recompute_pack_op','=', False)]}"/>-->
-<!--                            <field name="recompute_pack_op" invisible="1"/>-->
-<!--                            <field name="pack_operation_ids" invisible="1"/>-->
 
-                            <field name="picking_type_entire_packs" invisible="1"/>
-<!--                            <field name="pack_operation_pack_ids" options="{'reload_on_button': True}" attrs="{'invisible': [('pack_operation_pack_ids', '=', []), ('picking_type_entire_packs', '=', False)]}" context="{'default_picking_id': id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_picking_id': id}" groups="stock.group_tracking_lot">-->
-<!--                                <tree editable="bottom" decoration-muted="qty_done&gt;0">-->
-<!--                                    <field name="package_id" required="1" string="Package To Move" domain="[('location_id', '=', location_id)]"/>-->
-<!--                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>-->
-<!--                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>-->
-<!--                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>-->
-<!--                                    <field name="state" invisible="1"/>-->
-<!--                                    <field name="qty_done" invisible="1"/>-->
-<!--                                    <field name="lots_visible" invisible="1"/>-->
-<!--                                    <field name="processed_boolean"/>-->
-<!--                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil"-->
-<!--                                            states="confirmed,assigned,waiting,partially_available" groups="base.group_no_one"/>-->
-<!--                                </tree>-->
-<!--                            </field>-->
-<!--                            <button class="oe_link oe_right" name="put_in_pack" type="object" string="&#8627;Put in Pack" attrs="{'invisible': [('state', 'in', ('done', 'cancel'))]}" groups="stock.group_tracking_lot"/>-->
-                        </page>
-                        <page string="Initial Demand" groups="kin_loading.group_show_initial_demand_page" >
-<!--                            context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"-->
-                            <field name="move_lines" attrs="{'invisible': [('state', 'not in', ('draft', 'confirmed', 'waiting'))]}" options="{'reload_on_button': True}" mode="tree,kanban" >
-                                    <kanban class="o_kanban_mobile">
-                                    <field name="product_id"/>
-                                    <field name="availability"/>
-                                    <field name="product_uom_qty"/>
-                                    <field name="product_uom" options="{'no_open': True, 'no_create': True}"/>
-                                    <field name="location_dest_id"/>
-                                    <templates>
-                                        <t t-name="kanban-box">
-                                            <div t-attf-class="oe_kanban_card oe_kanban_global_click">
-                                                <div class="row">
-                                                    <div class="col-xs-12">
-                                                        <strong><span><t t-esc="record.product_id.value"/></span></strong>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-xs-8 text-muted">
-                                                        <span><t t-esc="record.availability.value"/> on <t t-esc="record.product_uom_qty.value"/> <t t-esc="record.product_uom.value"/></span>
-                                                    </div>
-                                                    <div class="col-xs-4 text-muted">
-                                                        <span class="pull-right text-right"><t t-esc="record.location_dest_id.value"/></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </t>
-                                    </templates>
-                                </kanban>
-                            </field>
-<!--                            <field name="move_lines_related" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting', 'done'))]}" readonly="1" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"/>-->
-<!--                            <field name="pack_operation_exist" invisible="1"/>-->
-                            <field name="note" placeholder="Add an internal note..." class="oe_inline"/>
-                        </page>
-                        <page string="Additional Info" name="extra">
-                            <group>
-                                <group>
-                                    <field name="move_type"/>
-                                    <field name="is_carry_over" />
-                                     <field name="initial_loading_date" />
-                                    <field name="picking_type_id" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
-                                    <field name="picking_type_code" invisible="1"/>
-<!--                                    <field name="quant_reserved_exist" invisible="1"/>-->
-                                </group>
-                                <group>
-                                    <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                    <field name="group_id"/>
-                                    <field name="priority"/>
-                                </group>
-                            </group>
-                        </page>
+
+
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
@@ -1124,7 +933,7 @@
             <field name="name">stock.picking.tree.throughput</field>
             <field name="model">stock.picking</field>
             <field name="arch" type="xml">
-<!--                decoration-danger="state not in ('cancel', 'done') and min_date &lt; current_date"-->
+<!--                decoration-danger="state not in ('cancel', 'done') and scheduled_date &lt; current_date"-->
                 <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'"  string="Picking list">
                    <field name="ticket_id" />
 <!--                    <field name="name"/>-->
@@ -1134,7 +943,7 @@
                     <field name="product_id"  />
                     <field name="ticket_load_qty"  />
                     <field name="date" invisible="1"/>
-<!--                    <field name="min_date"/>-->
+<!--                    <field name="scheduled_date"/>-->
                     <field name="origin"/>
                     <field name="group_id" invisible="1"/>
                     <field name="backorder_id"/>
@@ -1149,25 +958,14 @@
             <field name="name">Throughput Dispatch Transfers</field>
             <field name="res_model">stock.picking</field>
             <field name="type">ir.actions.act_window</field>
-
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('vpicktree_throughput')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('view_picking_throughput_form')})]"/>
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">[('is_loading_ticket', '=', True),('is_throughput_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
 <!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
-        </record>
-
-         <record id="action_throughput_view_tree" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">tree</field>
-             <field name="view_id" ref="vpicktree_throughput" />
-            <field name="act_window_id" ref="action_throughput_dispatch"/>
-        </record>
-
-         <record id="action_throughput_view_form" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">form</field>
-             <field name="view_id" ref="view_picking_throughput_form" />
-            <field name="act_window_id" ref="action_throughput_dispatch"/>
         </record>
 
         <menuitem id="menu_throughput_form" name="Throughput Loading Ticket / Waybill" parent="menu_root_throughput_operation" sequence="3" action="action_throughput_dispatch"/>
@@ -1300,7 +1098,7 @@
                     <button name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
                     <button name="action_assign" states="confirmed,waiting" string="Check Availability and Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
 <!--                    <button name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="kin_stock.group_force_availability_button"/>-->
-                    <button name="do_new_transfer" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
+                    <button name="button_validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
 <!--                    <button name="do_print_picking" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>-->
                     <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight" attrs="{'invisible': [('state', 'not in', ('partially_available','confirmed','waiting'))]}" type="object" groups="kin_loading.group_show_ticket_print_button"  />
                      <button name="btn_print_waybill" string="Print Waybill" states="done" class="oe_highlight" type="object" groups="kin_loading.group_show_waybill_print_button"  />
@@ -1330,49 +1128,38 @@
 <!--                        </button>-->
                     </div>
                     <h1 class="hidden-xs">
-<!--                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>-->
-                        <field name="name" attrs="{'readonly': [('state', 'in', ['done'])]}" />
+                        <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
                     </h1>
-<!--                    <group class="hidden-xs">-->
-<!--                        <group>-->
-<!--                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>-->
-<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['incoming'])], 'required': [('operation_type', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"  domain="[('location_id','=',source_depot_type_id)]" />-->
-<!--                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
-<!--                            <field name="location_dest_id" domain="[('location_id','=',dest_depot_type_id)]" groups="stock.group_locations" attrs="{'invisible': [('operation_type', 'in', ['outgoing'])], 'required': [('operation_type', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>-->
-<!--                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>-->
-<!--                        </group>-->
-
-<!--                        <group>-->
-<!--                             <field name="operation_type" invisible="1" />-->
-<!--&lt;!&ndash;                            <field name="min_date"/>&ndash;&gt;-->
-<!--                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>-->
-<!--                           <field name="truck_park_ticket_id" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="tarmac_truck_check_list_ids" widget="many2many_tags" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />-->
-<!--                            <field name="product_id" />-->
-<!--                            <field name="ticket_load_qty" />-->
-<!--                            <field name="total_dispatch_qty" />-->
-<!--                            <field name="is_correct_truck_no" />-->
-<!--                            <label for="owner_id" groups="stock.group_tracking_owner"/>-->
-<!--                            <div groups="stock.group_tracking_owner">-->
-<!--                                <field name="owner_id"/>-->
-<!--&lt;!&ndash;                                <button name="action_assign_owner" string="Assign Owner" type="object" attrs="{'invisible': ['|',('pack_operation_exist', '=', False),('state', 'not in', ('draft','assigned','confirmed'))]}"&ndash;&gt;-->
-<!--&lt;!&ndash;                                    class="oe_link oe_edit_only"/>&ndash;&gt;-->
-<!--                            </div>-->
-<!--                        </group>-->
-<!--                    </group>-->
+                 <group class="hidden-xs">
+                        <group>
+                            <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
+<!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
+                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />
+<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                            <field name="location_dest_id" groups="kin_loading.group_show_dest_location" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>
+                            <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>
+                        </group>
+                         <field name="picking_type_code" invisible="1" />
+                        <group>
+                            <field name="date"/>
+                            <field name="origin" placeholder="e.g. PO0032" class="oe_inline"/>
+                        </group>
+                    </group>
                     <notebook>
                       <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
-                        <group col="4" string="Ticket and WayBill Details"  >
-                            <field name="is_loading_ticket"   invisible="1" />
+                         <field name="is_loading_ticket"   invisible="1" />
+                          <group col="4" string="Ticket and WayBill Details"  >
+                            <field name="product_id" />
+                            <field name="ticket_load_qty" />
+                            <field name="total_dispatch_qty" />
 <!--                            <field name="authorization_form_no" />-->
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_state"  />
                              <field name="station_code"  />
-<!--                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />-->
+                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
@@ -1415,31 +1202,12 @@
                         <group>
                             <field name="other_information" />
                         </group>
-                        <!--<group col="4"  string="Approvals and Date" >-->
-                             <!--<field name="dispatch_officer_id" />-->
-                             <!--<field name="dispatch_date" />-->
-                             <!--<field name="supervisor_id" />-->
-                             <!--<field name="supervisor_date" />-->
-                            <!--<field name="driver_id" />-->
-                             <!--<field name="driver_date" />-->
-                            <!--<field name="customer_rep_id" />-->
-                             <!--<field name="customer_rep_date" />-->
-                        <!--</group>-->
+
                     </page>
-                     <page string="Loader's Information" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}">
-                        <group col="4"   >
-                            <field name="meter_id" />
-                            <field name="loader_date" />
-                            <field name="truck_time_in" />
-                            <field name="truck_time_out" />
-                            <field name="totalizer_open" />
-                            <field name="totalizer_close" />
-                            <field name="remark" />
-                        </group>
-                    </page>
+
                     <page string="Ticket Status" attrs="{'invisible': [('is_loading_ticket', '=', True),('is_exdepot_ticket', '=', True),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
-                        <group col="4"   >
-                            <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
+                        <group col="4"  string="States" >
+                             <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
@@ -1455,82 +1223,16 @@
                              <field name="is_internal_use_ticket" readonly="1" />
                             <field name="is_retail_station_ticket" readonly="1" />
                         </group>
+                        <group col="4"  string="Approvals and Date" >
+                             <field name="dispatch_officer_id" />
+                             <field name="dispatch_date" />
+                            <field name="driver_id" />
+                            <field name="supervisor_officer_id" />
+                            <field name="supervisor_date" />
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
                     </page>
-                     <page string="Operations" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting'))]}">
-<!--                            <button name="do_prepare_partial" type="object" string="Recompute" attrs="{'invisible': [('recompute_pack_op','=', False)]}"/>-->
-<!--                            <field name="recompute_pack_op" invisible="1"/>-->
-<!--                            <field name="pack_operation_ids" invisible="1"/>-->
 
-                            <field name="picking_type_entire_packs" invisible="1"/>
-<!--                            <field name="pack_operation_pack_ids" options="{'reload_on_button': True}" attrs="{'invisible': [('pack_operation_pack_ids', '=', []), ('picking_type_entire_packs', '=', False)]}" context="{'default_picking_id': id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_picking_id': id}" groups="stock.group_tracking_lot">-->
-<!--                                <tree editable="bottom" decoration-muted="qty_done&gt;0">-->
-<!--                                    <field name="package_id" required="1" string="Package To Move" domain="[('location_id', '=', location_id)]"/>-->
-<!--                                    <field name="location_id" domain="[('id', 'child_of', parent.location_id)]" invisible="1"/>-->
-<!--                                    <field name="from_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="to_loc" groups="stock.group_locations,stock.group_tracking_lot"/>-->
-<!--                                    <field name="location_dest_id" domain="[('id', 'child_of', parent.location_dest_id)]" invisible="1"/>-->
-<!--                                    <field name="result_package_id" groups="stock.group_tracking_lot" context="{'location_id': location_dest_id}" invisible="1"/>-->
-<!--                                    <field name="state" invisible="1"/>-->
-<!--                                    <field name="qty_done" invisible="1"/>-->
-<!--                                    <field name="lots_visible" invisible="1"/>-->
-<!--                                    <field name="processed_boolean"/>-->
-<!--                                    <button name="show_details" string="Modify" type="object" icon="fa-pencil"-->
-<!--                                            states="confirmed,assigned,waiting,partially_available" groups="base.group_no_one"/>-->
-<!--                                </tree>-->
-<!--                            </field>-->
-<!--                            <button class="oe_link oe_right" name="put_in_pack" type="object" string="&#8627;Put in Pack" attrs="{'invisible': [('state', 'in', ('done', 'cancel'))]}" groups="stock.group_tracking_lot"/>-->
-                        </page>
-                        <page string="Initial Demand" groups="kin_loading.group_show_initial_demand_page" >
-<!--                            context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"-->
-                            <field name="move_lines" attrs="{'invisible': [('state', 'not in', ('draft', 'confirmed', 'waiting'))]}" options="{'reload_on_button': True}" mode="tree,kanban" >
-                                    <kanban class="o_kanban_mobile">
-                                    <field name="product_id"/>
-                                    <field name="availability"/>
-                                    <field name="product_uom_qty"/>
-                                    <field name="product_uom" options="{'no_open': True, 'no_create': True}"/>
-                                    <field name="location_dest_id"/>
-                                    <templates>
-                                        <t t-name="kanban-box">
-                                            <div t-attf-class="oe_kanban_card oe_kanban_global_click">
-                                                <div class="row">
-                                                    <div class="col-xs-12">
-                                                        <strong><span><t t-esc="record.product_id.value"/></span></strong>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-xs-8 text-muted">
-                                                        <span><t t-esc="record.availability.value"/> on <t t-esc="record.product_uom_qty.value"/> <t t-esc="record.product_uom.value"/></span>
-                                                    </div>
-                                                    <div class="col-xs-4 text-muted">
-                                                        <span class="pull-right text-right"><t t-esc="record.location_dest_id.value"/></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </t>
-                                    </templates>
-                                </kanban>
-                            </field>
-<!--                            <field name="move_lines_related" attrs="{'invisible': [('state', 'in', ('draft', 'confirmed', 'waiting', 'done'))]}" readonly="1" context="{'address_in_id': partner_id, 'form_view_ref':'stock.view_move_picking_form', 'tree_view_ref':'stock.view_move_picking_tree', 'default_picking_type_id': picking_type_id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id}"/>-->
-<!--                            <field name="pack_operation_exist" invisible="1"/>-->
-                            <field name="note" placeholder="Add an internal note..." class="oe_inline"/>
-                        </page>
-                        <page string="Additional Info" name="extra">
-                            <group>
-                                <group>
-                                    <field name="move_type"/>
-                                    <field name="is_carry_over" />
-                                     <field name="initial_loading_date" />
-                                    <field name="picking_type_id" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
-                                    <field name="picking_type_code" invisible="1"/>
-<!--                                    <field name="quant_reserved_exist" invisible="1"/>-->
-                                </group>
-                                <group>
-                                    <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
-                                    <field name="group_id"/>
-                                    <field name="priority"/>
-                                </group>
-                            </group>
-                        </page>
                     </notebook>
                 </sheet>
                 <div class="oe_chatter">
@@ -1545,7 +1247,7 @@
             <field name="name">stock.picking.tree.internal.use</field>
             <field name="model">stock.picking</field>
             <field name="arch" type="xml">
-                <!--                decoration-danger="state not in ('cancel', 'done') and min_date &lt; current_date"-->
+                <!--                decoration-danger="state not in ('cancel', 'done') and scheduled_date &lt; current_date"-->
                 <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" string="Picking list">
                    <field name="ticket_id" />
 <!--                    <field name="name"/>-->
@@ -1555,7 +1257,7 @@
                     <field name="product_id"  />
                     <field name="ticket_load_qty"  />
                     <field name="date" invisible="1"/>
-<!--                    <field name="min_date"/>-->
+<!--                    <field name="scheduled_date"/>-->
                     <field name="origin"/>
                     <field name="group_id" invisible="1"/>
                     <field name="backorder_id"/>
@@ -1570,26 +1272,17 @@
             <field name="name">Internal Use Dispatch Transfers</field>
             <field name="res_model">stock.picking</field>
             <field name="type">ir.actions.act_window</field>
-
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('vpicktree_internal_use')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('view_picking_internal_use_form')})]"/>
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">[('is_loading_ticket', '=', True),('is_internal_use_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
 <!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
         </record>
 
-         <record id="action_internal_use_view_tree" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">tree</field>
-             <field name="view_id" ref="vpicktree_internal_use" />
-            <field name="act_window_id" ref="action_internal_use_dispatch"/>
-        </record>
 
-         <record id="action_internal_use_view_form" model="ir.actions.act_window.view">
-            <field name="sequence">1</field>
-            <field name="view_mode">form</field>
-             <field name="view_id" ref="view_picking_internal_use_form" />
-            <field name="act_window_id" ref="action_internal_use_dispatch"/>
-        </record>
 
         <menuitem id="menu_internal_use_form" name="Internal Use Loading Ticket / Waybill" parent="menu_root_internal_use_operation" sequence="3" action="action_internal_use_dispatch"/>
 
@@ -1680,6 +1373,10 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">kin.internal.use</field>
             <field name="view_mode">tree,form</field>
+            <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('view_kin_internal_use_tree')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('view_internal_use_form')})]"/>
             <!--<field name="context">{'search_default_grpstatus': 1}</field>-->
 <!--            <field name="search_view_id" ref="view_kin_internal_use_filter"/>-->
         </record>
@@ -1777,12 +1474,12 @@
         </record>
 
 
-        <!-- Vessel -->
-         <record id="view_vessel_form" model="ir.ui.view" >
-            <field name="name" >vessel.form</field>
-            <field name="model">vessel</field>
+        <!-- Depot -->
+         <record id="view_depot_form" model="ir.ui.view" >
+            <field name="name" >depot.form</field>
+            <field name="model">depot</field>
             <field name="arch" type="xml" >
-                <form string="Vessel" >
+                <form string="Depot" >
                     <sheet>
                         <div class="oe_button_box" name="button_box">
                             <button type="object"  name="btn_view_stock_location" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('stock_location_count', '=', 0)]}"  groups="stock.group_stock_manager" >
@@ -1793,10 +1490,13 @@
                              <field name="name" required="1" />
                             <field name="location_id" />
                             <field name="usage" required="1" />
-                            <field name="product_id" required="1" domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  />
-                            <field name="product_uom" required="1" />
+<!--                            <field name="product_id" required="1" domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  />-->
+<!--                            <field name="product_uom" required="1" />-->
                         </group>
                         <notebook>
+                            <page string="Purchase Orders" name="sale_order">
+                                <field name="purchase_order_ids" />
+                            </page>
                             <page string="Sales Orders" name="sale_order">
                                 <field name="sale_order_ids" />
                             </page>
@@ -1811,47 +1511,47 @@
             </field>
          </record>
 
-        <record id="view_vessel_tree" model="ir.ui.view" >
-            <field name="name" >vessel.tree</field>
-            <field name="model">vessel</field>
+        <record id="view_depot_tree" model="ir.ui.view" >
+            <field name="name" >depot.tree</field>
+            <field name="model">depot</field>
             <field name="arch" type="xml" >
-                <tree string="Vessel" >
+                <tree string="Depot" >
                      <field name="name"  />
                            <field name="location_id" />
                             <field name="usage" required="1" />
-                            <field name="product_id" required="1" />
-                            <field name="product_uom" required="1" />
+<!--                            <field name="product_id" required="1" />-->
+<!--                            <field name="product_uom" required="1" />-->
                 </tree>
             </field>
         </record>
 
-        <record id="view_vessel_filter" model="ir.ui.view">
-            <field name="name">vessel.select</field>
-            <field name="model">vessel</field>
+        <record id="view_depot_filter" model="ir.ui.view">
+            <field name="name">depot.select</field>
+            <field name="model">depot</field>
             <field name="arch" type="xml">
-                <search string="Vessel Filter">
-                    <field name="name" string="Vessel"  filter_domain="['|',('name','ilike',self),('product_id','ilike',self)]"/>
+                <search string="Depot Filter">
+                    <field name="name" string="Depot"  filter_domain="['|',('name','ilike',self),('product_id','ilike',self)]"/>
                     <group expand="0" string="Group By">
-                        <filter name="grpPrd" string="Product" domain="[]" context="{'group_by':'product_id'}"/>
+<!--                        <filter name="grpPrd" string="Product" domain="[]" context="{'group_by':'product_id'}"/>-->
                     </group>
                 </search>
             </field>
         </record>
 
-        <record id="action_vessel_form" model="ir.actions.act_window" >
-            <field name="name" >Vessel</field>
+        <record id="action_depot_form" model="ir.actions.act_window" >
+            <field name="name" >Depot</field>
             <field name="type">ir.actions.act_window</field>
-            <field name="res_model">vessel</field>
+            <field name="res_model">depot</field>
             <field name="view_mode">tree,form</field>
-            <field name="search_view_id" ref="view_vessel_filter"/>
-            <field name="context">{'search_default_grpPrd': 1}</field>
+            <field name="search_view_id" ref="view_depot_filter"/>
+<!--            <field name="context">{'search_default_grpPrd': 1}</field>-->
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
-                Click to create a Vessel
+                Click to create a Depot
               </p>
             </field>
         </record>
-        <menuitem id="menu_vessel" name="Vessel" parent="menu_root_atl" sequence="4" action="action_vessel_form"/>
+        <menuitem id="menu_depot" name="Depot" parent="menu_root_atl" sequence="4" action="action_depot_form"/>
 
 
         <!-- Jetty -->
@@ -1979,11 +1679,346 @@
                     <attribute name="duplicate">0</attribute>
                 </xpath>
                 <field name="partner_ref" position="after" >
-                     <field name="vessel_id" options ="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_vessel_on_po" />
+                     <field name="depot_id" options ="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_depot_on_po" />
                 </field>
 
             </field>
          </record>
+
+
+         <!-- DRP INFO -->
+        <record id="view_dpr_info_form" model="ir.ui.view" >
+            <field name="name" >dpr.info.form</field>
+            <field name="model">dpr.info</field>
+            <field name="arch" type="xml" >
+                <form string="DRP Information" >
+                    <sheet>
+                        <group col="4">
+                            <field name="customer_id" required="1" />
+                            <field name="address" required="1" />
+                            <field name="location" required="1" />
+                            <field name="dpr_state"  />
+                             <field name="station_code"  />
+                            <field name="dpr_no" required="1" />
+                            <field name="dpr_expiry_date" />
+                        </group>
+                     </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_dpr_info_tree" model="ir.ui.view" >
+            <field name="name" >dpr.info.tree</field>
+            <field name="model">dpr.info</field>
+            <field name="arch" type="xml" >
+                <tree string="DRP Information " >
+                    <field name="customer_id" />
+                    <field name="address" />
+                    <field name="location" />
+                    <field name="dpr_state" />
+                    <field name="station_code"  />
+                    <field name="dpr_no" />
+                    <field name="dpr_expiry_date" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_dpr_info_filter" model="ir.ui.view">
+            <field name="name">dpr.info.select</field>
+            <field name="model">dpr.info</field>
+            <field name="arch" type="xml">
+                <search string="DPR Information Filter">
+                    <field name="customer_id" string="Customer"  filter_domain="[('customer_id','ilike',self)]"/>
+                    <group expand="0" string="Group By">
+                         <filter name="grpcust" string="Customer" domain="[]" context="{'group_by':'customer_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_dpr_info_form" model="ir.actions.act_window" >
+            <field name="name" >DRP Information</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">dpr.info</field>
+            <field name="view_mode">tree,form</field>
+             <field name="context">{'search_default_grpcust':True}</field>
+             <field name="search_view_id" ref="view_dpr_info_filter"/>
+            <field name="help" type="html">
+              <p class="oe_view_nocontent_create">
+                Click to create a DRP Information for a customer
+              </p>
+            </field>
+        </record>
+        <menuitem id="menu_dpr_info_form" name="DRP Information" parent="menu_depot_configuration" sequence="1" action="action_dpr_info_form"/>
+
+
+        <!-- Res Partner -->
+        <record id="view_res_partner_loading_extend" model="ir.ui.view">
+            <field name="name" >res.partner.loading.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                 <field name="function" position="before" >
+                     <field  name="throughput_location_id" invisible="1" />
+                 </field>
+                <notebook position="inside" >
+                    <page string="DRP Informations">
+                             <field name="dpr_info_ids"  >
+                                 <tree editable="bottom" >
+                                    <field name="address" required="1" />
+                                    <field name="location" required="1" />
+                                    <field name="dpr_no" required="1" />
+                                     <field name="dpr_state"  />
+                                     <field name="station_code"  />
+                                    <field name="dpr_expiry_date" />
+                                </tree>
+                             </field>
+                    </page>
+                </notebook>
+            </field>
+        </record>
+
+        <!-- Stock Scrap -->
+        <record id="stock_scrap_form_view" model="ir.ui.view">
+            <field name="name">stock.scrap.form</field>
+            <field name="model">stock.scrap</field>
+            <field name="inherit_id" ref="stock.stock_scrap_form_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record id="stock_scrap_form_view2" model="ir.ui.view">
+            <field name="name">stock.scrap.form2</field>
+            <field name="model">stock.scrap</field>
+             <field name="inherit_id" ref="stock.stock_scrap_form_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <!-- Stock Quant -->
+        <record id="quant_search_view" model="ir.ui.view">
+        <field name="name">stock.quant.search</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.quant_search_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_stock_quant_form_editable">
+        <field name="name">stock.quant.form.editable</field>
+        <field name="model">stock.quant</field>
+        <field eval="11" name="priority"/>
+        <field name="inherit_id" ref="stock.view_stock_quant_form_editable" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_stock_quant_form">
+        <field name="name">stock.quant.form</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+        <field name="inherit_id" ref="stock.view_stock_quant_form_editable" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_stock_quant_tree_editable">
+        <field name="name">stock.quant.tree.editable</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+         <field name="inherit_id" ref="stock.view_stock_quant_tree_editable" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_stock_quant_tree">
+        <field name="name">stock.quant.tree</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+         <field name="inherit_id" ref="stock.view_stock_quant_tree" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+
+            </field>
+        </record>
+
+        <record model="ir.ui.view" id="view_quant_package_form">
+        <field name="name">stock.quant.package.form</field>
+        <field name="model">stock.quant.package</field>
+        <field eval="10" name="priority"/>
+        <field name="inherit_id" ref="stock.view_quant_package_form" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <!-- Stock move lines -->
+        <record id="view_move_line_tree" model="ir.ui.view">
+        <field name="name">stock.move.line.tree</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_move_line_tree" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record id="view_move_line_form" model="ir.ui.view">
+        <field name="name">stock.move.line.form</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_move_line_form" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="lot_name"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record id="view_stock_move_line_kanban" model="ir.ui.view">
+        <field name="name">stock.move.line.kanban</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_kanban" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="lot_name"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record id="view_stock_move_line_operation_tree" model="ir.ui.view">
+            <field name="name">stock.move.line.operations.tree</field>
+            <field name="model">stock.move.line</field>
+            <field name="priority">1000</field>
+            <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="lot_name"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                </field>
+            </field>
+        </record>
+
+         <record id="view_stock_move_line_detailed_operation_tree" model="ir.ui.view">
+            <field name="name">stock.move.line.operations.tree</field>
+            <field name="model">stock.move.line</field>
+            <field name="priority">1000</field>
+            <field name="inherit_id" ref="stock.view_stock_move_line_detailed_operation_tree" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                     <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="lot_name"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                </field>
+            </field>
+        </record>
+
+        <!-- Stock package -->
+        <record id="package_level_form_view" model="ir.ui.view">
+        <field name="name">Package Level</field>
+        <field name="model">stock.package_level</field>
+        <field name="inherit_id" ref="stock.package_level_form_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="lot_name"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                </field>
+            </field>
+        </record>
+
+        <!-- Stock package destination -->
+        <record id="stock_package_destination_form_view" model="ir.ui.view">
+        <field name="name">stock.package.destination.view</field>
+        <field name="model">stock.package.destination</field>
+        <field name="inherit_id" ref="stock.stock_package_destination_form_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+
+            </field>
+        </record>
+
+        <!-- Stock warn insufficient type -->
+        <record id="stock_warn_insufficient_qty_form_view" model="ir.ui.view">
+        <field name="name">stock.warn.insufficient.qty</field>
+        <field name="model">stock.warn.insufficient.qty</field>
+        <field name="inherit_id" ref="stock.stock_warn_insufficient_qty_form_view" />
+            <field name="arch" type="xml">
+                <field name="lot_id"  position="attributes" >
+                    <attribute name="string" >Vessel</attribute>
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+
+        <!-- Lots/Serial number -->
+        <record id="view_production_lot_form" model="ir.ui.view">
+        <field name="name">stock.production.lot.form</field>
+        <field name="model">stock.production.lot</field>
+        <field name="priority">10</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form" />
+            <field name="arch" type="xml">
+                <label for="name" class="oe_edit_only" position="replace" >
+                    <label  string="Vessel"  for="name" class="oe_edit_only"/>
+                </label>
+
+                 <field name="product_id"  position="attributes" >
+                    <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+            </field>
+        </record>
+        <record id="stock.action_production_lot_form" model="ir.actions.act_window">
+            <field name="name">Vessels</field>
+        </record>
 
 
 
