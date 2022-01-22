@@ -4,6 +4,7 @@
 # Copyright 2019 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
 # License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
 import base64
+from builtins import super
 from datetime import datetime,date, timedelta
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
@@ -92,14 +93,14 @@ class SaleOrderExtend(models.Model):
         res.sale_id = self
         return res
 
-    def get_payment_type(self):
-        is_paid_deferred = False
-        product_subscription_line = self.order_line.filtered(lambda line: line.product_id.is_sub == True)
-        if product_subscription_line:
-            is_paid_deferred = "paid"
-        else:
-            is_paid_deferred = "deferred"
-        return is_paid_deferred
+    # def get_payment_type(self):
+    #     is_paid_deferred = False
+    #     product_subscription_line = self.order_line.filtered(lambda line: line.product_id.is_sub == True)
+    #     if product_subscription_line:
+    #         is_paid_deferred = "paid"
+    #     else:
+    #         is_paid_deferred = "deferred"
+    #     return is_paid_deferred
 
 
     def action_create_payment_entry(self):
@@ -114,7 +115,7 @@ class SaleOrderExtend(models.Model):
             'views': [[form_view_id, 'form']],
             'target': action.target,
             'domain': action.domain,
-            'context': {'default_is_paid_deferred': self.get_payment_type(),'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
+            'context': {'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
             'res_model': action.res_model,
             'target': 'new'
         }
@@ -122,7 +123,6 @@ class SaleOrderExtend(models.Model):
 
     
     def create_ticket_with_email(self):
-        self.state = 'sale'
         res = super(SaleOrderExtend, self).action_confirm()
         self.approved_by_user_id = self.env.user
 
@@ -185,8 +185,6 @@ class SaleOrderExtend(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
 
     def action_approve(self):
-        if self.partner_id.ref :
-            raise UserError('Sorry, this is not a new customer. You can create a new customer for a new installation')
         return self.action_create_payment_entry()
 
 
@@ -440,11 +438,7 @@ class ResPartnerExtend(models.Model):
         if not self.street:
             raise UserError('Kindly set the client address')
         if not self.name:
-            raise UserError('Kindly set the client company or Fullname')
-        if not self.lastname and self.company_type == 'person':
-            raise UserError('Kindly set the client Lastname')
-        if not self.firstname and self.company_type == 'person':
-            raise UserError('Kindly set the client Firstname')
+            raise UserError('Kindly set the client Name')
         if not self.phone:
             raise UserError('Kindly set the client phone number')
         if not self.email:
@@ -464,10 +458,8 @@ class ResPartnerExtend(models.Model):
             'state': self.state_ng or 'nil',
             'city': self.city_cust or 'nil' ,
             'address': self.street or 'nil',
-            'company': self.name or 'nil',
-            'lastname': self.lastname or 'nil',
-            'password': 'nil',
-            'firstname': self.firstname or 'nil',
+            'password': self.ref or 'nil',
+            'firstname': self.name or 'nil',
             'phone': self.phone or 'nil',
             'email': self.email or 'nil',
             'expiration': self.expiration_date or 'nil',
@@ -490,22 +482,79 @@ class ResPartnerExtend(models.Model):
                 self.env.cr.execute("update res_partner set selfcare_push = True, selfcare_response = '%s' where id = %s" % (response.text, self.id))
                 # send email
                 grp_name = 'fibernet.group_receive_push_selfcare_customer_email'
-                subject = 'Existing Customer Re-Pushed'
-                msg = _('%s has Pushed a new Customer (%s) to the selfcare Service') % (
-                                self.env.user.name, self.name)
+                subject = 'New Customer (%s) with client id: %s, has been pushed by %s' % (self.name,self.ref,self.env.user.name)
+                msg = _('%s has Pushed a new Customer (%s), with client id: %s to the selfcare Service') % (
+                                self.env.user.name, self.name, self.ref)
                 self.send_email(grp_name, subject, msg)
         except Exception as e:
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
-            raise UserError('ERP while communicating with selfcare has encountered the following error: %s' % (e))
+            raise UserError('ERP while communicating with selfcare (Create Customer Endpoint) has encountered the following error: %s' % (e))
+
+
+    def action_update_customer_selfcare(self):
+        if not self.customer_rank:
+            raise UserError('This is to be applied to customers only')
+        payload = self._get_self_care_payload()
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/update-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                raise UserError(response.text)
+            else:
+                self.env.cr.execute("update res_partner set selfcare_push = True, selfcare_response = '%s' where id = %s" % (response.text, self.id))
+                # send email
+                grp_name = 'fibernet.group_receive_push_selfcare_customer_email'
+                subject = 'Existing Customer (%s) with client id: %s, has been Updated in ERP and Selfcare Service by %s' % (self.name, self.ref,self.env.user.name)
+                msg = _('%s has edited the Customer (%s),  with client id: %s, in ERP and Selfcare Service') % (
+                                self.env.user.name, self.name, self.ref)
+                self.send_email(grp_name, subject, msg)
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            raise UserError('ERP while communicating with selfcare (Update Customer Endpoint) has encountered the following error: %s' % (e))
+
+
+    def action_delete_customer_selfcare(self):
+        if not self.customer_rank:
+            raise UserError('This is to be applied to customers only')
+        payload = {
+            'username': self.ref,
+            'key': 1899,
+        }
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/delete-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                raise UserError(response.text)
+            else:
+                # send email
+                grp_name = 'fibernet.group_receive_push_selfcare_customer_email'
+                subject = 'Existing Customer (%s) with client ID: %s has been deleted from ERP and Self Care by %s' % (self.name,self.ref,self.env.user.name)
+                msg = _('%s has deleted the Customer (%s) with client ID: %s in ERP and in Selfcare Service') % (
+                                self.env.user.name, self.name, self.ref)
+                self.send_email(grp_name, subject, msg)
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            raise UserError('ERP while communicating with selfcare (Delete Customer Endpoint) has encountered the following error: %s' % (e))
 
 
     def btn_push_customer_selfcare(self):
         self.action_create_customer_selfcare()
 
+    def write(self,vals):
+        res = super(ResPartnerExtend, self).write(vals)
+        if self.selfcare_push :
+            self.action_update_customer_selfcare()
+        return res
 
-    firstname = fields.Char(string='First Name')
-    lastname = fields.Char(string='Last Name')
+    def unlink(self):
+        for rec in self:
+            if rec.selfcare_push:
+                rec.action_delete_customer_selfcare()
+        return super(ResPartnerExtend, self).unlink()
+
+
+
     product_id = fields.Many2one('product.product', string='Package',tracking=True)
     amount = fields.Float(string='Package Amount')
     location_id = fields.Many2one('location',string='Location',tracking=True)

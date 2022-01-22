@@ -49,7 +49,7 @@
                         <h1>
                             <field name="ticket_id" readonly="1"/>
                         </h1>
-                        <h1><field name="name" placeholder="Subject..." attrs="{'readonly': [('state', 'not in', ('draft', 'new'))]}"  /></h1>
+                        <h1><field name="name" placeholder="Subject..." attrs="{'readonly': [('state', 'not in', ('draft'))]}"  /></h1>
                     </div>
                     <group>
                         <group>
@@ -58,7 +58,7 @@
                             <field name="category_id"  options="{'no_open': True, 'no_create': True}"  string="Category" attrs="{'readonly': [('state', 'not in', ('draft', 'new'))]}"  />
                              <field name="user_ticket_group_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'not in', ('draft', 'new', 'progress'))]}"  />
                             <field name="assigned_date" readonly="1"  />
-                            <field name="expected_finish_date"  attrs="{'readonly': [('state', 'not in', ('draft', 'new', 'progress'))]}"  />
+                            <field name="expected_finish_date"  attrs="{'readonly': [('state', 'not in', ('draft'))]}"  />
                             <field name="done_ticket_date" readonly="1" />
                             <field name="duration" />
                             <field name="ticket_company_id" options="{'no_open': True, 'no_create': True}" readonly="1" />

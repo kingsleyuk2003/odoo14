@@ -201,21 +201,21 @@
             <field name="model" >res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
-                <xpath expr="//sheet" position="before">
-                    <header>
-                         <button name="btn_push_customer_selfcare" type="object"  string="Re-Push Selfcare Customer"   groups="fibernet.group_push_selfcare_customer" />
-                    </header>
-                 </xpath>
+<!--                <xpath expr="//sheet" position="before">-->
+<!--                    <header>-->
+<!--                         <button name="btn_push_customer_selfcare" type="object"  string="Re-Push Selfcare Customer"   groups="fibernet.group_push_selfcare_customer" />-->
+<!--                    </header>-->
+<!--                 </xpath>-->
                 <field name="parent_id" position="attributes" >
+                    <attribute name="invisible" >True</attribute>
+                </field>
+                <field name="company_type" position="attributes" >
                     <attribute name="invisible" >True</attribute>
                 </field>
                 <field name="type" position="attributes" >
                     <attribute name="invisible" >True</attribute>
                 </field>
-                <field name="type" position="before" >
-                        <field name="firstname"  attrs="{'invisible': [('company_type', '!=', 'person')], 'required': [('company_type', '=', 'person')]  }"  />
-                        <field name="lastname" attrs="{'invisible': [('company_type', '!=', 'person')], 'required': [('company_type', '==', 'person')] }"    />
-                  </field>
+
                 <xpath expr="//page[@name='sales_purchases']//field[@name='user_id']"  position="attributes" >
                     <attribute name="groups" >fibernet.group_show_sales_person</attribute>
                 </xpath>
@@ -350,6 +350,14 @@
                     </button>
                  </div>
 
+                <field  position="attributes"  name="date_order" nolabel="1" groups="base.group_no_one" attrs="{'invisible': [('state', 'in', ['sale', 'done', 'cancel'])]}" >
+                    <attribute name="invisible" >1</attribute>
+                </field>
+
+                 <field position="attributes"  name="date_order" attrs="{'required': [('state', 'in', ['sale', 'done'])], 'invisible': [('state', 'in', ['draft', 'sent'])]}" nolabel="1" >
+                      <attribute name="invisible" >1</attribute>
+                 </field>
+
                   <button name="preview_sale_order" position="attributes" >
                       <attribute name="invisible" >True</attribute>
                   </button>
@@ -358,9 +366,6 @@
                       <attribute name="invisible" >1</attribute>
                  </field>
 
-                <field name="date_order" position="attributes" >
-                      <attribute name="nolabel" >0</attribute>
-                 </field>
 
                 <field name="payment_term_id" position="attributes" >
                     <attribute name="invisible" >1</attribute>
@@ -369,6 +374,7 @@
                   <page  name="other_information" position="attributes" >
                     <attribute name="invisible" >1</attribute>
                 </page>
+
 
 
                  <button name="action_cancel" position="before" >

@@ -10,7 +10,7 @@
                     <p>Please the following information to post the payment received from the customer</p>
                     <group>
                         <group col="2" >
-                            <field name="is_paid_deferred" widget="radio" required="1"  readonly="1"  />
+                            <field name="is_paid_deferred" widget="radio" required="1"   />
                         </group>
                         <group col="2" >
                             <field name="total_amount_paid" readonly="1" />

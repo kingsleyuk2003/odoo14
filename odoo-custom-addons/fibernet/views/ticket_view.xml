@@ -82,13 +82,13 @@
                  <field name="user_ticket_group_id"  position="after" >
                       <field name="user_intg_ticket_group_id" options="{'no_open': True, 'no_create': True}" readonly="1" />
                      <field name="initiator_ticket_group_id" options="{'no_open': True, 'no_create': True}" required="1" readonly="1" />
-
                  </field>
-
 
 
                  <field name="user_ticket_group_id" position="attributes" >
                     <attribute name="required" >1</attribute>
+                     <attribute name="readonly" >1</attribute>
+                     <attribute name="force_save" >1</attribute>
                 </field>
 
                 <field name="name" position="before" >
@@ -152,14 +152,13 @@
                     <page string="Activation Form" attrs="{'invisible': [('category_code', '!=', 'installation' )]}" >
                         <group col="4" >
                               <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                               <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                             <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                              <field name="olt_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                            <field name="gpon_level"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                         <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be diapproved -->
+                            <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                           <field name="gpon_level" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
+                         <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
                           <field name="wifi_ssid"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="expiration_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
                             <field name="splitter_box_code"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -285,7 +284,7 @@
                          </group>
                     </page>
 
-                    <page name="cust_details"  string="Customer Details" >
+                    <page name="cust_details"  string="Customer Details"  groups="fibernet.group_helpdesk_show_customer_other_tabs" >
                             <group col="4" >
 
                                   <field name="cust_name" />
@@ -322,7 +321,7 @@
                   </page>
 
 
-                    <page  string="Other Information" >
+                    <page  string="Other Information" groups="fibernet.group_helpdesk_show_customer_other_tabs" >
                         <group  >
                              <group string="Ticket Opener" >
                                 <field name="opener_disapprove_msg" readonly="1"  />
@@ -594,7 +593,6 @@
                               <field name="name" />
                         </group>
                     </sheet>
-
                 </form>
             </field>
           </record>

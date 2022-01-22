@@ -1082,12 +1082,20 @@ class Ticket(models.Model):
             if not self.ip_address:
                 raise UserError(_('Please set the Customer IP Address in the Activation Form Tab below'))
 
+            if not self.gpon_level:
+                raise UserError(_('Please set the GPON Port in the Activation Form Tab below'))
+
             if not self.expiration_date :
                 raise UserError('Please set the expiration date for this service in the activation tab below')
 
             #push new customer to selfcare
             if not self.order_id :
                 raise UserError('No Sales Order for this Ticket')
+
+            if self.order_id.amount_balance:
+                raise UserError('%s has a balance of %s%s, to pay before his account can be activated. Please contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket '% (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance, self.order_id.name))
+
+
             self.partner_id.amount = self.order_id.amount_total
             self.partner_id.action_create_customer_selfcare()
 
@@ -1096,8 +1104,8 @@ class Ticket(models.Model):
             # Send email to the customer after activation from NOC for the installation ticket
             user_names = ''
             if self.partner_id and self.partner_id.email:
-                msg = '<p>Dear %s, (ID %s) </p> <p>We, at Fibernet, are honored to have you as one of our reputable customers. </p> <p> Your account has been activated and we are confident that you will be very satisfied with our services. Find below details of your service portal login from which you can manage your account.</p> <p> Client ID: %s <br/> Service Plan: %s </p>   <p>You can manage your service via the platform below;<br/>Fibernet Self-service Portal - <a href= https://selfcare.fibernet.ng/ > https://selfcare.fibernet.ng/</a> <br/>Username : <br/>Password :  </p> <p><b>Contact Us</b><br/>You can contact our customer service center via the following platforms. <ul><li> Email: csc@fibernet.ng,support@fibernet.ng</li><li>Phone:+2349083301363 </li><li>Whatsapp: +2349071011409</li><li>Website online chat via: <a href= http://www.fibernet.ng > http://www.fibernet.ng</a>  </li></ul> </p> <p><b>Service Renewal:</b><br/>You can renew your service via our automated platform.<br/> Fibernet Self-care Portal - <a href= https://selfcare.fibernet.ng/ > https://selfcare.fibernet.ng/</a></p> <p> Thank you again for your business.</p> <p> Sincerely, </p> <p><b> Customer Service Center </b> </p>' % (
-                    self.partner_id.name, self.ref, self.ref, self.product_id.name)
+                msg = '<p>Dear %s, (ID %s) </p> <p>We, at Fibernet, are honored to have you as one of our reputable customers. </p> <p> Your account has been activated and we are confident that you will be very satisfied with our services. Find below details of your service portal login from which you can manage your account.</p> <p> Client ID: %s <br/> Service Plan: %s </p>   <p>You can manage your service via the platform below;<br/>Fibernet Self-service Portal - <a href= https://selfcare.fibernet.ng/ > https://selfcare.fibernet.ng/</a> <br/>Username : %s<br/>Password : %s</p> <p><b>Contact Us</b><br/>You can contact our customer service center via the following platforms. <ul><li> Email: csc@fibernet.ng,support@fibernet.ng</li><li>Phone:+2349083301363 </li><li>Whatsapp: +2349071011409</li><li>Website online chat via: <a href= http://www.fibernet.ng > http://www.fibernet.ng</a>  </li></ul> </p> <p><b>Service Renewal:</b><br/>You can renew your service via our automated platform.<br/> Fibernet Self-care Portal - <a href= https://selfcare.fibernet.ng/ > https://selfcare.fibernet.ng/</a></p> <p> Thank you again for your business.</p> <p> Sincerely, </p> <p><b> Customer Service Center </b> </p>' % (
+                    self.partner_id.name, self.partner_id.ref, self.partner_id.ref, self.product_id.name, self.partner_id.ref, self.partner_id.ref)
                 mail_obj = self.message_post(body=_(msg), subject='%s - Welcome to Fibernet Broadband' % (self.partner_id.name),
                                              partner_ids=[self.partner_id.id], subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += self.partner_id.name + ", "
