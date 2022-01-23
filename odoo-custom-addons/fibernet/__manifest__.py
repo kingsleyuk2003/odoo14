@@ -14,7 +14,7 @@ Fibernet Modifications
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-     'depends': ['base','sale','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others'],
+     'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others'],
     'data': [
         'data/data.xml',
         'security/security.xml',
