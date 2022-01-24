@@ -25,20 +25,20 @@ class CreatePaymentEntry(models.TransientModel):
                 if len(sale_order.ticket_ids) == 0:
                     sale_order.create_ticket_with_email()
                 sale_order.state = 'sale'
+                sale_order.send_email_to_sales_person()
             elif sale_order.total_amount_paid > sale_order.amount_total :
                 raise UserError('Total Amount paid is greater than Sales Amount')
             elif sale_order.total_amount_paid <= 0 :
                 raise UserError('Amount paid is less than or equal to Zero ')
-            sale_order.send_email_to_sales_person()
             if self.is_send_receipt :
                 return res.action_receipt_plain_sent_no_logging_no_button_document()
         elif is_paid_deferred == 'deferred' :
             if sale_order.amount_balance != 0 :
                 raise UserError('Sorry, you cannot register a deferred installation payment for this sales order, since some initial payment(s) have been received. You can rather cancel this order and re-approve to register a deferred payment ')
             sale_order.is_deferred_payment = True
-            sale_order.state = 'so_to_approve'
             if len(sale_order.ticket_ids) == 0:
                 sale_order.create_ticket_with_email()
+            sale_order.state = 'so_to_approve'
         else:
             raise UserError('Please indicate if the payment is deferred or paid')
         return True
