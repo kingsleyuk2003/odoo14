@@ -460,7 +460,6 @@
                 <xpath expr="//kanban/field[@name='tax_id']"  position="attributes">
                      <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
                 </xpath>
-
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
                 </field>
