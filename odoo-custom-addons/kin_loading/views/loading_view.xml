@@ -45,11 +45,11 @@
                 <form string="Loading Programme" >
                     <header>
                         <button name="action_confirm" type="object" states="draft" string="Confirm" class="oe_highlight" groups="kin_loading.group_depot_officer" />
-                        <button name="action_dm_approve" type="object" states="confirm" string="Depot Manager Approve" class="oe_highlight" groups="kin_loading.group_depot_officer" />
-                        <button name="%(action_depot_manager_disapproval_reason)d" type="action" states="confirm" string="Depot Manager Dis-Approve" groups="kin_loading.group_depot_officer" />
-                        <button name="action_cancel" states="confirm,dm_approve" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
+                        <button name="action_approve" type="object" states="confirm" string="Approve" class="oe_highlight" groups="kin_loading.group_depot_manager" />
+                        <button name="%(action_disapproval_reason)d" type="action" states="confirm" string="Dis-Approve" groups="kin_loading.group_depot_manager" />
+                        <button name="action_cancel" states="confirm,approve" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
                         <button name="action_draft" states="cancel" type="object" string="Reset to Draft"  />
-                        <button name="%(action_loading_programme_wizard)d" type="action" states="dm_approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_depot_officer" />
+                        <button name="%(action_loading_programme_wizard)d" type="action" states="approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_depot_officer,kin_loading.group_depot_manager" />
                         <field name="state" widget="statusbar"  />
                     </header>
                     <sheet>
@@ -66,44 +66,28 @@
                                 <field name="ticket_ids" attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('lp_ids','=',False)]">
                                     <tree string="Loading Tickets" editable="bottom"  >
                                         <field name="ticket_id" readonly="1"  />
-                                        <field name="truck_no" />
+                                        <field name="partner_id" string="Customer" readonly="1" />
                                         <field name="product_id" readonly="1"  />
-                                        <field name="ticket_load_qty" readonly="1" />
-                                        <field name="partner_id" readonly="1" />
+                                        <field name="ticket_load_qty" readonly="1" sum="Total" />
+                                         <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                                         <field name="receiving_station_address"  invisible="1"  />
                                         <field name="location_addr_id"   />
-                                        <field name="dpr_state"  />
-                                        <field name="station_code"  />
                                         <field name="dpr_no"   />
                                         <field name="dpr_status" readonly="0" />
-                                        <field name="state"  />
+                                         <field name="truck_no" />
                                     </tree>
                                 </field>
                             </page>
                              <page string="Approvals/Dates"  >
                                  <group col="4"  >
-                                     <field name="dispatch_officer_id" readonly="1" />
-                                     <field name="dispatch_officer_date" readonly="1" />
-                                     <field name="operation_manager_id" readonly="1" />
-                                     <field name="operation_manager_date" readonly="1" />
-                                     <field name="dpr_officer_id" readonly="1" />
-                                     <field name="dpr_officer_date" readonly="1" />
+                                     <field name="depot_officer_id" readonly="1" />
+                                     <field name="depot_officer_date" readonly="1" />
                                      <field name="depot_manager_id" readonly="1" />
                                      <field name="depot_manager_date" readonly="1" />
                                  </group>
                              </page>
                              <page string="Dis-Approvals/Dates/Reasons"  >
                                  <group col="4"  >
-                                     <group col="2" string="Operations Manager" >
-                                         <field name="operation_manager_disapprove_id" readonly="1" />
-                                         <field name="operation_manager_disapprove_date" readonly="1" />
-                                         <field name="operation_manager_reason" readonly="1" />
-                                     </group>
-                                     <group col="2" string="DPR" >
-                                          <field name="dpr_officer_disapprove_id" readonly="1" />
-                                          <field name="dpr_officer_disapprove_date" readonly="1" />
-                                         <field name="dpr_officer_reason" readonly="1" />
-                                     </group>
                                      <group col="2" string="Depot Manager" >
                                          <field name="depot_manager_disapprove_id" readonly="1" />
                                          <field name="depot_manager_disapprove_date" readonly="1" />
@@ -619,15 +603,6 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Other Checks">
-                            <group>
-
-
-                            <field name="move_line_nosuggest_ids" />
-    <field name="move_line_ids_without_package" />
-                            <field name="move_ids_without_package"  />
-                             </group>
-                        </page>
                       <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                        <field name="is_loading_ticket"   invisible="1" />
                           <group col="4" string="Ticket and WayBill Details"  >
@@ -638,8 +613,6 @@
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
-                            <field name="dpr_state"  />
-                             <field name="station_code"  />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
@@ -707,7 +680,7 @@
 
                         </group>
                         <group col="4"  string="Approvals and Date" >
-                             <field name="dispatch_officer_id" />
+                             <field name="depot_officer_id" />
                              <field name="dispatch_date" />
                             <field name="driver_id" />
                             <field name="supervisor_officer_id" />
@@ -730,21 +703,21 @@
          <record id="vpicktree_depot" model="ir.ui.view">
             <field name="name">stock.picking.tree.depot</field>
             <field name="model">stock.picking</field>
-            <field name="arch" type="xml">
-                <!--                decoration-danger="state not in ('cancel', 'done') and scheduled_date &lt; current_date"-->
-                <tree decoration-info="state == 'draft'" decoration-muted="state == 'cancel'" string="Picking list">
-                     <field name="ticket_id" />
+            <field name="arch" type="xml" >
+                <tree create="0"  string="Picking list">
+                    <header>
+                         <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight"  type="object" groups="kin_loading.group_show_ticket_print_button"  />
+                    </header>
+                    <field name="ticket_id" />
 <!--                    <field name="name"/>-->
 <!--                    <field name="location_dest_id"/>-->
-                    <field name="partner_id"/>
+                    <field name="partner_id" />
                     <field name="waybill_no" />
                     <field name="product_id"  />
                     <field name="ticket_load_qty"  />
                     <field name="date" invisible="1"/>
-<!--                    <field name="scheduled_date"/>-->
                     <field name="origin"/>
                     <field name="group_id" invisible="1"/>
-                    <field name="backorder_id"/>
                     <field name="state"/>
                     <field name="priority" invisible="1"/>
                     <field name="picking_type_id" invisible="1"/>
@@ -839,8 +812,6 @@
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
-                            <field name="dpr_state"  />
-                             <field name="station_code"  />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
@@ -908,7 +879,7 @@
 
                         </group>
                         <group col="4"  string="Approvals and Date" >
-                             <field name="dispatch_officer_id" />
+                             <field name="depot_officer_id" />
                              <field name="dispatch_date" />
                             <field name="driver_id" />
                             <field name="supervisor_officer_id" />
@@ -1157,8 +1128,6 @@
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
-                            <field name="dpr_state"  />
-                             <field name="station_code"  />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                             <field name="dpr_status" readonly="0" />
                             <field name="dpr_no" />
@@ -1224,7 +1193,7 @@
                             <field name="is_retail_station_ticket" readonly="1" />
                         </group>
                         <group col="4"  string="Approvals and Date" >
-                             <field name="dispatch_officer_id" />
+                             <field name="depot_officer_id" />
                              <field name="dispatch_date" />
                             <field name="driver_id" />
                             <field name="supervisor_officer_id" />
@@ -1696,9 +1665,6 @@
                         <group col="4">
                             <field name="customer_id" required="1" />
                             <field name="address" required="1" />
-                            <field name="location" required="1" />
-                            <field name="dpr_state"  />
-                             <field name="station_code"  />
                             <field name="dpr_no" required="1" />
                             <field name="dpr_expiry_date" />
                         </group>
@@ -1714,9 +1680,6 @@
                 <tree string="DRP Information " >
                     <field name="customer_id" />
                     <field name="address" />
-                    <field name="location" />
-                    <field name="dpr_state" />
-                    <field name="station_code"  />
                     <field name="dpr_no" />
                     <field name="dpr_expiry_date" />
                 </tree>
@@ -1766,10 +1729,7 @@
                              <field name="dpr_info_ids"  >
                                  <tree editable="bottom" >
                                     <field name="address" required="1" />
-                                    <field name="location" required="1" />
                                     <field name="dpr_no" required="1" />
-                                     <field name="dpr_state"  />
-                                     <field name="station_code"  />
                                     <field name="dpr_expiry_date" />
                                 </tree>
                              </field>

@@ -35,6 +35,44 @@ class StockLocation(models.Model):
 class StockMoveLoading(models.Model):
     _inherit = 'stock.move'
 
+    def _prepare_move_line_vals(self, quantity=None, reserved_quant=None):
+        self.ensure_one()
+        # apply putaway
+        location_dest_id = self.location_dest_id._get_putaway_strategy(self.product_id).id or self.location_dest_id.id
+        vals = {
+            'move_id': self.id,
+            'product_id': self.product_id.id,
+            'product_uom_id': self.product_uom.id,
+            'location_id': self.location_id.id,
+            'location_dest_id': location_dest_id,
+            'picking_id': self.picking_id.id,
+            'company_id': self.company_id.id,
+        }
+
+        if self.picking_id.is_loading_ticket == True:
+            vals['qty_done'] = self.picking_id.ticket_load_qty
+
+        if quantity:
+            rounding = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+            uom_quantity = self.product_id.uom_id._compute_quantity(quantity, self.product_uom,
+                                                                    rounding_method='HALF-UP')
+            uom_quantity = float_round(uom_quantity, precision_digits=rounding)
+            uom_quantity_back_to_product_uom = self.product_uom._compute_quantity(uom_quantity, self.product_id.uom_id,
+                                                                                  rounding_method='HALF-UP')
+            if float_compare(quantity, uom_quantity_back_to_product_uom, precision_digits=rounding) == 0:
+                vals = dict(vals, product_uom_qty=uom_quantity)
+            else:
+                vals = dict(vals, product_uom_qty=quantity, product_uom_id=self.product_id.uom_id.id)
+        if reserved_quant:
+            vals = dict(
+                vals,
+                location_id=reserved_quant.location_id.id,
+                lot_id=reserved_quant.lot_id.id or False,
+                package_id=reserved_quant.package_id.id or False,
+                owner_id=reserved_quant.owner_id.id or False,
+            )
+        return vals
+
     def _assign_picking(self):
         """ Try to assign the moves to an existing picking that has not been
         reserved yet and has the same procurement group, locations and picking
@@ -86,6 +124,7 @@ class StockMoveLoading(models.Model):
             vals['location_id'] = location_id
         if location_dest_id :
             vals['location_dest_id'] = location_dest_id
+
         res = super(StockMoveLoading,self).create(vals)
         return res
 
@@ -124,8 +163,6 @@ class StockMoveLoading(models.Model):
 
     throughput_receipt_movement_id = fields.Many2one('kin.throughput.receipt', string="Throughput Receipt Movement", readonly=True)
     throughput_so_transfer_movement_id = fields.Many2one('sale.order', string="Throughput Sales Order Transfer", readonly=True)
-
-
 
 
 class StockPickingExtend(models.Model):
@@ -253,6 +290,14 @@ class StockPickingExtend(models.Model):
         ctx = dict(self.env.context)
         ctx.pop('default_immediate_transfer', None)
         self = self.with_context(ctx)
+
+        #check if the loading programme is done
+        if self.is_loading_ticket == True:
+            if not self.picking_id.loading_programme_id:
+                raise UserError('Sorry, Wait for the Ticket to be Programmed before you can dispatch the goods')
+            if self.picking_id.loading_programme_id.state != 'approve':
+                raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.picking_id.loading_programme_id.state))
+
 
         # Sanity checks.
         pickings_without_moves = self.browse()
@@ -837,7 +882,7 @@ class StockPickingExtend(models.Model):
         if self.source_depot_type_id.is_throughput_parent_view and not is_other_sale and self.source_depot_type_id.is_depot_type and self.picking_type_code != 'incoming' and not self.is_throughput_ticket :
             raise UserError(_('Sorry, Throughput operation is not allowed in In Depot Operation, because it will lead to zero value posting for the stock movement'))
         if is_load_ticket_btn :
-            return
+            return True
         res = super(StockPickingExtend, self).action_assign()
         return res
 
@@ -848,8 +893,6 @@ class StockPickingExtend(models.Model):
             'receiving_station_address': dpr_info_id.address,
             'location_addr_id': dpr_info_id.location,
             'dpr_no': dpr_info_id.dpr_no,
-            'dpr_state' : dpr_info_id.dpr_state,
-            'station_code' : dpr_info_id.station_code,
         }
 
         # Using write() here does not work.  but direct assignments works, but not suitable,
@@ -887,13 +930,11 @@ class StockPickingExtend(models.Model):
     seal_no_top = fields.Char(string='Seal No. Top')
     seal_no_bottom  = fields.Char(string='Seal No. Bottom')
     is_water_content = fields.Boolean(string='Water Content')
-    dispatch_officer_id = fields.Many2one('res.users', string="Dispatch Officer's Name")
+    depot_officer_id = fields.Many2one('res.users', string="Dispatch Officer's Name")
     dispatch_date = fields.Date(string='Dispatch Date')
     supervisor_officer_id = fields.Many2one('res.users', string="Supervisor's Name")
     supervisor_date = fields.Date(string='Supervisor Date')
-    dpr_no = fields.Char(string='DPR No.')
-    dpr_state = fields.Char(string='State')
-    station_code = fields.Char(string='Station Code')
+    dpr_no = fields.Char(string='DPR License No.')
     loading_programme_id = fields.Many2one('loading.programme',string='Loading Programme',readonly=True)
     waybill_no = fields.Char('Waybill No.',readonly=True)
     # ref_no = fields.Char('Ref. No.')
@@ -951,7 +992,7 @@ class StockPickingExtend(models.Model):
     other_information = fields.Text(string = "Other Info.")
     is_loading_ticket_printed = fields.Boolean(string='Is loading Ticket Printed')
     is_waybill_printed = fields.Boolean(string='Is Waybill Printed')
-    dpr_info_id = fields.Many2one('dpr.info',string='Receiving Address')
+    dpr_info_id = fields.Many2one('dpr.info',string='Destination')
     dpr_status = fields.Selection(
         [('valid', 'Valid'),('expired', 'Expired'), ('renew','Under Renewal')],
          string='DPR Status',compute=_compute_dpr_info,store=True)
@@ -1114,85 +1155,15 @@ class LoadingProgramme(models.Model):
                               subject='A New Loading Programme has been Confirmed ', subtype_xmlid='mail.mt_comment', force_send=False)
 
         dispatch_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        return self.write({'state': 'confirm','dispatch_officer_id':self.env.user.id,'dispatch_officer_date':dispatch_officer_date})
+        return self.write({'state': 'confirm','depot_officer_id':self.env.user.id,'dispatch_officer_date':dispatch_officer_date})
 
 
     
-    def action_om_approve(self):
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_dpr_officer')
-        for user in group_obj.users:
-            user_ids.append(user.id)
-
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            self.message_post(_('A Loading Programme from %s has been Approved for %s. Please you are required to approve or reject the programme') % (
-                self.env.user.name, self.name),
-                              subject='A New Loading Programme has been Approved ', subtype_xmlid='mail.mt_comment', force_send=False)
-
-        operation_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        return self.write({'state': 'om_approve', 'operation_manager_id': self.env.user.id,
-                           'operation_manager_date': operation_manager_date})
 
 
-    
-    def action_om_disapprove(self,msg):
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_depot_manager')
-        for user in group_obj.users:
-            user_ids.append(user.id)
-
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            user = self.env.user
-            self.message_post(_(
-                'The Loading Programme (%s) has been DisApproved by %s. Reason for Disapproval: %s ') % (
-                self.name,user.name,msg),
-                              subject='The Loading Programme (%s) has been Dis-Approved by %s' % (self.name,user.name), subtype_xmlid='mail.mt_comment', force_send=False)
 
 
-        return self.write({'state': 'draft', 'operation_manager_disapprove_id': user.id,
-                           'operation_manager_disapprove_date': datetime.today(),'operation_manager_reason':msg})
-
-
-    
-    def action_dpr_approve(self):
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_depot_manager')
-        for user in group_obj.users:
-            user_ids.append(user.id)
-
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            self.message_post(_('A Loading Programme from %s has been Approved for %s. Please you are required to approve or reject the programme') % (
-                self.env.user.name, self.name),
-                              subject='A New Loading Programme has been Approved ', subtype_xmlid='mail.mt_comment', force_send=False)
-
-        dpr_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        return self.write({'state': 'dpr_approve', 'dpr_officer_id': self.env.user.id,
-                           'dpr_officer_date': dpr_officer_date})
-
-    
-    def action_dpr_disapprove(self, msg):
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_operation_manager')
-        for user in group_obj.users:
-            user_ids.append(user.id)
-
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            user = self.env.user
-            self.message_post(_(
-                'The Loading Programme (%s) has been DisApproved by %s. Reason for Disapproval: %s ') % (
-                                  self.name, user.name, msg),
-                              subject='The Loading Programme (%s) has been Dis-Approved by %s' % (self.name, user.name),
-                              subtype_xmlid='mail.mt_comment', force_send=False)
-
-        return self.write({'state': 'confirm', 'dpr_officer_disapprove_id': user.id,
-                           'dpr_officer_disapprove_date': datetime.today(), 'dpr_officer_reason': msg})
-
-    
-    def action_dm_approve(self):
+    def action_approve(self):
         self.check_blocked_tickets()
         user_ids = []
         group_obj = self.env.ref('kin_loading.group_safety_manager')
@@ -1207,7 +1178,7 @@ class LoadingProgramme(models.Model):
                               subject='A New Loading Programme has been Approved ', subtype_xmlid='mail.mt_comment', force_send=False)
 
         depot_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        res = self.write({'state': 'dm_approve', 'depot_manager_id': self.env.user.id,
+        res = self.write({'state': 'approve', 'depot_manager_id': self.env.user.id,
                            'depot_manager_date': depot_officer_date})
 
         self.create_truck_checklist()
@@ -1215,7 +1186,7 @@ class LoadingProgramme(models.Model):
 
 
     
-    def action_dm_disapprove(self, msg):
+    def action_disapprove(self, msg):
         user_ids = []
         group_obj = self.env.ref('kin_loading.group_dpr_officer')
         for user in group_obj.users:
@@ -1245,7 +1216,6 @@ class LoadingProgramme(models.Model):
             }
             res = truck_check_list_obj.create(vals)
 
-
             #Notify Safety Officers
             user_ids = []
             group_obj = self.env.ref('kin_loading.group_security_officer')
@@ -1258,9 +1228,6 @@ class LoadingProgramme(models.Model):
                     'A New Truck Check List from %s has been created for %s document. Please you can now work with it') % (
                                       self.env.user.name, res.name),
                                   subject='A New Truck Check List has been Created ', subtype_xmlid='mail.mt_comment', force_send=False)
-
-
-
 
     
     def action_view_truck_check_list(self):
@@ -1290,41 +1257,26 @@ class LoadingProgramme(models.Model):
         return result
 
 
-
     @api.model
     def create(self, vals):
         vals['name'] = self.env['ir.sequence'].next_by_code('loading_prog_id_code') or 'New'
         return super(LoadingProgramme, self).create(vals)
 
 
-
     name = fields.Char(string='Name')
     programme_date = fields.Datetime(string='Date and Time',default=fields.Datetime.now)
-    #programme_time = fields.Char('Time')
-    dispatch_officer_id = fields.Many2one('res.users',string='Dispatcher Officer')
-    dispatch_officer_date = fields.Datetime(string='Dispatcher Approval Date')
-    operation_manager_id = fields.Many2one('res.users', string='Operations Manager')
-    operation_manager_date = fields.Datetime(string='Operations Manager Approval Date')
-    dpr_officer_id = fields.Many2one('res.users', string='DPR Officer')
-    dpr_officer_date = fields.Datetime(string='DPR Approval Date')
+    depot_officer_id = fields.Many2one('res.users',string='Dispatcher Officer')
+    depot_officer_date = fields.Datetime(string='Depot office Confirmation Date')
     depot_manager_id = fields.Many2one('res.users', string='Depot Manager')
     depot_manager_date = fields.Datetime(string='Depot Manager Approval Date')
-
-    operation_manager_disapprove_id = fields.Many2one('res.users', string='Operations Manager')
-    operation_manager_disapprove_date = fields.Datetime(string='Operations Manager DisApproval Date')
-    operation_manager_reason = fields.Text('Operations Manager Reason')
-    dpr_officer_disapprove_id = fields.Many2one('res.users', string='DPR Officer')
-    dpr_officer_disapprove_date = fields.Datetime(string='DPR Disapproval Date')
-    dpr_officer_reason = fields.Text('DPR Reason')
     depot_manager_disapprove_id = fields.Many2one('res.users', string='Depot Manager')
     depot_manager_disapprove_date = fields.Datetime(string='Depot Manager DisApproval Date')
     depot_manager_reason = fields.Text('Depot Manager Reason')
     ticket_ids = fields.Many2many('stock.picking', 'lp_ticket',  'loading_prog_id', 'picking_id', string='Loading Program Lines', ondelete='restrict')
-
-
     state = fields.Selection(
-        [('draft', 'Draft'),('confirm', 'Dispatch Confirmed'), ('om_approve', 'Operations Manager Approved'), ('dpr_approve', 'DRP Approved'), ('dm_approve', 'Depot Manager Approved'), ('cancel','Cancel')],
+        [('draft', 'Draft'),('confirm', 'Confirmed'), ('approve', 'Approved'), ('cancel','Cancel')],
         default='draft')
+
 
 class LoadingProgrammeLines(models.Model):
     _name = 'loading.programme.lines'
@@ -2177,7 +2129,8 @@ class SaleOrderLoading(models.Model):
             'name': action.name,
             'help': action.help,
             'type': action.type,
-            'view_mode': action.view_mode,
+            'view_mode': 'tree',
+            'view_id': self.env.ref('kin_loading.vpicktree_depot').id,
             'target': 'new',
             'context': action.context,
             'res_model': action.res_model,
@@ -3098,6 +3051,7 @@ class SaleOrderLineLoading(models.Model):
                 line.product_id, product_qty, procurement_uom,
                 line.order_id.partner_shipping_id.property_stock_customer,
                 line.name, line.order_id.name, line.order_id.company_id, values))
+
         if procurements:
             self.env['procurement.group'].run(procurements)
         return True
@@ -3890,12 +3844,9 @@ class DRPInfo(models.Model):
     _description = 'DRP Information'
 
     customer_id = fields.Many2one('res.partner',string='Customer')
-    address = fields.Char(string='Receiving Address')
-    location = fields.Char(string='Location')
-    dpr_no = fields.Char('DPR No.')
+    address = fields.Char(string='Destination')
+    dpr_no = fields.Char('DPR License No.')
     dpr_expiry_date = fields.Date('DPR Expiry Date')
-    dpr_state = fields.Char(string='State')
-    station_code = fields.Char('Station Code')
     picking_ids = fields.One2many('stock.picking','dpr_info_id',string='Stock Pickings')
 
 

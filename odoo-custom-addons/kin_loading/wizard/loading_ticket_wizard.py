@@ -90,7 +90,7 @@ class LoadingTicketWizard(models.TransientModel):
                 sale_order.order_line[0]._compute_procurement_qty()
                 res = sale_order.with_context(ctx).action_create_loading_ticket()
         if res:
-            self.env.user.notify_info('LOADING TICKET(S) SUCESSFULLY CREATED')
+            self.env.user.notify_info('LOADING TICKET(S) SUCCESSFULLY CREATED')
             return sale_order.action_view_delivery()
         else:
             raise UserError(_(
