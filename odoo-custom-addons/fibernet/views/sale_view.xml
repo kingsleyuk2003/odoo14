@@ -431,6 +431,16 @@
                         <field name="amount_balance" readonly="1" />
                  </field>
 
+                <xpath expr="//form//field[@name='product_uom_qty']"  position="attributes">
+                     <attribute name="invisible" >1</attribute>
+                </xpath>
+                 <xpath expr="//tree/field[@name='product_uom_qty']"  position="attributes">
+                     <attribute name="invisible" >1</attribute>
+                </xpath>
+                <xpath expr="//kanban/field[@name='product_uom_qty']"  position="attributes">
+                      <attribute name="invisible" >1</attribute>
+                </xpath>
+
                  <xpath expr="//form//field[@name='company_id']"  position="after">
                     <field name="is_dedicated" invisible="1" />
                 </xpath>
@@ -442,13 +452,13 @@
                 </xpath>
 
                 <xpath expr="//form//field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'invisible': [('is_dedicated', '=', False)]}</attribute>
+                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
                 </xpath>
                  <xpath expr="//tree/field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'invisible': [('is_dedicated', '=', False)]}</attribute>
+                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
                 </xpath>
                 <xpath expr="//kanban/field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'invisible': [('is_dedicated', '=', False)]}</attribute>
+                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
                 </xpath>
 
                 <field name="sale_order_template_id"  position="attributes" >
