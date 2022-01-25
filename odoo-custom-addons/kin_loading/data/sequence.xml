@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<openerp>
+	<data>
+
+
+    <record model="ir.sequence" id="seq_loading_programme_id">
+        <field name="name">Loading Programme ID</field>
+        <field name="code">loading_programme_code</field>
+        <field name="prefix">LP/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+
+    <record model="ir.sequence" id="seq_waybill_id">
+        <field name="name">Waybill ID</field>
+        <field name="code">waybill_id</field>
+        <field name="prefix"></field>
+        <field name="padding">8</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+
+    <record model="ir.sequence" id="seq_kin_throughput_receipt_id">
+        <field name="name">Throughput Receipt ID</field>
+        <field name="code">thru_move_code</field>
+        <field name="prefix">TR</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+        <record model="ir.sequence" id="seq_kin_throughput_delivery_id">
+        <field name="name">Throughput Delivery ID</field>
+        <field name="code">thru_delv_code</field>
+        <field name="prefix">TP</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+      <record model="ir.sequence" id="seq_kin_internal_use_id">
+        <field name="name">Internal Use ID</field>
+        <field name="code">intu_code</field>
+        <field name="prefix">INTU</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+         <record model="ir.sequence" id="seq_kin_internal_use_delivery_id">
+        <field name="name">Internal Use Delivery ID</field>
+        <field name="code">intu_delv_code</field>
+        <field name="prefix">ITU</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
+
+
+	</data>
+</openerp>

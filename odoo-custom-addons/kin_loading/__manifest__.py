@@ -17,6 +17,7 @@ Loading Process for the Oil and Gas Industry
     'depends': ['base','mail','report_xlsx','account','sale', 'stock','kin_sales','kin_product','kin_stock','sale_stock'],
     'data': [
         'data/data.xml',
+        'data/sequence.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
         'wizard/loading_ticket_wizard_view.xml',

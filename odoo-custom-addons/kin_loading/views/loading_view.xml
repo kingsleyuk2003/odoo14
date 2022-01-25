@@ -25,7 +25,7 @@
         <menuitem id="menu_root_throughput_operation" name="Throughput Operations" parent="menu_root_dispatch_operation" sequence="4" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
         <menuitem id="menu_root_internal_use_operation" name="Internal Use Transfer Operations" parent="menu_root_dispatch_operation" sequence="5" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
 
-         <menuitem id="menu_root_atl" name="Authority to Load" parent="stock.menu_stock_config_settings" sequence="5" groups="group_depot_officer,group_depot_manager" />
+         <menuitem id="menu_root_atl" name="Authority to Load" parent="menu_depot_configuration" sequence="5" groups="group_depot_officer,group_depot_manager" />
          <menuitem name="Vessels" action="stock.action_production_lot_form" id="stock.menu_action_production_lot_form" parent="menu_root_atl" groups="stock.group_production_lot" sequence="0" />
 
         <!-- All Transfers -->
@@ -42,40 +42,59 @@
             <field name="name" >loading.programme.form</field>
             <field name="model">loading.programme</field>
             <field name="arch" type="xml" >
-                <form string="Loading Programme" >
+
+                <form string="Loading Programme" duplicate="0" >
                     <header>
                         <button name="action_confirm" type="object" states="draft" string="Confirm" class="oe_highlight" groups="kin_loading.group_depot_officer" />
                         <button name="action_approve" type="object" states="confirm" string="Approve" class="oe_highlight" groups="kin_loading.group_depot_manager" />
                         <button name="%(action_disapproval_reason)d" type="action" states="confirm" string="Dis-Approve" groups="kin_loading.group_depot_manager" />
                         <button name="action_cancel" states="confirm,approve" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
-                        <button name="action_draft" states="cancel" type="object" string="Reset to Draft"  />
+                        <button name="action_draft" states="confirm,approve,cancel" type="object" string="Reset to Draft" confirm="Are you sure you want to Reset the Loading Programme?" />
                         <button name="%(action_loading_programme_wizard)d" type="action" states="approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_depot_officer,kin_loading.group_depot_manager" />
                         <field name="state" widget="statusbar"  />
                     </header>
                     <sheet>
+                         <div class="oe_button_box" name="button_box">
+                             <button type="object"  name="btn_view_tickets" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('ticket_count', '=', 0)]}" >
+                                    <field name="ticket_count" widget="statinfo" string="Tickets"/>
+                            </button>
+                        </div>
                         <div class="oe_title">
                             <h1>
                                 <field name="name" readonly="1" />
                             </h1>
                         </div>
                         <group col="4" >
-                            <field name="programme_date" string="Date and Time" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
+                            <field name="programme_date" string="Date" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
+                             <field name="product_id"  domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  required="1"  attrs="{'readonly': [('state', '!=', 'draft')]}" options="{'no_open':True,'no_create':True}" />
                         </group>
                          <notebook>
                             <page string="Loading Tickets"  >
-                                <field name="ticket_ids" attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('lp_ids','=',False)]">
+                                <field name="ticket_ids" attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('product_id','=',product_id)]">
                                     <tree string="Loading Tickets" editable="bottom"  >
-                                        <field name="ticket_id" readonly="1"  />
+                                        <field name="ticket_id" readonly="1" string="Ticket No."  />
                                         <field name="partner_id" string="Customer" readonly="1" />
-                                        <field name="product_id" readonly="1"  />
-                                        <field name="ticket_load_qty" readonly="1" sum="Total" />
-                                         <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                                        <field name="receiving_station_address"  invisible="1"  />
-                                        <field name="location_addr_id"   />
-                                        <field name="dpr_no"   />
-                                        <field name="dpr_status" readonly="0" />
-                                         <field name="truck_no" />
+                                        <field name="product_id"  />
+                                        <field name="ticket_load_qty" string="Quantity" readonly="1" sum="Total" />
+                                          <field name="truck_no" />
+                                        <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
+                                          <field name="dpr_no" readonly="1"  force_save="1"   />
+                                        <field name="dpr_status" readonly="1"  force_save="1" />
+                                        <field string="Waybill Status" name="state" readonly="1" />
                                     </tree>
+                                    <form>
+                                        <group col="4">
+                                            <field name="ticket_id" readonly="1" string="Ticket No."  />
+                                            <field name="partner_id" string="Customer" readonly="1" />
+                                            <field name="product_id"  />
+                                            <field name="truck_no" />
+                                            <field name="ticket_load_qty" string="Quantity" readonly="1" sum="Total" />
+                                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
+                                            <field name="dpr_no" readonly="1"  force_save="1"   />
+                                            <field name="dpr_status" readonly="1"  force_save="1" />
+                                            <field string="Waybill Status" name="state" readonly="1" />
+                                        </group>
+                                    </form>
                                 </field>
                             </page>
                              <page string="Approvals/Dates"  >
@@ -136,6 +155,7 @@
             <field name="res_model">loading.programme</field>
             <field name="view_mode">tree,form</field>
             <field name="search_view_id" ref="view_loading_programme_filter"/>
+            <field name="context">{}</field>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
                 Click to add a Loading Programme
@@ -153,11 +173,9 @@
             <field name="model">sale.order</field>
             <field name="inherit_id" ref="sale.view_order_form" />
             <field name="arch" type="xml">
-
                 <xpath expr="//form" position="attributes" >
                     <attribute name="duplicate">0</attribute>
                 </xpath>
-
                 <div position="inside" name="button_box">
                      <button type="object"  name="btn_view_refund_invoice" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('ref_count', '=', 0)]}"  groups="account.group_account_user" >
                          <field name="ref_count" widget="statinfo" string="Refund Invoice"/>
@@ -180,7 +198,6 @@
                 <button name="action_cancel"  type="object"  position="attributes">
                      <attribute name="states">draft,sent,sale,so_to_approve,sale,no_sale,atl_awaiting_approval</attribute>
                  </button>
-
 
                  <button name="action_cancel"  position="before" >
                      <button name="action_atl_approval" states="atl_awaiting_approval" context="{'show_sale': True}"  string="Approve ATL" class="btn-primary" type="object" groups="kin_loading.group_show_approve_atl"   />
@@ -550,7 +567,7 @@
                 <form string="Transfer">
                 <header>
                     <button name="action_confirm" states="draft" string="Mark as Todo" type="object" class="oe_highlight" groups="base.group_user"/>
-                    <button name="action_assign" states="confirmed,waiting" string="Check Availability and Reserve" type="object" class="oe_highlight" groups="base.group_user"/>
+<!--                    <button name="action_assign" states="confirmed,waiting" string="Check Availability and Reserve" type="object" class="oe_highlight" groups="base.group_user"/>-->
 <!--                    <button name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="kin_stock.group_force_availability_button"/>-->
                     <button name="button_validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
 <!--                    <button name="do_print_picking" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>-->
@@ -614,8 +631,8 @@
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                            <field name="dpr_status" readonly="0" />
-                            <field name="dpr_no" />
+                            <field name="dpr_status" readonly="1"  force_save="1" />
+                            <field name="dpr_no" readonly="1"   force_save="1"/>
                             <field name="location_addr_id" />
                             <field name="customer_address" readonly="1" />
                             <field name="valid_driver_license" />
@@ -656,13 +673,13 @@
                         <group>
                             <field name="other_information" />
                         </group>
-
                     </page>
 
 
                     <page string="Ticket Status" attrs="{'invisible': [('is_loading_ticket', '=', True),('is_exdepot_ticket', '=', True),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                         <group col="4"  string="States" >
-                             <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
+                            <field name="is_loading_programme_approved" readonly="1" />
+                            <field name="is_loading_ticket_printed" groups="kin_loading.group_is_loading_ticket_printed" />
                             <field name="is_waybill_printed" groups="kin_loading.group_is_waybill_printed" />
                             <field name="is_block_ticket" readonly="1" />
                             <field name="block_reason" readonly="1" />
@@ -813,7 +830,7 @@
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                            <field name="dpr_status" readonly="0" />
+                            <field name="dpr_status" readonly="1" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
                             <field name="customer_address" readonly="1" />
@@ -1129,7 +1146,7 @@
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                            <field name="dpr_status" readonly="0" />
+                            <field name="dpr_status" readonly="1" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
                             <field name="customer_address" readonly="1" />

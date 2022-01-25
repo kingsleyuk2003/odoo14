@@ -6,8 +6,13 @@
             <field name="name">Depot Operations</field>
         </record>
 
-        <record id="group_depot_officer" model="res.groups">
-        <field name="name">Depot Officer</field>
+    <record id="group_dispatch_officer" model="res.groups">
+        <field name="name">Dispatch Officer</field>
+        <field name="category_id" ref="module_depot"/>
+    </record>
+
+   <record id="group_depot_officer" model="res.groups">
+        <field name="name">Depot/CSC Officer</field>
         <field name="category_id" ref="module_depot"/>
     </record>
 

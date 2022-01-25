@@ -1,8 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_loading_programme_depot_officer,loading.programme depot officer,model_loading_programme,group_depot_officer,1,1,1,0
 access_loading_programme_depot_manager,loading.programme depot manager,model_loading_programme,group_depot_manager,1,1,1,1
-access_loading_programme_lines_depot_officer,loading.programme.lines depot officer,model_loading_programme_lines,group_depot_officer,1,1,1,0
-access_loading_programme_lines_depot_manager,loading.programme.lines depot manager,model_loading_programme_lines,group_depot_manager,1,1,1,1
+access_loading_programme_disapproval_wizard_depot_manager,loading.programme.disapproval.wizard depot manager,model_loading_programme_disapproval_wizard,group_depot_manager,1,1,1,1
 access_kin_throughput_receipt_user,kin.throughput.receipt user,model_kin_throughput_receipt,group_throughput_receipt,1,1,1,1
 access_kin_internal_use_user,kin.internal.use user,model_kin_internal_use,group_internal_use,1,1,1,1
 access_loading_ticket_wizard_user,loading.ticket.wizard user,model_loading_ticket_wizard,group_show_create_loading_ticket,1,1,1,1

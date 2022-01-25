@@ -41,6 +41,65 @@
             <field name="model">stock.picking</field>
             <field name="inherit_id" ref="stock.view_picking_form"/>
             <field name="arch" type="xml">
+
+                 <button name="action_assign"  position="attributes" >
+                     <attribute name="groups" >kin_stock.group_check_availability_button</attribute>
+                 </button>
+
+                <button  name="action_confirm" attrs="{'invisible': [('show_mark_as_todo', '=', False)]}" type="object" class="oe_highlight" groups="base.group_user"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_todo_button</attribute>
+                 </button>
+
+                <button name="button_validate" attrs="{'invisible': ['|', ('state', 'in', ('waiting','confirmed')), ('show_validate', '=', False)]}" type="object" class="oe_highlight" groups="stock.group_stock_user" position="attributes" >
+                        <attribute name="groups" >kin_stock.group_stock_validate_button</attribute>
+                </button>
+                <button name="button_validate" attrs="{'invisible': ['|', ('state', 'not in', ('waiting', 'confirmed')), ('show_validate', '=', False)]}" type="object" groups="stock.group_stock_user" class="o_btn_validate" position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_validate_button</attribute>
+                </button>
+
+                 <widget name="signature"  highlight="1" attrs="{'invisible': ['|', '|', ('id', '=', False), ('picking_type_code', '!=', 'outgoing'), ('state', '!=', 'done')]}"
+                            full_name="partner_id" groups="stock.group_stock_sign_delivery" position="attributes">
+                         <attribute name="groups" >kin_stock.group_stock_signature_button</attribute>
+                 </widget>
+
+                <widget name="signature"  attrs="{'invisible': ['|', '|', ('id', '=', False), ('picking_type_code', '!=', 'outgoing'), ('state', '=', 'done')]}"
+                            full_name="partner_id" groups="stock.group_stock_sign_delivery"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_signature_button</attribute>
+                </widget>
+
+                <button name="do_print_picking" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}" position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_print_button</attribute>
+                </button>
+
+                <button name="%(stock.action_report_delivery)d"  attrs="{'invisible': [('state', '!=', 'done')]}" type="action" groups="base.group_user"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_print_button</attribute>
+                </button>
+
+                <button name="%(stock.act_stock_return_picking)d"  attrs="{'invisible': [('state', '!=', 'done')]}" type="action" groups="base.group_user" position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_return_button</attribute>
+                </button>
+
+                <button name="do_unreserve" groups="base.group_user" type="object" attrs="{'invisible': ['|', '|', '|', ('picking_type_code', '=', 'incoming'), ('immediate_transfer', '=', True), '&amp;', ('state', 'not in', ('assigned', 'partially_available')), ('move_type', '!=', 'one'), '&amp;', ('state', 'not in', ('assigned', 'partially_available', 'confirmed')), ('move_type', '=', 'one')]}"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_unreserve_button</attribute>
+                </button>
+
+                <button name="button_scrap" type="object"  attrs="{'invisible': ['|', '&amp;', ('picking_type_code', '=', 'incoming'), ('state', '!=', 'done'), '&amp;', ('picking_type_code', '=', 'outgoing'), ('state', '=', 'done')]}"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_scrapped_button</attribute>
+                </button>
+
+               <button name="action_toggle_is_locked" attrs="{'invisible': ['|', ('state', 'in', ('draft','cancel')), ('is_locked', '=', False)]}"  groups="stock.group_stock_manager" type="object"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_unlock_button</attribute>
+                </button>
+
+                 <button name="action_toggle_is_locked" attrs="{'invisible': [('is_locked', '=', True)]}" groups="stock.group_stock_manager" type="object"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_unlock_button</attribute>
+                </button>
+
+               <button name="action_cancel" attrs="{'invisible': [('state', 'not in', ('assigned', 'confirmed', 'partially_available', 'draft', 'waiting'))]}"  groups="base.group_user" type="object"  position="attributes" >
+                    <attribute name="groups" >kin_stock.group_stock_cancel_button</attribute>
+                </button>
+
+
                  <div name="button_box" position="inside">
                      <button type="object"  name="btn_view_invoices" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('invoice_count', '=', 0)]}" >
                             <field name="invoice_count" widget="statinfo" string="Invoices"/>

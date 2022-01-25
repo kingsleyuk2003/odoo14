@@ -293,9 +293,9 @@ class StockPickingExtend(models.Model):
 
         #check if the loading programme is done
         if self.is_loading_ticket == True:
-            if not self.picking_id.loading_programme_id:
+            if not self.loading_programme_id:
                 raise UserError('Sorry, Wait for the Ticket to be Programmed before you can dispatch the goods')
-            if self.picking_id.loading_programme_id.state != 'approve':
+            if self.loading_programme_id.state != 'approve':
                 raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.picking_id.loading_programme_id.state))
 
 
@@ -873,7 +873,7 @@ class StockPickingExtend(models.Model):
 
 
 
-    
+
     def action_assign(self):
         is_other_sale = self.env.context.get('is_other_sale',False)
         is_load_ticket_btn = self.env.context.get('is_load_ticket_btn', False)
@@ -891,32 +891,31 @@ class StockPickingExtend(models.Model):
         dpr_info_id = self.dpr_info_id
         vals = {
             'receiving_station_address': dpr_info_id.address,
-            'location_addr_id': dpr_info_id.location,
             'dpr_no': dpr_info_id.dpr_no,
         }
+        if self.loading_programme_id:
+            programme_date = self.loading_programme_id.programme_date
+            if not programme_date:
+                raise UserError(
+                    'Please First Create a Loading Programme with a Programme Date, to check the DPR license date')
+
+            if self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date < programme_date:
+                vals['dpr_status'] = 'expired'
+            elif self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date >= programme_date:
+                vals['dpr_status'] = 'valid'
+            else:
+                vals['dpr_status'] = False
 
         # Using write() here does not work.  but direct assignments works, but not suitable,
         # Note that update() is different from Write(). Update(0 method updates on the front end. Similar to what return {'value':{}} does
         self.update(vals)
 
 
-    @api.depends('dpr_info_id')  # This does the work of @onchaage and also runs teh code body at the point of save(writing the record when store=True)
-    def _compute_dpr_info(self):
-        for rec in self:
-            if rec.loading_programme_id :
-                programme_date = rec.loading_programme_id.programme_date
-                if not programme_date:
-                    raise UserError('Please First Create a Loading Program with a Programme Date, to check the DPR license date')
-
-                if rec.dpr_info_id.dpr_expiry_date and rec.dpr_info_id.dpr_expiry_date < programme_date :
-                    rec.dpr_status = 'expired'
-                else:
-                    rec.dpr_status = 'valid'
-
     # ticket_no = fields.Char(string='Ticket No.')
+    is_loading_programme_approved = fields.Boolean(string='Is Loading programme Approved')
     authorization_form_no = fields.Char(string="Authorization Form No",readonly=True)
     product_id = fields.Many2one('product.product',string='Product',compute="_compute_ticket_param",store=True)
-    truck_no = fields.Char(string='Truck No')
+    truck_no = fields.Char(string='Truck No.')
     ticket_date = fields.Date(string='Ticket Date',default=fields.Datetime.now)
     # quantity_required = fields.Float('Quantity Required')
     # product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
@@ -971,8 +970,6 @@ class StockPickingExtend(models.Model):
     is_throughput_ticket = fields.Boolean('Throughput Ticket')
     is_internal_use_ticket = fields.Boolean('Internal Use Ticket')
     is_retail_station_ticket = fields.Boolean('Retail Station Ticket')
-    lp_ids = fields.Many2many('stock.picking', 'lp_ticket',  'picking_id','loading_prog_id',
-                              string='Loading Program Lines', ondelete='restrict')
     valid_driver_license = fields.Char(string="Valid Driver's License")
     receiving_station_address = fields.Char(string="Receiving Customer's Address")
     receiving_station_management = fields.Char(string="Receiving Station Manager")
@@ -995,7 +992,7 @@ class StockPickingExtend(models.Model):
     dpr_info_id = fields.Many2one('dpr.info',string='Destination')
     dpr_status = fields.Selection(
         [('valid', 'Valid'),('expired', 'Expired'), ('renew','Under Renewal')],
-         string='DPR Status',compute=_compute_dpr_info,store=True)
+         string='DPR Status')
 
 
 
@@ -1006,94 +1003,37 @@ class LoadingProgramme(models.Model):
     _inherit = ['mail.thread']
     _order = 'name desc'
 
-
-    # def carry_over_loading_ticket(self):
-    #     picking_obj = self.env['stock.picking']
-    #     pickings = picking_obj.search([("min_date", "!=", False), ('state', 'in', ('confirmed', 'assigned'))])
-
-    # 
-    # def action_generate(self):
-    #     picking_obj = self.env['stock.picking']
-    #     self.lp_ids.unlink()
-    #     pickings = picking_obj.search([("is_loading_ticket","=",True),("min_date","=",self.programme_date),('state','in',('confirmed','assigned')),('loading_programme_id','=',False)])
-    #
-    #     lines = []
-    #     for picking in pickings:
-    #         partner = picking.partner_id
-    #         product = picking.move_lines[0].product_id
-    #         lines += [(0, 0,{
-    #                     'customer_id': partner,
-    #                     'customer_address': partner.street,
-    #                     'location_addr_id':partner.state_id,
-    #                     'dpr_no':partner.dpr_no,
-    #                     'product_id': product,
-    #                     'product_uom':uom.uom_id,
-    #                     'quantity_required': picking.move_lines[0].product_uom_qty,
-    #                     'ticket_id': picking.id,
-    #                     'lp_id':self.id
-    #                             })
-    #                 ]
-    #         picking.loading_programme_id = self
-    #
-    #     #get carried over tickets
-    #     company = self.env.user.company_id
-    #     is_auto_carry_over = company.is_auto_carry_over
-    #
-    #     if is_auto_carry_over :
-    #         carry_over_date_interval = company.carry_over_date_interval or False
-    #         if carry_over_date_interval :
-    #             today = date.today()
-    #             comp_date = today + relativedelta(days=-carry_over_date_interval)
-    #
-    #             picking_carry_overs = picking_obj.search([("is_loading_ticket","=",True),("min_date", "<=", comp_date), ('state', 'not in', ['done','cancel'])])
-    #             for picking in picking_carry_overs:
-    #                 partner = picking.partner_id
-    #                 product = picking.move_lines[0].product_id
-    #                 lines += [(0, 0, {
-    #                         'customer_id': partner,
-    #                         'customer_address': partner.street,
-    #                         'location_addr_id': partner.state_id,
-    #                         'dpr_no': partner.dpr_no,
-    #                         'product_id': product,
-    #                         'product_uom': uom.uom_id,
-    #                         'quantity_required': picking.move_lines[0].product_uom_qty,
-    #                         'ticket_id': picking.id,
-    #                         'lp_id': self.id
-    #                     })
-    #                               ]
-    #                 picking.loading_programme_id = self
-    #
-    #
-    #     self.lp_ids = lines
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
-    
-    def action_draft(self):
-        programs = self.filtered(lambda s: s.state in ['cancel'])
-        programs.write({'state': 'draft'})
+    @api.onchange('product_id')
+    def _product_change(self):
+        if any(ticket.product_id != self.product_id for ticket in self.ticket_ids):
+            raise UserError(_("Kindly remove all the Non-%s tickets below") % (self.product_id.name))
 
     
     def unlink(self):
         for rec in self:
-            # Check The tests
-            tcl_lists = []
-            tcl_lines = rec.truck_check_list_ids
-            for tcl_line in tcl_lines:
-                if tcl_line.state != 'draft':
-                    tcl_lists.append(tcl_line.name)
-
-            if tcl_lists:
-                raise UserError(_(
-                    "The following truck check lists are no longer in draft state. Safety officer/manager has worked on the checklists. So this loading programme cannot be deleted: \n  %s") % (', '.join(tcl for tcl in tcl_lists)))
-
             for ticket in rec.ticket_ids:
-                ticket.lp_ids = False
+                ticket.is_loading_programme_approved = False
+            if rec.state == 'approve':
+                raise UserError('Sorry, you can not delete an approved loading programme. Howver, you can reset it to draft before deleting')
         return super(LoadingProgramme, self).unlink()
 
 
-    
-    def action_cancel(self):
 
+    def _perform_ticket_done_check(self):
         # check if the tickets for each line has been validated
         done_tickets = []
         lines = self.ticket_ids
@@ -1104,24 +1044,22 @@ class LoadingProgramme(models.Model):
         if done_tickets:
             raise UserError(_(
                 "The following ticket(s) in this programme are done already. So this loading programme cannot be cancelled: \n  %s") % (
-                                ', '.join(ticket for ticket in done_tickets)))
-
-        # Check The tests
-        tcl_lists = []
-        tcl_lines = self.truck_check_list_ids
-        for tcl_line in tcl_lines:
-            if tcl_line.state != 'draft':
-                tcl_lists.append(tcl_line.name)
-
-        if tcl_lists:
-            raise UserError(_(
-                "The following truck check lists are no longer in draft state. Safety officer/manager has worked on the checklists. Thus, this loading programme cannot be cancelled: \n  %s") % (
-                                ', '.join(tcl for tcl in tcl_lists)))
-        else:
-            tcl_lines.unlink()
-
-
+                                ', \n'.join(ticket for ticket in done_tickets)))
+    
+    def action_cancel(self):
+        self._perform_ticket_done_check()
+        for rec in self:
+            for ticket in rec.ticket_ids:
+                ticket.is_loading_programme_approved = False
         self.write({'state': 'cancel'})
+        return
+
+    def action_draft(self):
+        self._perform_ticket_done_check()
+        for rec in self:
+            for ticket in rec.ticket_ids:
+                ticket.is_loading_programme_approved = False
+        self.write({'state': 'draft'})
 
 
     def check_blocked_tickets(self):
@@ -1133,195 +1071,108 @@ class LoadingProgramme(models.Model):
     def action_confirm(self):
 
         if len(self.ticket_ids) <= 0 :
-            raise UserError("Please add tickets to Programme Lines")
+            raise UserError("Kindly add tickets to Programme Lines")
+
+        if any(not ticket.dpr_info_id for ticket in self.ticket_ids):
+            raise UserError('Kindly Set the Destination for each of the lines below')
 
         for line in self.ticket_ids:
+            if not line.dpr_status:
+                raise UserError('Check if the destination has been set or the DPR status field')
+
             if line.dpr_status == 'expired' :
-                raise UserError(_('Please ensure the DPR license for the receiving address on the ticket - %s is valid or under renewal status, before you can proceed.') % (line.name))
+                raise UserError(_('Please ensure the DPR license for the Destination on the ticket - %s is valid or under renewal status, before you can proceed.') % (line.name))
+
         self.check_blocked_tickets()
 
         for picking in self.ticket_ids :
             picking.loading_programme_id = self
 
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_operation_manager')
-        for user in group_obj.users:
-            user_ids.append(user.id)
+        # Notify User/depot manager
+        self.send_email(grp_name='kin_loading.group_depot_manager',
+                        subject='A New %s Loading Programme (%s) has been Confirmed by %s for %s' % (self.product_id.name,self.name, self.env.user.name,self.programme_date),
+                        msg='A New %s Loading Programme (%s) has been created and confirmed by %s for %s. Kindly approve the programme' % (self.product_id.name,self.name, self.env.user.name,self.programme_date))
 
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            self.message_post(_('A New Loading Programme from %s has been Confirmed for %s. Please you are required to approve or reject the programme') % (
-                self.env.user.name, self.name),
-                              subject='A New Loading Programme has been Confirmed ', subtype_xmlid='mail.mt_comment', force_send=False)
-
-        dispatch_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-        return self.write({'state': 'confirm','depot_officer_id':self.env.user.id,'dispatch_officer_date':dispatch_officer_date})
-
-
-    
-
-
+        depot_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        return self.write({'state': 'confirm','depot_officer_id':self.env.user.id,'depot_officer_date':depot_officer_date})
 
 
     def action_approve(self):
         self.check_blocked_tickets()
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_safety_manager')
-        for user in group_obj.users:
-            user_ids.append(user.id)
 
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            self.message_post(_(
-                'A Loading Programme from %s has been Approved for %s. Please you can now work with it') % (
-                                  self.env.user.name, self.name),
-                              subject='A New Loading Programme has been Approved ', subtype_xmlid='mail.mt_comment', force_send=False)
+        for ticket in self.ticket_ids:
+            ticket.is_loading_programme_approved = True
 
-        depot_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        # Notify Dispatch officers/Inventory users
+        self.send_email(grp_name='kin_loading.group_dispatch_officer',
+                        subject='A New %s Loading Programme (%s) has been finally approved by %s for %s' % (
+                        self.product_id.name, self.name, self.env.user.name, self.programme_date),
+                        msg='A New %s Loading Programme (%s) has been finally approved by %s for %s. Kindly proceed with the loading and dispatch of the goods for all the tickets in the programme' % (
+                        self.product_id.name, self.name, self.env.user.name, self.programme_date))
+
+        depot_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         res = self.write({'state': 'approve', 'depot_manager_id': self.env.user.id,
-                           'depot_manager_date': depot_officer_date})
+                           'depot_manager_date': depot_manager_date})
 
-        self.create_truck_checklist()
         return res
 
 
     
     def action_disapprove(self, msg):
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_dpr_officer')
-        for user in group_obj.users:
-            user_ids.append(user.id)
-
-            self.message_unsubscribe_users(user_ids=user_ids)
-            self.message_subscribe_users(user_ids=user_ids)
-            user = self.env.user
-            self.message_post(_(
-                'The Loading Programme (%s) has been DisApproved by %s. Reason for Disapproval: %s ') % (
-                                  self.name, user.name, msg),
-                              subject='The Loading Programme (%s) has been Dis-Approved by %s' % (
-                                  self.name, user.name), subtype_xmlid='mail.mt_comment', force_send=False)
-
-        return self.write({'state': 'om_approve', 'depot_manager_disapprove_id': user.id,
+        user = self.env.user
+        # Notify User/depot officer
+        self.send_email(grp_name='kin_loading.group_depot_officer',
+                        subject='The Loading Programme (%s) has been Dis-Approved by %s' % (
+                                  self.name, user.name),
+                        msg = 'The Loading Programme (%s) has been DisApproved by %s. Reason for Disapproval: %s ' % (
+                                  self.name, user.name, msg))
+        return self.write({'state': 'draft', 'depot_manager_disapprove_id': user.id,
                            'depot_manager_disapprove_date': datetime.today(), 'depot_manager_reason': msg})
-
-
-
-    def create_truck_checklist(self):
-        truck_check_list_obj = self.env['truck.check.list']
-        for line in self.ticket_ids:
-            vals = {
-                'loading_ticket_id':line.id,
-                'lp_id': self.id,
-                'truck_no' : line.truck_no,
-            }
-            res = truck_check_list_obj.create(vals)
-
-            #Notify Safety Officers
-            user_ids = []
-            group_obj = self.env.ref('kin_loading.group_security_officer')
-            for user in group_obj.users:
-                user_ids.append(user.id)
-                res.message_unsubscribe_users(user_ids=self.env.user.id)
-                res.message_unsubscribe_users(user_ids=user_ids)
-                res.message_subscribe_users(user_ids=user_ids)
-                res.message_post(_(
-                    'A New Truck Check List from %s has been created for %s document. Please you can now work with it') % (
-                                      self.env.user.name, res.name),
-                                  subject='A New Truck Check List has been Created ', subtype_xmlid='mail.mt_comment', force_send=False)
-
-    
-    def action_view_truck_check_list(self):
-        truck_check_list_ids = self.mapped('truck_check_list_ids')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('kin_loading.action_truck_check_list_form')
-        list_view_id = imd.xmlid_to_res_id('view_truck_check_list_tree')
-        form_view_id = imd.xmlid_to_res_id('view_truck_check_list_form')
-
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
-                      [False, 'calendar'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-        }
-        if len(truck_check_list_ids) > 1:
-            result['domain'] = "[('id','in',%s)]" % truck_check_list_ids.ids
-        elif len(truck_check_list_ids) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = truck_check_list_ids.ids[0]
-        else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
-
 
     @api.model
     def create(self, vals):
-        vals['name'] = self.env['ir.sequence'].next_by_code('loading_prog_id_code') or 'New'
+        vals['name'] = self.env['ir.sequence'].next_by_code('loading_programme_code') or 'New'
         return super(LoadingProgramme, self).create(vals)
 
 
+    def btn_view_tickets(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("kin_loading.action_depot_dispatch")
+        action['views'] = [
+            (self.env.ref('kin_loading.vpicktree_depot').id, 'tree'),
+        ]
+        action['context'] = self.env.context
+        ticket_ids = self.mapped('ticket_ids')
+        action['domain'] = [('id', 'in', ticket_ids.ids)]
+
+        if len(ticket_ids) > 1:
+            action['domain'] = [('id', 'in', ticket_ids.ids)]
+        elif len(ticket_ids) == 1:
+            action['views'] = [(self.env.ref('kin_loading.view_picking_depot_form').id, 'form'),]
+            action['res_id'] = ticket_ids.ids[0]
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
+
+    @api.depends('ticket_ids')
+    def _compute_ticket_count(self):
+        for rec in self:
+            rec.ticket_count = len(rec.ticket_ids)
+
     name = fields.Char(string='Name')
-    programme_date = fields.Datetime(string='Date and Time',default=fields.Datetime.now)
-    depot_officer_id = fields.Many2one('res.users',string='Dispatcher Officer')
-    depot_officer_date = fields.Datetime(string='Depot office Confirmation Date')
+    programme_date = fields.Date(string='Date',default=fields.Datetime.now)
+    product_id = fields.Many2one('product.product', string='Product')
+    depot_officer_id = fields.Many2one('res.users',string='Depot Officer')
+    depot_officer_date = fields.Datetime(string='Depot Officer Confirmation Date')
     depot_manager_id = fields.Many2one('res.users', string='Depot Manager')
     depot_manager_date = fields.Datetime(string='Depot Manager Approval Date')
     depot_manager_disapprove_id = fields.Many2one('res.users', string='Depot Manager')
     depot_manager_disapprove_date = fields.Datetime(string='Depot Manager DisApproval Date')
     depot_manager_reason = fields.Text('Depot Manager Reason')
     ticket_ids = fields.Many2many('stock.picking', 'lp_ticket',  'loading_prog_id', 'picking_id', string='Loading Program Lines', ondelete='restrict')
+    ticket_count = fields.Integer(compute="_compute_ticket_count", string='# of Tickets', copy=False, default=0)
     state = fields.Selection(
         [('draft', 'Draft'),('confirm', 'Confirmed'), ('approve', 'Approved'), ('cancel','Cancel')],
         default='draft')
-
-
-class LoadingProgrammeLines(models.Model):
-    _name = 'loading.programme.lines'
-    _description = "Loading Programme Lines"
-
-    @api.onchange('customer_id')
-    def _onchange_customer_id(self):
-        partner = self.customer_id
-        # Using write() here does not work.  but direct assignments works, but not suitable,
-        # Note that update() is different from Write(). Update(0 method updates on the front end. Similar to what return {'value':{}} does
-        self.update({
-            'customer_address': partner.street,
-            'location_addr_id': partner.state_id,
-
-        })
-
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        product_id = self.product_id
-        # Using write() here does not work.  but direct assignments works, but not suitable,
-        # Note that update() is different from Write(). Update(0 method updates on the front end. Similar to what return {'value':{}} does
-        self.update({
-            'product_uom': product_id.uom_id
-        })
-
-
-    
-    def unlink(self):
-        for lp_id in self:
-            if lp_id.ticket_id :
-                lp_id.ticket_id.loading_programme_id = False
-        return super(LoadingProgrammeLines, self).unlink()
-
-
-    sequence = fields.Integer(string='Sequence', default=10)
-    programme_date = fields.Datetime(related='lp_id.programme_date',string='Loading Programme Date')
-    customer_id = fields.Many2one('res.partner', "Customer's Name")
-    product_id = fields.Many2one('product.product', string='Product')
-    product_uom = fields.Many2one('uom.uom', string='Unit of Measure')
-    quantity_required = fields.Float('Quantity Required')
-    ticket_id = fields.Many2one('stock.picking',string='Loading Ticket',required=True)
-    customer_address = fields.Char( string='Address')
-    location_addr_id = fields.Many2one('res.country.state',  string="Location")
-    state = fields.Selection(related='ticket_id.state',string='State')
-    lp_id = fields.Many2one('loading.programme', string='Loading Programme')
 
 
 
