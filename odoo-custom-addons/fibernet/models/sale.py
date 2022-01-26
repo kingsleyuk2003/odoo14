@@ -81,7 +81,6 @@ class SaleOrderExtend(models.Model):
                         price = pricelist_price
 
                 data.update({
-                    'is_special_other_sme' : line.sale_order_template_id.is_special_other_sme,
                     'price_unit': line.amount,
                     'discount': discount,
                     'product_uom_qty': line.product_uom_qty,
@@ -465,11 +464,8 @@ class SaleOrderExtend(models.Model):
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
-   
-class SaleOrderLine(models.Model):
-    _inherit = 'sale.order.line'
-
     is_special_other_sme = fields.Boolean(string='Is Dedicated')
+
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"

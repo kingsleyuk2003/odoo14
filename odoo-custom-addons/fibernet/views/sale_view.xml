@@ -360,7 +360,7 @@
                  </field>
 
                   <button name="preview_sale_order" position="attributes" >
-                      <attribute name="invisible" >True</attribute>
+                      <attribute name="invisible" >1</attribute>
                   </button>
 
                  <field name="validity_date" position="attributes" >
@@ -442,25 +442,19 @@
                       <attribute name="invisible" >1</attribute>
                 </xpath>
 
-                 <xpath expr="//form//field[@name='company_id']"  position="after">
-                    <field name="is_special_other_sme" invisible="1" />
-                </xpath>
-                <xpath expr="//tree/field[@name='company_id']"  position="after">
-                    <field name="is_special_other_sme" invisible="1" />
-                </xpath>
-                <xpath expr="//kanban/field[@name='company_id']"  position="after">
-                    <field name="is_special_other_sme" invisible="1" />
-                </xpath>
+                 <field name="payment_term_id" position="after" >
+                       <field name="is_special_other_sme" invisible="1" />
+                 </field>
 
-                <xpath expr="//form//field[@name='order_line']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
-                </xpath>
-                 <xpath expr="//tree/field[@name='order_line']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
-                </xpath>
-                <xpath expr="//kanban/field[@name='order_line']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
-                </xpath>
+                 <field name="order_line" position="attributes" >
+                       <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
+                 </field>
+
+
+                <xpath expr="field[@name='order_line']//form"  position="replace" />
+
+
+
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
                 </field>
