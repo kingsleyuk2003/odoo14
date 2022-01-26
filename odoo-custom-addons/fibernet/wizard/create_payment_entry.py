@@ -43,12 +43,12 @@ class CreatePaymentEntry(models.TransientModel):
             raise UserError('Please indicate if the payment is deferred or paid')
         return True
 
-    is_paid_deferred = fields.Selection([('paid', 'Paid'),('deferred', 'Deferred (For Free Installation)')], string='Payment Status')
+    is_paid_deferred = fields.Selection([('paid', 'Paid'),('deferred', 'Deferred (Zero Payment)')], string='Payment Status')
     payment_date = fields.Date(string='Payment Date')
     journal_id = fields.Many2one('account.journal',string='Payment Method')
     amount = fields.Float(string='Amount Paid')
     ref = fields.Char(string='Reference')
-    is_send_receipt = fields.Boolean(string="Send Receipt to Customer")
+    is_send_receipt = fields.Boolean(string="Send Receipt to Customer", default=True)
     partner_id = fields.Many2one('res.partner',string='Customer')
     currency_id = fields.Many2one("res.currency", string="Currency", required=True,
                                   default=lambda self: self.env.user.company_id.currency_id)

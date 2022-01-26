@@ -22,7 +22,7 @@
                         <field  name="payment_date" attrs="{'required': [('is_paid_deferred', '=', 'paid')], 'invisible': [('is_paid_deferred', '!=', 'paid')]}" />
                         <field name="amount" attrs="{'required': [('is_paid_deferred', '=', 'paid')], 'invisible': [('is_paid_deferred', '!=', 'paid')]}" />
                         <field name="ref"  attrs="{'required': [('is_paid_deferred', '=', 'paid')], 'invisible': [('is_paid_deferred', '!=', 'paid')]}" />
-                        <field name="is_send_receipt" attrs="{'invisible': [('is_paid_deferred', '!=', 'paid')]}" />
+                        <field name="is_send_receipt" readonly="1" attrs="{'invisible': [('is_paid_deferred', '!=', 'paid')]}" />
                         <field name="partner_id" invisible="1" />
                     </group>
                     <footer>

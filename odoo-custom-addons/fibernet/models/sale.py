@@ -81,7 +81,7 @@ class SaleOrderExtend(models.Model):
                         price = pricelist_price
 
                 data.update({
-                    'is_dedicated' : line.sale_order_template_id.is_dedicated,
+                    'is_special_other_sme' : line.sale_order_template_id.is_special_other_sme,
                     'price_unit': line.amount,
                     'discount': discount,
                     'product_uom_qty': line.product_uom_qty,
@@ -469,12 +469,12 @@ class SaleOrderExtend(models.Model):
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
-    is_dedicated = fields.Boolean(string='Is Dedicated')
+    is_special_other_sme = fields.Boolean(string='Is Dedicated')
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"
 
-    is_dedicated = fields.Boolean(string='Is Dedicated')
+    is_special_other_sme = fields.Boolean(string='Is Special Home / Other SME Packages')
 
 class SaleOrderTemplateLine(models.Model):
     _inherit = "sale.order.template.line"

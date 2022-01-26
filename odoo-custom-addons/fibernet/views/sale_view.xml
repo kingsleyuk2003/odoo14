@@ -207,14 +207,15 @@
 <!--                    </header>-->
 <!--                 </xpath>-->
                 <field name="parent_id" position="attributes" >
-                    <attribute name="invisible" >True</attribute>
+                    <attribute name="invisible" >1</attribute>
                 </field>
                 <field name="company_type" position="attributes" >
-                    <attribute name="invisible" >True</attribute>
+                    <attribute name="invisible" >1</attribute>
                 </field>
                 <field name="type" position="attributes" >
-                    <attribute name="invisible" >True</attribute>
+                    <attribute name="invisible" >1</attribute>
                 </field>
+
 
                 <xpath expr="//page[@name='sales_purchases']//field[@name='user_id']"  position="attributes" >
                     <attribute name="groups" >fibernet.group_show_sales_person</attribute>
@@ -258,7 +259,7 @@
                     <field name="product_id"  options="{'no_open': True, 'no_create': True}"   />
                     <field name="amount" readonly="1" />
                     <field name="company_id" readonly="1" invisible="1" />
-                    <field name="ref" string="Client ID" />
+                    <field name="ref" string="Client ID" readonly="1" />
                     <field name="location_id"  options="{'no_open': True, 'no_create': True}"  />
                     <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}"  />
                     <field name="bandwidth"  />
@@ -281,8 +282,8 @@
                     <field name="activation_date"  />
                     <field name="reg_date"   />
                     <field name="last_logoff"  />
-                    <field name="expiration_date"  />
-                    <field name="status"  />
+                    <field name="expiration_date" invisible="1"  />
+                    <field name="status"  invisible="1" />
                     <field name="selfcare_push" readonly="1"   />
                     <field name="selfcare_response" readonly="1"   />
                 </field>
@@ -442,23 +443,23 @@
                 </xpath>
 
                  <xpath expr="//form//field[@name='company_id']"  position="after">
-                    <field name="is_dedicated" invisible="1" />
+                    <field name="is_special_other_sme" invisible="1" />
                 </xpath>
                 <xpath expr="//tree/field[@name='company_id']"  position="after">
-                    <field name="is_dedicated" invisible="1" />
+                    <field name="is_special_other_sme" invisible="1" />
                 </xpath>
                 <xpath expr="//kanban/field[@name='company_id']"  position="after">
-                    <field name="is_dedicated" invisible="1" />
+                    <field name="is_special_other_sme" invisible="1" />
                 </xpath>
 
-                <xpath expr="//form//field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
+                <xpath expr="//form//field[@name='order_line']"  position="attributes">
+                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
                 </xpath>
-                 <xpath expr="//tree/field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
+                 <xpath expr="//tree/field[@name='order_line']"  position="attributes">
+                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
                 </xpath>
-                <xpath expr="//kanban/field[@name='tax_id']"  position="attributes">
-                     <attribute name="attrs" >{'readonly': [('is_dedicated', '=', False)]}</attribute>
+                <xpath expr="//kanban/field[@name='order_line']"  position="attributes">
+                     <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
                 </xpath>
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
@@ -615,7 +616,7 @@
         <field name="inherit_id" ref="sale_management.sale_order_template_view_form" />
         <field name="arch" type="xml">
              <field name="company_id" position="after">
-                    <field name="is_dedicated" />
+                    <field name="is_special_other_sme" />
             </field>
             <xpath expr="//tree/field[@name='product_uom_qty']"  position="after">
                     <field name="amount" required="1" />
