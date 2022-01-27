@@ -683,11 +683,6 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'csc@fibernet.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
-        group_name = 'kin_helpdesk.group_helpdesk_receive_open_ticket_email'
-        msg = 'The Ticket (%s) with description (%s), has been Opened by %s' % (
-        self.ticket_id, self.name, self.env.user.name)
-        subject = msg
-        self.send_email(group_name, subject, msg)
         return
 
 
@@ -1073,10 +1068,38 @@ class Ticket(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
+    def _send_debt_email_to_sales_person(self,debt_subject,debt_msg):
+        # Send email to sales person
+        partn_ids = []
+        user = self.order_id.user_id
+        user_name = user.name
+        partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            self.order_id.message_follower_ids.unlink()
+            self.order_id.message_post(
+                body=debt_msg,
+                subject=debt_subject, partner_ids=partn_ids,
+                subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_danger(debt_msg,sticky=True,title='Debt Notification Alert')
+
+    def _send_debt_email_to_csc(self,debt_subject,debt_msg):
+        partn_ids = []
+        user_names = ''
+        ope_users = self.initiator_ticket_group_id.sudo().user_ids
+        for user in ope_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            self.message_follower_ids.unlink()
+            self.message_post(
+                body=_(debt_msg),
+                subject=debt_subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
     def btn_ticket_finalized(self):
-        self.state = 'finalized'
-        self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         if self.partner_id and self.category_id == self.env.ref('fibernet.installation'):
             if not self.ip_address:
@@ -1093,8 +1116,21 @@ class Ticket(models.Model):
                 raise UserError('No Sales Order for this Ticket')
 
             if self.order_id.amount_balance:
-                raise UserError('%s has a balance of %s%s, to pay before his account can be activated. Please contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket '% (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance, self.order_id.name))
+                debt_subject = '%s has a balance of %s%s, to pay before his account can be activated, for the sales order (%s)' % (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance, self.order_id.name)
+                debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket '% (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance,self.order_id.user_id.name, self.order_id.name)
+                #notify the sales person
+                self._send_debt_email_to_sales_person(debt_subject,debt_msg)
 
+                #notify csc
+                self._send_debt_email_to_csc(debt_subject,debt_msg)
+                self.alert_msg = debt_msg
+                self.show_alert_box = True
+                return
+            else:
+                self.alert_msg = ''
+                self.show_alert_box = False
+                self.state = 'finalized'
+                self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
             self.partner_id.amount = self.order_id.amount_total
             self.partner_id.action_create_customer_selfcare()
@@ -1206,12 +1242,14 @@ class Ticket(models.Model):
                 'activation_date': vals.get('activation_date', self.partner_id.activation_date),
                 'reg_date': vals.get('reg_date', self.partner_id.reg_date),
                 'last_logoff': vals.get('last_logoff', self.partner_id.last_logoff),
-                'gpon': vals.get('gpon', self.partner_id.gpon),
+                'gpon': vals.get('gpon_level', self.partner_id.gpon),
                 'interface': vals.get('interface', self.partner_id.interface),
-                'serial_no': vals.get('serial_no', self.partner_id.serial_no),
+                'serial_no': vals.get('idu_serial_no', self.partner_id.serial_no),
                 'product_id': vals.get('product_id', self.partner_id.product_id),
                 'olt_id' : vals.get('olt_id', self.partner_id.olt_id),
                 'status' : vals.get('status', self.partner_id.status),
+                'installation_fse_id': vals.get('installation_fse_id', self.partner_id.installation_fse_id),
+                'power_level_id': vals.get('power_level_id', self.partner_id.power_level_id),
                 'ref' : vals.get('ref', self.partner_id.ref),
                 'expiration_date' : vals.get('expiration_date', self.partner_id.expiration_date),
            }
@@ -1371,13 +1409,13 @@ class Ticket(models.Model):
 
     #activation form
     olt_id = fields.Many2one(related='partner_id.olt_id',  string='OLT')
-    gpon_level = fields.Char(string='GPON Port')
-    power_level_id = fields.Many2one('pl',string='Power Level')
-    idu_serial_no = fields.Char(string='IDU SerialNumber')
+    gpon_level = fields.Char(related='partner_id.gpon',string='GPON Port')
+    power_level_id = fields.Many2one(related='partner_id.power_level_id',string='Power Level')
+    idu_serial_no = fields.Char(related='partner_id.serial_no',string='IDU SerialNumber')
     wifi_ssid = fields.Char(string='Wifi SSID')
     splitter_box_code = fields.Char(string='Splitter Box Code')
     region_id = fields.Many2one(related='partner_id.region_id', string='Region')
-    installation_fse_id = fields.Many2one('res.users',string='Installation FSE')
+    installation_fse_id = fields.Many2one(related='partner_id.installation_fse_id',string='Installation FSE')
     installation_approver_id = fields.Many2one('res.users',string='Installation Approval')
     wireless_technology = fields.Char(string='Wireless Technology')
     rssi_id = fields.Char(string='RSSI')
@@ -1443,7 +1481,8 @@ class Ticket(models.Model):
     is_bpsq_hcx_email_sent = fields.Boolean(string='Is BPSQ/HCX')
 
     assigned_eng_user_ids = fields.Many2many(related='user_ticket_group_id.user_ids', string='Engineers')
-
+    show_alert_box = fields.Boolean(string="Show Alert Box")
+    alert_msg = fields.Char(string='Alert Message')
 
 class AccountInvoice(models.Model):
     _inherit = 'account.move'

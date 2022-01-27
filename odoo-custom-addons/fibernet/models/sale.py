@@ -81,7 +81,6 @@ class SaleOrderExtend(models.Model):
                         price = pricelist_price
 
                 data.update({
-                    'is_special_other_sme' : line.sale_order_template_id.is_special_other_sme,
                     'price_unit': line.amount,
                     'discount': discount,
                     'product_uom_qty': line.product_uom_qty,
@@ -404,6 +403,20 @@ class SaleOrderExtend(models.Model):
         return action
 
 
+    def check_debt_customer(self):
+        if self.amount_balance:
+            debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket ' % (
+            self.partner_id.name, self.currency_id.symbol, self.amount_balance,
+            self.user_id.name, self.name)
+
+            for ticket in self.ticket_ids:
+                ticket.alert_msg = debt_msg
+                ticket.show_alert_box = True
+        else:
+            for ticket in self.ticket_ids:
+                ticket.alert_msg = ''
+                ticket.show_alert_box = False
+        return
 
     @api.depends('payment_ids')
     def _compute_payment_count(self):
@@ -465,11 +478,8 @@ class SaleOrderExtend(models.Model):
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
-   
-class SaleOrderLine(models.Model):
-    _inherit = 'sale.order.line'
+    is_special_other_sme = fields.Boolean(string='Is Special Home/Other SME Packages')
 
-    is_special_other_sme = fields.Boolean(string='Is Dedicated')
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"
@@ -612,13 +622,14 @@ class ResPartnerExtend(models.Model):
             raise UserError('ERP while communicating with selfcare (Delete Customer Endpoint) has encountered the following error: %s' % (e))
 
 
-    def btn_push_customer_selfcare(self):
-        self.action_create_customer_selfcare()
+    def btn_push_update_selfcare(self):
+        if self.selfcare_push :
+            self.action_update_customer_selfcare()
+        else:
+            raise UserError('There is no initial customer created from ERP to selfcare from the installation ticket')
 
     def write(self,vals):
         res = super(ResPartnerExtend, self).write(vals)
-        if self.selfcare_push :
-            self.action_update_customer_selfcare()
         return res
 
     def unlink(self):
@@ -647,7 +658,8 @@ class ResPartnerExtend(models.Model):
     region_id = fields.Many2one('region', string='Region',tracking=True)
     estate_id = fields.Many2one('estate', string='Estate',tracking=True)
     area_id = fields.Many2one('area',string='Area',tracking=True)
-
+    installation_fse_id = fields.Many2one('res.users', string='Installation FSE', tracking=True)
+    power_level_id = fields.Many2one('pl', string='Power Level', tracking=True)
     comment = fields.Char(string='Comment',tracking=True)
     activation_date = fields.Date(string='Activation Date',tracking=True)
     status = fields.Selection([
@@ -755,7 +767,7 @@ class AccountPayment(models.Model):
             'auto_delete': True
         }
         mail_values['attachment_ids'] += [(4, receipt.id)]
-        mail = self.env['mail.mail'].sudo().create(mail_values)
+        mail = self.env['mail.mail'].create(mail_values)
         #mail.send()
         mail.mark_outgoing()
 
