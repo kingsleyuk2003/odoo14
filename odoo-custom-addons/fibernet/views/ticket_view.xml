@@ -14,7 +14,7 @@
             <field name="arch" type="xml">
 
                 <xpath expr="//header"  position="after">
-                    <div  class="alert alert-danger text-center" role="alert" style="margin-bottom:0px;" attrs="{'invisible': [('show_alert_box', '!=', True)]}" >
+                    <div  class="alert alert-danger text-center" role="alert" style="margin-bottom:0px;" attrs="{'invisible': [('show_alert_box', '!=', True)]}" groups="fibernet.group_helpdesk_show_error_box_ticket" >
                            <field name="alert_msg"  />
                             <field name="show_alert_box" invisible="1"/>
                     </div>
@@ -159,7 +159,7 @@
                         <group col="4" >
                               <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                             <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                             <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />

@@ -405,7 +405,7 @@ class SaleOrderExtend(models.Model):
 
     def check_debt_customer(self):
         if self.amount_balance:
-            debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket ' % (
+            debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you NOC can finalize this ticket ' % (
             self.partner_id.name, self.currency_id.symbol, self.amount_balance,
             self.user_id.name, self.name)
 
@@ -478,7 +478,7 @@ class SaleOrderExtend(models.Model):
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
-    is_special_other_sme = fields.Boolean(string='Is Special Home/Other SME Packages')
+    is_special_other_sme = fields.Boolean(related='sale_order_template_id.is_special_other_sme',string='Is Special Home/Other SME Packages')
 
 
 class SaleOrderTemplate(models.Model):
