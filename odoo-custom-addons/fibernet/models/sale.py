@@ -672,9 +672,9 @@ class ResPartnerExtend(models.Model):
     expiration_date = fields.Date(string="Expiration Date",tracking=True)
     reg_date = fields.Date(string="REG Date",tracking=True)
     last_logoff = fields.Date(string="Last Logoff",tracking=True)
-    gpon = fields.Char(string="GPON",tracking=True)
+    gpon = fields.Char(string="GPON Port",tracking=True)
     interface = fields.Char(string="Interface",tracking=True)
-    serial_no = fields.Char(string="Serial No",tracking=True)
+    serial_no = fields.Char(string="IDU Serial No",tracking=True)
     state_ng = fields.Selection([
         ('Abia', 'Abia'),
         ('FCT', 'Abuja Federal Capital Territory'),
