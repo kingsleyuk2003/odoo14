@@ -12,10 +12,16 @@
             <field name="model">kin.ticket</field>
              <field name="inherit_id" ref="kin_helpdesk.ticket_form" />
             <field name="arch" type="xml">
+
+                <xpath expr="//header"  position="after">
+                    <div  class="alert alert-danger text-center" role="alert" style="margin-bottom:0px;" attrs="{'invisible': [('show_alert_box', '!=', True)]}" groups="fibernet.group_helpdesk_show_error_box_ticket" >
+                           <field name="alert_msg"  />
+                            <field name="show_alert_box" invisible="1"/>
+                    </div>
+                </xpath>
                 <button name="btn_ticket_done" position="after" >
                     <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="fibernet.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="fibernet.group_helpdesk_finalized_ticket"  />
-
                 </button>
                 <button name="btn_ticket_progress" position="before" >
                      <button name="btn_ticket_maint_approve" type="object"  string="Maintenance Approved"  class="oe_highlight" groups="fibernet.group_helpdesk_maint_ticket" attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"    />
@@ -153,7 +159,7 @@
                         <group col="4" >
                               <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                             <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                             <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />

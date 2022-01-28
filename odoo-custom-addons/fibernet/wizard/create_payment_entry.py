@@ -8,6 +8,7 @@ class CreatePaymentEntry(models.TransientModel):
     _description = 'Create Payment Wizard'
 
 
+
     def action_create_payment(self):
         rec = self.env.context['active_id']
         sale_order = self.env['sale.order'].browse(rec)
@@ -31,7 +32,7 @@ class CreatePaymentEntry(models.TransientModel):
             elif sale_order.total_amount_paid <= 0 :
                 raise UserError('Amount paid is less than or equal to Zero ')
             if self.is_send_receipt :
-                return res.action_receipt_plain_sent_no_logging_no_button_document()
+                res.action_receipt_plain_sent_no_logging_no_button_document()
         elif is_paid_deferred == 'deferred' :
             if sale_order.amount_balance != 0 :
                 raise UserError('Sorry, you cannot register a deferred installation payment for this sales order, since some initial payment(s) have been received. You can rather cancel this order and re-approve to register a deferred payment ')
@@ -41,6 +42,7 @@ class CreatePaymentEntry(models.TransientModel):
             sale_order.state = 'so_to_approve'
         else:
             raise UserError('Please indicate if the payment is deferred or paid')
+        sale_order.check_debt_customer()
         return True
 
     is_paid_deferred = fields.Selection([('paid', 'Paid'),('deferred', 'Deferred (Zero Payment)')], string='Payment Status')

@@ -11,9 +11,6 @@
         </record>
 
 
-
-
-
         <!-- Location -->
         <record id="view_location_form" model="ir.ui.view">
             <field name="name">location</field>
@@ -201,11 +198,11 @@
             <field name="model" >res.partner</field>
             <field name="inherit_id" ref="base.view_partner_form"/>
             <field name="arch" type="xml">
-<!--                <xpath expr="//sheet" position="before">-->
-<!--                    <header>-->
-<!--                         <button name="btn_push_customer_selfcare" type="object"  string="Re-Push Selfcare Customer"   groups="fibernet.group_push_selfcare_customer" />-->
-<!--                    </header>-->
-<!--                 </xpath>-->
+                <xpath expr="//sheet" position="before">
+                    <header>
+                         <button name="btn_push_update_selfcare" class="btn-primary"  type="object"  string="Update Customer Data to Selfcare" confirm="ERP will update selfcare with changes. Do you want to continue?"   groups="fibernet.group_update_selfcare_customer" />
+                    </header>
+                 </xpath>
                 <field name="parent_id" position="attributes" >
                     <attribute name="invisible" >1</attribute>
                 </field>
@@ -251,35 +248,37 @@
 
 
                 <field name="vat" position="after" >
-                    <field name="estate_id" options="{'no_open': True, 'no_create': True}" />
+                    <field name="ref" string="Client ID" readonly="1" />
                     <field name="city_cust" required="1"  />
                     <field name="state_ng" required="1"   />
+                    <field name="area_id" options="{'no_open': True, 'no_create': True}"  />
+                    <field name="product_id"  options="{'no_open': True, 'no_create': True}"   />
+                    <field name="amount" invisible="1" />
+                     <field name="serial_no"  />
+                    <field name="installation_fse_id" options="{'no_open': True, 'no_create': True}" />
+                    <field  name="power_level_id" options="{'no_open': True, 'no_create': True}" />
+                    <field name="vlan"  />
+                    <field name="olt_id" options="{'no_open': True, 'no_create': True}"  />
+                    <field name="gpon"  />
+                    <field name="ip_address"  />
+                    <field name="activation_date"  />
+                     <field name="region_id" options="{'no_open': True, 'no_create': True}"  />
+                    <field name="estate_id" options="{'no_open': True, 'no_create': True}" />
                     <field name="gender"   />
                     <field name="dob" />
-                    <field name="product_id"  options="{'no_open': True, 'no_create': True}"   />
-                    <field name="amount" readonly="1" />
                     <field name="company_id" readonly="1" invisible="1" />
-                    <field name="ref" string="Client ID" readonly="1" />
                     <field name="location_id"  options="{'no_open': True, 'no_create': True}"  />
                     <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}"  />
                     <field name="bandwidth"  />
-                    <field name="vlan"  />
                     <field name="contact_person"  />
                     <field name="cpe"  />
-                    <field name="ip_address"  />
                     <field name="radio_ip_address"  />
                     <field name="base_station_ip_address"  />
                     <field name="subnet"  />
                     <field name="gateway"  />
                     <field name="indoor_wan"  />
-                    <field name="olt_id" options="{'no_open': True, 'no_create': True}"  />
-                    <field name="gpon"  />
                     <field name="interface"  />
-                    <field name="serial_no"  />
-                    <field name="region_id" options="{'no_open': True, 'no_create': True}"  />
-                    <field name="area_id" options="{'no_open': True, 'no_create': True}"  />
                     <field name="comment" />
-                    <field name="activation_date"  />
                     <field name="reg_date"   />
                     <field name="last_logoff"  />
                     <field name="expiration_date" invisible="1"  />
@@ -360,7 +359,7 @@
                  </field>
 
                   <button name="preview_sale_order" position="attributes" >
-                      <attribute name="invisible" >1</attribute>
+                      <attribute name="invisible" >True</attribute>
                   </button>
 
                  <field name="validity_date" position="attributes" >
@@ -375,7 +374,6 @@
                   <page  name="other_information" position="attributes" >
                     <attribute name="invisible" >1</attribute>
                 </page>
-
 
 
                  <button name="action_cancel" position="before" >
@@ -442,21 +440,32 @@
                       <attribute name="invisible" >1</attribute>
                 </xpath>
 
-                 <field name="payment_term_id" position="after" >
-                       <field name="is_special_other_sme" invisible="1" />
+                <field name="payment_term_id" position="after"  >
+                      <field name="is_special_other_sme" invisible="1" />
                  </field>
 
-                 <field name="order_line" position="attributes" >
-                       <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
-                 </field>
-
-
-                <xpath expr="field[@name='order_line']//form"  position="replace" />
-
-
+                <field name="order_line" position="attributes" >
+                    <attribute name="force_save" >1</attribute>
+                    <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
+                </field>
+                 <xpath expr="//field[@name='order_line']/form"  position="replace" />
+                 <xpath expr="//field[@name='order_line']/kanban"  position="replace" />
 
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
+                </field>
+
+            </field>
+        </record>
+
+        <record id="view_order_tree" model="ir.ui.view">
+            <field name="name">sale.order.tree</field>
+            <field name="model">sale.order</field>
+            <field name="priority">2</field>
+            <field name="inherit_id" ref="sale.view_order_tree"/>
+            <field name="arch" type="xml">
+                <field name="invoice_status"  position="attributes" >
+                    <attribute name="invisible" >1</attribute>
                 </field>
 
             </field>
