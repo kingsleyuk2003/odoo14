@@ -70,14 +70,14 @@
                         </group>
                          <notebook>
                             <page string="Loading Tickets"  >
-                                <field name="ticket_ids" attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('product_id','=',product_id)]">
-                                    <tree string="Loading Tickets" editable="bottom"  >
-                                        <field name="ticket_id" readonly="1" string="Ticket No."  />
+                                <field name="ticket_ids" context="{'loading_programme_date':programme_date}"  attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('product_id','=',product_id)]">
+                                    <tree string="Loading Tickets" editable="bottom"   >
+                                        <field name="ticket_id"  readonly="1" string="Ticket No."  />
                                         <field name="partner_id" string="Customer" readonly="1" />
                                         <field name="product_id"  />
                                         <field name="ticket_load_qty" string="Quantity" readonly="1" sum="Total" />
                                           <field name="truck_no" />
-                                        <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
+                                        <field name="dpr_info_id"   domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                                           <field name="dpr_no" readonly="1"  force_save="1"   />
                                         <field name="dpr_status" readonly="1"  force_save="1" />
                                         <field string="Waybill Status" name="state" readonly="1" />
@@ -822,6 +822,7 @@
                          <field name="is_loading_ticket"   invisible="1" />
                       <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                         <group col="4" string="Ticket and WayBill Details"  >
+
                             <field name="product_id" />
                             <field name="ticket_load_qty" />
                             <field name="total_dispatch_qty" />
