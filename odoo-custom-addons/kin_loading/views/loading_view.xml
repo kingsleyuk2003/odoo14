@@ -70,16 +70,17 @@
                         </group>
                          <notebook>
                             <page string="Loading Tickets"  >
-                                <field name="ticket_ids" context="{'loading_programme_date':programme_date}"  attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('product_id','=',product_id)]">
+                                <field name="ticket_ids"  attrs="{'readonly': [('state', 'not in', ['draft'])]}" domain="[('is_block_ticket','=',False),('is_loading_ticket','=',True),('state','not in',('done','cancel')),('product_id','=',product_id)]">
                                     <tree string="Loading Tickets" editable="bottom"   >
                                         <field name="ticket_id"  readonly="1" string="Ticket No."  />
                                         <field name="partner_id" string="Customer" readonly="1" />
                                         <field name="product_id"  />
                                         <field name="ticket_load_qty" string="Quantity" readonly="1" sum="Total" />
                                           <field name="truck_no" />
-                                        <field name="dpr_info_id"   domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
+                                        <field name="dpr_info_id" context="{'loading_programme_date':parent.programme_date}"   domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                                           <field name="dpr_no" readonly="1"  force_save="1"   />
-                                        <field name="dpr_status" readonly="1"  force_save="1" />
+                                        <field name="dpr_expiry_date" readonly="1"  force_save="1"  />
+                                        <field name="dpr_status"  />
                                         <field string="Waybill Status" name="state" readonly="1" />
                                     </tree>
                                     <form>
@@ -91,6 +92,7 @@
                                             <field name="ticket_load_qty" string="Quantity" readonly="1" sum="Total" />
                                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
                                             <field name="dpr_no" readonly="1"  force_save="1"   />
+                                            <field name="dpr_expiry_date" readonly="1" force_save="1"  />
                                             <field name="dpr_status" readonly="1"  force_save="1" />
                                             <field string="Waybill Status" name="state" readonly="1" />
                                         </group>
@@ -609,7 +611,7 @@
 <!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
                             <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
                               <field name="loading_programme_id"   options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />
-                             <field name="loading_programme_ids"    options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />
+<!--                             <field name="loading_programme_ids" widget="many2many_tags"   options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />-->
                             <!--
 <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
                             <field name="location_dest_id" groups="kin_loading.group_show_dest_location" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>
@@ -636,6 +638,7 @@
                             <field name="dpr_status" readonly="1"  force_save="1" />
                             <field name="dpr_no" readonly="1"   force_save="1"/>
                             <field name="location_addr_id" />
+                              <field name="dpr_expiry_date" readonly="1" force_save="1"  />
                             <field name="customer_address" readonly="1" />
                             <field name="valid_driver_license" />
                             <field name="receiving_station_address" invisible="1" />
@@ -833,9 +836,10 @@
                             <field name="truck_no" />
                             <field name="ticket_date" />
                             <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                            <field name="dpr_status" readonly="1" />
+                           <field name="dpr_status" readonly="1" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
+                             <field name="dpr_expiry_date" readonly="1" force_save="1"  />
                             <field name="customer_address" readonly="1" />
                             <field name="valid_driver_license" />
                             <field name="receiving_station_address" invisible="1" />
@@ -1152,6 +1156,7 @@
                             <field name="dpr_status" readonly="1" />
                             <field name="dpr_no" />
                             <field name="location_addr_id" />
+                              <field name="dpr_expiry_date" readonly="1" force_save="1"  />
                             <field name="customer_address" readonly="1" />
                             <field name="valid_driver_license" />
                             <field name="receiving_station_address" invisible="1" />

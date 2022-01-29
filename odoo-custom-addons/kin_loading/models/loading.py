@@ -296,7 +296,7 @@ class StockPickingExtend(models.Model):
             if not self.loading_programme_id:
                 raise UserError('Sorry, Wait for the Ticket to be Programmed before you can dispatch the goods')
             if self.loading_programme_id.state != 'approve':
-                raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.picking_id.loading_programme_id.state))
+                raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.loading_programme_id.state))
 
 
         # Sanity checks.
@@ -886,29 +886,37 @@ class StockPickingExtend(models.Model):
         res = super(StockPickingExtend, self).action_assign()
         return res
 
+    def _get_dpr_status(self, loading_programme_date,loading_programme):
+        dpr_status = False
+        programme_date = loading_programme_date or loading_programme.programme_date
+        if not programme_date:
+            raise UserError(
+                'Please First Create a Loading Programme with a Programme Date, to check the DPR license date')
+        if self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date < programme_date:
+            dpr_status= 'expired'
+        elif self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date >= programme_date:
+            dpr_status = 'valid'
+        return dpr_status
+
     @api.onchange('dpr_info_id')
     def _onchange_dpr_info(self):
+        loading_programme_date = self.env.context.get('loading_programme_date', False)
         dpr_info_id = self.dpr_info_id
         vals = {
             'receiving_station_address': dpr_info_id.address,
             'dpr_no': dpr_info_id.dpr_no,
+            'dpr_expiry_date': dpr_info_id.dpr_expiry_date,
         }
-        if self.loading_programme_id:
-            programme_date = self.loading_programme_id.programme_date
-            if not programme_date:
-                raise UserError(
-                    'Please First Create a Loading Programme with a Programme Date, to check the DPR license date')
-
-            if self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date < programme_date:
-                vals['dpr_status'] = 'expired'
-            elif self.dpr_info_id.dpr_expiry_date and self.dpr_info_id.dpr_expiry_date >= programme_date:
-                vals['dpr_status'] = 'valid'
-            else:
-                vals['dpr_status'] = False
+        if self.loading_programme_id or loading_programme_date:
+            programme_date = False
+            if loading_programme_date :
+                programme_date = datetime.strptime(loading_programme_date, '%Y-%m-%d').date()
+            vals['dpr_status'] = self._get_dpr_status(programme_date,self.loading_programme_id )
 
         # Using write() here does not work.  but direct assignments works, but not suitable,
         # Note that update() is different from Write(). Update(0 method updates on the front end. Similar to what return {'value':{}} does
         self.update(vals)
+
 
 
     # ticket_no = fields.Char(string='Ticket No.')
@@ -934,7 +942,7 @@ class StockPickingExtend(models.Model):
     supervisor_officer_id = fields.Many2one('res.users', string="Supervisor's Name")
     supervisor_date = fields.Date(string='Supervisor Date')
     dpr_no = fields.Char(string='DPR License No.')
-    loading_programme_id = fields.Many2one('loading.programme',string='Loading Programme')
+    loading_programme_id = fields.Many2one('loading.programme',string='Approved Loading Programme')
     loading_programme_ids = fields.Many2many('loading.programme', 'lp_ticket', 'picking_id', 'loading_prog_id',
                                              ondelete='restrict', string='Loading Programme')
     waybill_no = fields.Char('Waybill No.',readonly=True)
@@ -995,6 +1003,7 @@ class StockPickingExtend(models.Model):
     dpr_status = fields.Selection(
         [('valid', 'Valid'),('expired', 'Expired'), ('renew','Under Renewal')],
          string='DPR Status')
+    dpr_expiry_date = fields.Date(string="DPR Expiry Date")
 
 
 
