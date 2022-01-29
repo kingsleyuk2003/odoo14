@@ -65,7 +65,7 @@
                             </h1>
                         </div>
                         <group col="4" >
-                            <field name="programme_date" string="Date" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
+                            <field name="programme_date" context="{'loading_programme_date':programme_date}" string="Date" attrs="{'readonly': [('state', 'not in', ['draft'])]}" required="True" />
                              <field name="product_id"  domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  required="1"  attrs="{'readonly': [('state', '!=', 'draft')]}" options="{'no_open':True,'no_create':True}" />
                         </group>
                          <notebook>
@@ -608,8 +608,10 @@
                             <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
 <!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
                             <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
-                              <field name="loading_programme_id" options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" />
-<!--                            <field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
+                              <field name="loading_programme_id"   options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />
+                             <field name="loading_programme_ids"    options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />
+                            <!--
+<field name="dest_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }" domain="[('is_depot_type','=',True)]"    />-->
                             <field name="location_dest_id" groups="kin_loading.group_show_dest_location" attrs="{'invisible': [('picking_type_code', 'in', ['outgoing'])], 'required': [('picking_type_code', 'not in', ['outgoing'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','partially_available','assigned'))] }"/>
                             <field name="backorder_id" readonly="1" attrs="{'invisible': [('backorder_id','=',False)]}"/>
                         </group>

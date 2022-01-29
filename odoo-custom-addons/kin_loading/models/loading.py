@@ -934,7 +934,9 @@ class StockPickingExtend(models.Model):
     supervisor_officer_id = fields.Many2one('res.users', string="Supervisor's Name")
     supervisor_date = fields.Date(string='Supervisor Date')
     dpr_no = fields.Char(string='DPR License No.')
-    loading_programme_id = fields.Many2one('loading.programme',string='Loading Programme',readonly=True)
+    loading_programme_id = fields.Many2one('loading.programme',string='Loading Programme')
+    loading_programme_ids = fields.Many2many('loading.programme', 'lp_ticket', 'picking_id', 'loading_prog_id',
+                                             ondelete='restrict', string='Loading Programme')
     waybill_no = fields.Char('Waybill No.',readonly=True)
     # ref_no = fields.Char('Ref. No.')
     comp1_ullage = fields.Float('1')
