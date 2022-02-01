@@ -554,6 +554,7 @@
                             <field name="comment" attrs="{'readonly': [('state', '=', 'contacted')]}" />
                             <field name="request_ticket_id" readonly="1" />
                             <field name="is_non_compliance_email_sent"  readonly="1" />
+                            <field name="is_non_compliance_email_sent_date"  readonly="1" />
                         </group>
                     </sheet>
                      <div class="oe_chatter">

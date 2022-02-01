@@ -791,7 +791,7 @@ class Prospect(models.Model):
 
     @api.model
     def run_prospect_contacted_check(self):
-        the_date = datetime.today() + relativedelta(minutes=+30)
+        the_date = datetime.now() + relativedelta(minutes=+30)
         prospects = self.search([('open_date', '<', the_date), ('state', '!=', 'contacted'), ('is_non_compliance_email_sent', '=', False)])
 
         for prospect in prospects:
@@ -819,6 +819,7 @@ class Prospect(models.Model):
                 subject = subject, partner_ids = partn_ids,
                 subtype_xmlid = 'mail.mt_comment')
                 prospect.is_non_compliance_email_sent = True
+                prospect.is_non_compliance_email_sent_date = datetime.now()
         return True
 
 
@@ -872,4 +873,5 @@ class Prospect(models.Model):
         [('new', 'New'), ('contacted', 'Contacted')],
         default='new', tracking=True)
     is_non_compliance_email_sent = fields.Boolean(string='Is Non-Compliance Email Sent', default=False,tracking=True)
+    is_non_compliance_email_sent_date = fields.Datetime(string='Non-Compliance Email Sent Date')
     request_ticket_id = fields.Many2one('kin.ticket', string='Request Ticket',tracking=True)
