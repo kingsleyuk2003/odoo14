@@ -560,7 +560,9 @@ class Ticket(models.Model):
                 'email' : self.prospect_email,
                 'phone': self.prospect_phone,
                 'user_id': sales_person.id ,
-                'request_ticket_id' : self.id
+                'request_ticket_id' : self.id,
+                'open_date' : datetime.now(),
+                'expiry_date': datetime.now() + relativedelta(minutes=+30),
             }
         prospect = self.env['prospect'].create(vals)
         self.prospect_id = prospect

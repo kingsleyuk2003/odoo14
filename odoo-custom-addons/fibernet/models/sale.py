@@ -791,8 +791,8 @@ class Prospect(models.Model):
 
     @api.model
     def run_prospect_contacted_check(self):
-        the_date = datetime.now() + relativedelta(minutes=+30)
-        prospects = self.search([('open_date', '<', the_date), ('state', '!=', 'contacted'), ('is_non_compliance_email_sent', '=', False)])
+        now = datetime.now()
+        prospects = self.search([('expiry_date', '<', now), ('state', '!=', 'contacted'), ('is_non_compliance_email_sent', '=', False)])
 
         for prospect in prospects:
             # open_date = prospect.open_date
@@ -827,7 +827,7 @@ class Prospect(models.Model):
     def btn_contacted(self):
 
         if not self.comment :
-            raise UserError('Please enter your comment before making this prospect as contacted ')
+            raise UserError('Please enter your comment before marking this prospect as contacted ')
         self.state = 'contacted'
         self.contacted_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
@@ -867,7 +867,8 @@ class Prospect(models.Model):
     phone = fields.Char(string='Phone',tracking=True)
     comment = fields.Text(string="Comment",tracking=True)
     user_id = fields.Many2one('res.users', string='Sales Person',tracking=True)
-    open_date = fields.Datetime(string='Open Date', default=datetime.now(),tracking=True)
+    open_date = fields.Datetime(string='Open Date', tracking=True)
+    expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
     contacted_date = fields.Datetime(string='Contacted Date',tracking=True)
     state = fields.Selection(
         [('new', 'New'), ('contacted', 'Contacted')],
