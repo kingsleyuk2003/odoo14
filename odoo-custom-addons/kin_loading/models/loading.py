@@ -272,17 +272,13 @@ class StockPickingExtend(models.Model):
 
     
     def btn_print_loading_ticket(self):
-        if self.is_loading_ticket_printed :
-            raise UserError(_('Sorry, Loading Ticket can only be printed once'))
-        self.is_loading_ticket_printed = True
-        return self.env['report'].get_action(self, 'kin_loading.report_loading_ticket')
+        raise UserError('This report needs to be implemented in a sub module')
+        return
 
     
     def btn_print_waybill(self):
-        if self.is_waybill_printed:
-            raise UserError(_('Sorry, Waybill can only be printed once'))
-        self.is_waybill_printed = True
-        return self.env['report'].get_action(self, 'kin_loading.report_loading_waybill')
+        raise UserError('This report needs to be implemented in a sub module')
+        return
 
     def button_validate(self):
         # Clean-up the context key at validation to avoid forcing the creation of immediate
@@ -868,7 +864,7 @@ class StockPickingExtend(models.Model):
             if rec.picking_type_code == "outgoing":
                 rec.product_id =  rec.move_lines and rec.move_lines[0].product_id or False
                 rec.ticket_load_qty = rec.move_lines and rec.move_lines[0].product_qty or False
-                rec.total_dispatch_qty = rec.comp1_vol + rec.comp2_vol + rec.comp3_vol + rec.comp4_vol + rec.comp5_vol + rec.comp6_vol + rec.comp7_vol + rec.comp8_vol
+                rec.total_dispatch_qty = int(rec.comp1_vol) + int(rec.comp2_vol) + int(rec.comp3_vol) + int(rec.comp4_vol) + int(rec.comp5_vol) + int(rec.comp6_vol) + int(rec.comp7_vol) + int(rec.comp8_vol)
 
 
 
@@ -910,6 +906,21 @@ class StockPickingExtend(models.Model):
         # Note that update() is different from Write(). Update(0 method updates on the front end. Similar to what return {'value':{}} does
         self.update(vals)
 
+    @api.depends('move_ids_without_package.quantity_done')
+    def _compute_amount_in_words(self):
+        for rec in self:
+            current_curr = self.env.company.currency_id
+            if current_curr:
+                if self.move_ids_without_package:
+                    amount_in_words = current_curr.amount_to_text(
+                        self.move_ids_without_package[0].quantity_done)
+                    rec.amount_in_words = amount_in_words.replace(
+                        'Naira', '').replace('Kobo', '') + ' Gallons'
+            else:
+                rec.amount_in_words = False
+
+
+
 
     # ticket_no = fields.Char(string='Ticket No.')
     is_loading_programme_approved = fields.Boolean(string='Is Loading programme Approved')
@@ -937,26 +948,28 @@ class StockPickingExtend(models.Model):
     loading_programme_id = fields.Many2one('loading.programme',string='Loading Programme',readonly=True)
     waybill_no = fields.Char('Waybill No.',readonly=True)
     # ref_no = fields.Char('Ref. No.')
-    comp1_ullage = fields.Float('1')
-    comp2_ullage = fields.Float('2')
-    comp3_ullage = fields.Float('3')
-    comp4_ullage = fields.Float('4')
-    comp5_ullage = fields.Float('5')
-    comp6_ullage = fields.Float('6')
-    comp7_ullage = fields.Float('7')
-    comp8_ullage = fields.Float('8')
-    comp1_vol = fields.Float('1')
-    comp2_vol = fields.Float('2')
-    comp3_vol = fields.Float('3')
-    comp4_vol = fields.Float('4')
-    comp5_vol = fields.Float('5')
-    comp6_vol = fields.Float('6')
-    comp7_vol = fields.Float('7')
-    comp8_vol = fields.Float('8')
+    comp1_receipt = fields.Char('1')
+    comp2_receipt = fields.Char('2')
+    comp3_receipt = fields.Char('3')
+    comp4_receipt = fields.Char('4')
+    comp5_receipt = fields.Char('5')
+    comp6_receipt = fields.Char('6')
+    comp7_receipt = fields.Char('7')
+    comp8_receipt = fields.Char('8')
+    comp1_vol = fields.Char('1')
+    comp2_vol = fields.Char('2')
+    comp3_vol = fields.Char('3')
+    comp4_vol = fields.Char('4')
+    comp5_vol = fields.Char('5')
+    comp6_vol = fields.Char('6')
+    comp7_vol = fields.Char('7')
+    comp8_vol = fields.Char('8')
     ticket_id = fields.Char(related='name',string="Ticket")
     # supervisor_id = fields.Many2one('res.users', string="Supervisor's  Name")
     # supervisor_date = fields.Date(string="Supervisor's Date")
-    driver_id = fields.Many2one('res.partner', string="Driver's  Name")
+    driver_name = fields.Char(string="Driver's  Name")
+    receiving_officer = fields.Char(string='Receiving Officer')
+    depot_manager = fields.Char(string='Depot Manager')
     # driver_date = fields.Date(string="Driver's Date")
     # customer_rep_id = fields.Many2one('res.users', string="Customer's Rep.  Name")
     # customer_rep_date = fields.Date(string="Customer's Date")
@@ -986,13 +999,16 @@ class StockPickingExtend(models.Model):
     ticket_load_qty = fields.Float(string="Ticket Qty.",compute="_compute_ticket_param",store=True)
     source_depot_type_id = fields.Many2one('stock.location',string="Source Location Type")
     dest_depot_type_id = fields.Many2one('stock.location', string="Destination Type")
-    other_information = fields.Text(string = "Other Info.")
+    remark = fields.Text(string = "Remark")
     is_loading_ticket_printed = fields.Boolean(string='Is loading Ticket Printed')
     is_waybill_printed = fields.Boolean(string='Is Waybill Printed')
     dpr_info_id = fields.Many2one('dpr.info',string='Destination')
     dpr_status = fields.Selection(
         [('valid', 'Valid'),('expired', 'Expired'), ('renew','Under Renewal')],
          string='DPR Status')
+    dpr_expiry_date = fields.Date('DPR Expiry Date')
+    amount_in_words = fields.Char(
+        string="Amount in Words", store=True, compute=_compute_amount_in_words)
 
 
 

@@ -573,7 +573,7 @@
 <!--                    <button name="force_assign" states="confirmed,waiting,partially_available" string="Force Availability" type="object" groups="kin_stock.group_force_availability_button"/>-->
                     <button name="button_validate" states="draft,partially_available,assigned" string="Validate" groups="stock.group_stock_user" type="object" class="oe_highlight"/>
 <!--                    <button name="do_print_picking" string="Print" groups="stock.group_stock_user" type="object" attrs="{'invisible': [('state', 'not in', ('assigned', 'partially_available'))]}"/>-->
-                    <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight" attrs="{'invisible': [('state', 'not in', ('partially_available','confirmed','waiting'))]}" type="object" groups="kin_loading.group_show_ticket_print_button"  />
+                    <button name="btn_print_loading_ticket" string="Print Loading Ticket"  class="oe_highlight" attrs="{'invisible': [('state', 'in', ('draft','done','cancel'))]}" type="object" groups="kin_loading.group_show_ticket_print_button"  />
                      <button name="btn_print_waybill" string="Print Waybill" states="done" class="oe_highlight" type="object" groups="kin_loading.group_show_waybill_print_button"  />
                     <button name="%(action_block_ticket)d" string="Block Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', True)]}"   confirm="Loading Ticket will be Blocked from being Dispatched" />
                      <button name="%(action_unblock_ticket)d" string="UnBlock Ticket"   type="action" groups="kin_loading.group_show_block_ticket_button" attrs="{'invisible': [('is_block_ticket', '=', False)]}" confirm="Loading Ticket will be Un-Blocked" />
@@ -649,12 +649,14 @@
                             <field name="seal_no_top" />
                             <field name="seal_no_bottom" />
                             <field name="is_water_content" />
-<!--                            <field name="driver_id" domain="[('is_driver','=',True)]" />-->
+                            <field name="driver_name"  />
                             <field name="truck_driver_phone" />
+                              <field name="receiving_officer" />
+                              <field name="depot_manager" />
                             <!--<field name="ref_no" />-->
                         </group>
                         <group>
-                            <group  col="2" string="Compartment" >
+                            <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
                                 <field name="comp3_vol" />
@@ -664,20 +666,24 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="Ullage" >
-                                <field name="comp1_ullage" />
-                                <field name="comp2_ullage" />
-                                <field name="comp3_ullage" />
-                                <field name="comp4_ullage" />
-                                <field name="comp5_ullage" />
-                                <field name="comp6_ullage" />
-                                 <field name="comp7_ullage" />
-                                 <field name="comp8_ullage" />
+                            <group  col="2" string="ON RECEIPT" >
+                                <field name="comp1_receipt" />
+                                <field name="comp2_receipt" />
+                                <field name="comp3_receipt" />
+                                <field name="comp4_receipt" />
+                                <field name="comp5_receipt" />
+                                <field name="comp6_receipt" />
+                                 <field name="comp7_receipt" />
+                                 <field name="comp8_receipt" />
                             </group>
                         </group>
                         <group>
-                            <field name="other_information" />
+                            <field name="amount_in_words" />
                         </group>
+                        <group>
+                            <field name="remark" />
+                        </group>
+
                     </page>
 
 
@@ -704,7 +710,6 @@
                         <group col="4"  string="Approvals and Date" >
                              <field name="depot_officer_id" />
                              <field name="dispatch_date" />
-                            <field name="driver_id" />
                             <field name="supervisor_officer_id" />
                             <field name="supervisor_date" />
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
@@ -850,12 +855,14 @@
                             <field name="seal_no_top" />
                             <field name="seal_no_bottom" />
                             <field name="is_water_content" />
-<!--                            <field name="driver_id" domain="[('is_driver','=',True)]" />-->
+                            <field name="driver_name"  />
                             <field name="truck_driver_phone" />
+                            <field name="receiving_officer" />
+                              <field name="depot_manager" />
                             <!--<field name="ref_no" />-->
                         </group>
                         <group>
-                            <group  col="2" string="Compartment" >
+                            <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
                                 <field name="comp3_vol" />
@@ -865,19 +872,22 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="Ullage" >
-                                <field name="comp1_ullage" />
-                                <field name="comp2_ullage" />
-                                <field name="comp3_ullage" />
-                                <field name="comp4_ullage" />
-                                <field name="comp5_ullage" />
-                                <field name="comp6_ullage" />
-                                 <field name="comp7_ullage" />
-                                 <field name="comp8_ullage" />
+                            <group  col="2" string="ON RECEIPT" >
+                                <field name="comp1_receipt" />
+                                <field name="comp2_receipt" />
+                                <field name="comp3_receipt" />
+                                <field name="comp4_receipt" />
+                                <field name="comp5_receipt" />
+                                <field name="comp6_receipt" />
+                                 <field name="comp7_receipt" />
+                                 <field name="comp8_receipt" />
                             </group>
                         </group>
                         <group>
-                            <field name="other_information" />
+                            <field name="amount_in_words" />
+                        </group>
+                        <group>
+                            <field name="remark" />
                         </group>
 
                     </page>
@@ -905,7 +915,6 @@
                         <group col="4"  string="Approvals and Date" >
                              <field name="depot_officer_id" />
                              <field name="dispatch_date" />
-                            <field name="driver_id" />
                             <field name="supervisor_officer_id" />
                             <field name="supervisor_date" />
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
@@ -1167,12 +1176,14 @@
                             <field name="seal_no_top" />
                             <field name="seal_no_bottom" />
                             <field name="is_water_content" />
-<!--                            <field name="driver_id" domain="[('is_driver','=',True)]" />-->
+                            <field name="driver_name"  />
                             <field name="truck_driver_phone" />
+                              <field name="receiving_officer" />
+                              <field name="depot_manager" />
                             <!--<field name="ref_no" />-->
                         </group>
                         <group>
-                            <group  col="2" string="Compartment" >
+                            <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
                                 <field name="comp3_vol" />
@@ -1182,19 +1193,22 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="Ullage" >
-                                <field name="comp1_ullage" />
-                                <field name="comp2_ullage" />
-                                <field name="comp3_ullage" />
-                                <field name="comp4_ullage" />
-                                <field name="comp5_ullage" />
-                                <field name="comp6_ullage" />
-                                <field name="comp7_ullage" />
-                                <field name="comp8_ullage" />
+                            <group  col="2" string="ON RECEIPT" >
+                                <field name="comp1_receipt" />
+                                <field name="comp2_receipt" />
+                                <field name="comp3_receipt" />
+                                <field name="comp4_receipt" />
+                                <field name="comp5_receipt" />
+                                <field name="comp6_receipt" />
+                                <field name="comp7_receipt" />
+                                <field name="comp8_receipt" />
                             </group>
                         </group>
                         <group>
-                            <field name="other_information" />
+                            <field name="amount_in_words" />
+                        </group>
+                        <group>
+                            <field name="remark" />
                         </group>
 
                     </page>
@@ -1220,7 +1234,6 @@
                         <group col="4"  string="Approvals and Date" >
                              <field name="depot_officer_id" />
                              <field name="dispatch_date" />
-                            <field name="driver_id" />
                             <field name="supervisor_officer_id" />
                             <field name="supervisor_date" />
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
