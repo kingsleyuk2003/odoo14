@@ -527,6 +527,9 @@
                         <field name="is_sub" />
                         <label for="is_sub"/>
                     </div>
+                    <field name="categ_id" position="before"  >
+                        <field name="selfcare_package_id"/>
+                    </field>
                 </field>
         </record>
 

@@ -547,7 +547,7 @@ class ResPartnerExtend(models.Model):
             'phone': self.phone or 'nil',
             'email': self.email or 'nil',
             'expiration': self.expiration_date or 'nil',
-            'plan': self.product_id.name or 'nil',
+            'plan': self.product_id.selfcare_package_id or 'nil',
             'ipaddress': self.ip_address or 'nil',
             'amount': self.amount or 'nil' ,
         }
@@ -779,6 +779,7 @@ class ProductTemplateExtend(models.Model):
     _inherit = 'product.template'
 
     is_sub = fields.Boolean(string='Is Subscription Package', track_visibility='always')
+    selfcare_package_id = fields.Integer(string='Selfcare Package ID', track_visibility='always')
 
 
 

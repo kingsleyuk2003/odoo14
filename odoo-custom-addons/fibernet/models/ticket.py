@@ -840,8 +840,6 @@ class Ticket(models.Model):
             return
 
 
-
-
         #     if not self.root_cause or  not self.resolution :
         #         raise UserError(_('Please Set the Root Cause and Resolution in the Other Information Tab'))
 
