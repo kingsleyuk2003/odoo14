@@ -24,7 +24,7 @@ class ResConfigSettings(models.TransientModel):
     # restrict_days = fields.Boolean("Restrict Days Count")
     # restrict_back_date = fields.Boolean('Restrict Back Dating')
 
-    restrict_days = fields.Boolean("Restrict Days Count",config_parameter='kin_account.restrict_days')
+    restrict_days = fields.Integer("Restrict Days Count",config_parameter='kin_account.restrict_days')
     restrict_back_date = fields.Boolean('Restrict Back Dating', config_parameter = 'kin_account.restrict_back_date')
 
 
