@@ -624,9 +624,9 @@
                         </group>
                     </group>
                     <notebook>
-                      <page string="Ticket / Waybill Information" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
+                      <page string="Ticket Details" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                        <field name="is_loading_ticket"   invisible="1" />
-                          <group col="4" string="Ticket and WayBill Details"  >
+                          <group col="4"  >
                              <field name="product_id" />
                             <field name="ticket_load_qty" />
                             <field name="total_dispatch_qty" />
@@ -656,6 +656,11 @@
                             <!--<field name="ref_no" />-->
                         </group>
                         <group>
+                            <field name="amount_in_words" />
+                        </group>
+                    </page>
+                    <page string="Waybill Details" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
+                         <group >
                             <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
@@ -678,12 +683,8 @@
                             </group>
                         </group>
                         <group>
-                            <field name="amount_in_words" />
-                        </group>
-                        <group>
                             <field name="remark" />
                         </group>
-
                     </page>
 
 
