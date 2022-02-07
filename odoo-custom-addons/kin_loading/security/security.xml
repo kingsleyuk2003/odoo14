@@ -20,7 +20,6 @@
         <field name="name">Depot Manager</field>
         <field name="category_id" ref="module_depot"/>
         <field name="implied_ids" eval="[(4, ref('stock.group_stock_manager'))]"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
 
@@ -29,7 +28,6 @@
         <field name="name">Show Create Loading Ticket</field>
         <field name="category_id" ref="module_depot"/>
         <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
      <record id="group_show_confirm_other_sale" model="res.groups">
@@ -40,13 +38,11 @@
     <record id="group_show_confirm_main_sale" model="res.groups">
         <field name="name">Show "Approve Sales Order" Button</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_disapprove_btn" model="res.groups">
 			<field name="name">Show "Disapprove Sales Order" button on Sales Order</field>
 			<field name="category_id" ref="module_depot"/>
-            <field name="users" eval="[(4, ref('base.user_root'))]"/>
 		</record>
 
     <record id="group_receive_disapprove_sale_order_email" model="res.groups">
@@ -58,87 +54,83 @@
       <record id="group_show_submit_sale_to_manager" model="res.groups">
         <field name="name">Show "Submit" Button on Sales Order</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_cancel_remaining_order" model="res.groups">
         <field name="name">Show "Cancel Remaining Product Qty." Button</field>
        <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_transfer_order" model="res.groups">
         <field name="name">Show "Transfer Product Qty." Button</field>
        <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_approve_atl" model="res.groups">
         <field name="name">Show "Approve ATL" Button</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_sale_reset" model="res.groups">
         <field name="name">Show "Reset to Draft" Button</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
      <record id="group_receive_atl_awaiting_approval_email" model="res.groups">
         <field name="name">Receive "ATL Awaiting Approval" Email Notification</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
      <record id="group_receive_atl_approved" model="res.groups">
         <field name="name">Receive "ATL Approved" Email Notification</field>
         <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
 
     <record id="group_show_ticket_print_button" model="res.groups">
         <field name="name">Show "Print Loading Ticket" Button</field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_waybill_print_button" model="res.groups">
         <field name="name">Show "Print Waybill" Button</field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_show_block_ticket_button" model="res.groups">
         <field name="name">Show "Block Ticket" Button</field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
      <record id="group_cancel_ticket_button" model="res.groups">
         <field name="name">Show "Cancel" Button on Ticket/Waybill</field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
+    </record>
+
+    <record id="group_show_excel_export_lp_button" model="res.groups">
+        <field name="name">Show "Export Loading Programme in Excel" Button</field>
+         <field name="category_id" ref="module_depot"/>
+    </record>
+
+    <record id="group_show_pdf_export_lp_button" model="res.groups">
+        <field name="name">Show "Export Loading Programme in PDF" Button</field>
+         <field name="category_id" ref="module_depot"/>
     </record>
 
 
       <record id="group_notify_cancelled_sales" model="res.groups">
         <field name="name">Email notification for Cancelled Remaining Sales </field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
      <record id="group_notify_transferred_sales" model="res.groups">
         <field name="name">Email notification for Transferred Sales </field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
     <record id="group_receive_block_ticket_notification" model="res.groups">
         <field name="name">Receive Email notification for Blocked Ticket </field>
          <field name="category_id" ref="module_depot"/>
-        <field name="users" eval="[(4, ref('base.user_root'))]"/>
     </record>
 
 

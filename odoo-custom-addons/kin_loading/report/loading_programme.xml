@@ -6,11 +6,11 @@
             <field name="name">Loading Programme</field>
             <field name="model">loading.programme</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">kin_loading.report_loading_programme</field>
-            <field name="report_file">kin_loading.report_loading_programme</field>
+            <field name="report_name">kin_loading.report_loading_programme_pdf</field>
+            <field name="report_file">loading programme</field>
 <!--            <field name="print_report_name">'Delivery Note/Waybill - %s - %s' % (object.partner_id.name or '', object.name)</field>-->
-           <field name="binding_model_id" ref="model_loading_programme"/>
-            <field name="binding_type">report</field>
+<!--           <field name="binding_model_id" ref="model_loading_programme"/>-->
+<!--            <field name="binding_type">report</field>-->
         </record>
 
 
@@ -82,7 +82,7 @@
         <t  t-call="kin_loading.external_layout_standard_loading_programme"><t t-raw="0"/></t>
     </template>
 
-    <template id="report_loading_programme">
+    <template id="report_loading_programme_pdf">
         <t t-foreach="docs" t-as="o">
             <t t-call="web.html_container">
 				<t t-call="kin_loading.loading_programme_layout">

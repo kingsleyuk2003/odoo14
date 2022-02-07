@@ -929,7 +929,7 @@ class StockPickingExtend(models.Model):
 
 
 
-    # ticket_no = fields.Char(string='Ticket No.')
+    meter_no = fields.Char(string='Meter No.')
     is_loading_programme_approved = fields.Boolean(string='Is Loading programme Approved')
     authorization_form_no = fields.Char(string="Authorization Form No",readonly=True)
     product_id = fields.Many2one('product.product',string='Product',compute="_compute_ticket_param",store=True)
@@ -1088,6 +1088,9 @@ class LoadingProgramme(models.Model):
 
     def btn_loading_programme_excel_export(self):
         return self.env.ref('kin_loading.loading_programme_excel_report').report_action(self)
+
+    def btn_loading_programme_pdf_export(self):
+        return self.env.ref('kin_loading.action_report_loading_programme').report_action(self)
 
 
     def check_blocked_tickets(self):
