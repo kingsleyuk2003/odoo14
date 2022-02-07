@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data>
+
+        <record id="action_report_loading_programme" model="ir.actions.report">
+            <field name="name">Loading Programme</field>
+            <field name="model">loading.programme</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">kin_loading.report_loading_programme</field>
+            <field name="report_file">kin_loading.report_loading_programme</field>
+<!--            <field name="print_report_name">'Delivery Note/Waybill - %s - %s' % (object.partner_id.name or '', object.name)</field>-->
+           <field name="binding_model_id" ref="model_loading_programme"/>
+            <field name="binding_type">report</field>
+        </record>
+
+
+		<template id="external_layout_standard_loading_programme"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+<!--            <div class="row">-->
+<!--                <div class="col-6" name="company_address">-->
+<!--                    <div t-field="company.partner_id"  t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'  />-->
+<!--                </div>-->
+<!--            </div>-->
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+            <div class="text-center" style="border-bottom: 1px solid black;">
+<!--                <ul class="list-inline mb4">-->
+<!--                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem-->
+<!--                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>-->
+<!--                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>-->
+<!--                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>-->
+<!--                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>-->
+<!--                </ul>-->
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+<!--                <div t-if="report_type == 'pdf'" class="text-muted">-->
+<!--                    Page: <span class="page"/> / <span class="topage"/>-->
+<!--                </div>-->
+                 <br />
+            </div>
+        </div>
+    </template>
+
+		<template id="loading_programme_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t  t-call="kin_loading.external_layout_standard_loading_programme"><t t-raw="0"/></t>
+    </template>
+
+    <template id="report_loading_programme">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="web.html_container">
+				<t t-call="kin_loading.loading_programme_layout">
+						<div class="page">
+
+							<div class="row" >
+								<div class="col-xs-4" >
+										<h3 class="custom_th"  t-if="o.state == 'draft'" ><b>DRAFT LOADING PROGRAMME</b></h3>
+										<h3 t-if="o.state == 'approve'"><b>LOADING PROGRAMME</b></h3>
+										<h3 t-if="o.state == 'cancel'"><b>CANCELLED LOADING PROGRAMME</b></h3>
+										<h3 t-if="o.state == 'confirm'"><b>AWAITING APPROVAL LOADING PROGRAMME</b></h3>
+								</div>
+							</div>
+							<br />
+							<div class="row" >
+								<div class="col-4">
+									<strong>No:</strong> <span t-field="o.name" />
+								</div>
+								<div class="col-4" >
+									<strong>Product:</strong> <span t-field="o.product_id" />
+								</div>
+								<div class="col-4" >
+									<strong>Date:</strong> <span t-field="o.programme_date" />
+								</div>
+							</div>
+
+							<br />
+							<div class="row">
+									<div class="col-12" >
+										<t t-set="sn" t-value="0"/>
+										<table    class="table table-sm table-bordered"  >
+											<thead>
+												<tr>
+													<td width="3%" class="text-center" ><span><b>S/N.</b></span></td>
+													<td width="10%" class="text-center" ><span><b>TICKET NO.</b></span></td>
+													<td width="20%" class="text-center" ><span><b>Customer</b></span></td>
+													<td width="12%" class="text-center" ><span><b>QTY.</b></span></td>
+													<td width="12%" class="text-center" ><span><b>TRUCK NO.</b></span></td>
+													<td width="30%" class="text-center" ><span><b>DESTINATION</b></span></td>
+													<td width="13%" class="text-center" ><span><b>DPR NO.</b></span></td>
+												</tr>
+											</thead>
+											<tbody>
+												<tr t-foreach="o.ticket_ids" t-as="lp" >
+													<t t-set="sn" t-value="sn + 1"/>
+													<td class="text-center" ><span t-esc="sn" /></td>
+													<td class="text-center" ><span t-field="lp.name" /></td>
+													<td class="text-center" ><span t-field="lp.partner_id" /></td>
+													<td class="text-center" ><span t-field="lp.ticket_load_qty" /></td>
+													<td class="text-center" ><span t-field="lp.truck_no" /></td>
+													<td class="text-center" ><span t-field="lp.dpr_info_id" /></td>
+													<td class="text-center" ><span t-field="lp.dpr_no" /></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+
+						</div>
+
+
+				</t>
+			</t>
+		</t>
+	</template>
+
+
+
+
+	</data>
+</odoo>

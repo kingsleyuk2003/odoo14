@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <report
+		    id="loading_programme_excel_report"
+            model="loading.programme"
+		    string="Loading Programme Report"
+		    report_type="xlsx"
+		    name="kin_loading.loading_programme_excel"
+			file="kin_loading.loading_programme_excel"
+		    attachment_use="False"
+        />
+
+    </data>
+</odoo>
