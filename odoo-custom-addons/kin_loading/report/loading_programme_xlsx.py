@@ -11,7 +11,7 @@ from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 import pytz
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 
-class LoadingProgrammeReport(models.AbstractModel):
+class LoadingProgrammeReport(models.TransientModel):
     _name = 'report.kin_loading.loading_programme_excel'
     _inherit = 'report.report_xlsx.abstract'
 
