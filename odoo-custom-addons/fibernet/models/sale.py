@@ -813,7 +813,7 @@ class Prospect(models.Model):
 
             if partn_ids:
                 subject = 'Sales person (%s) Non-Complaince within the stipulated time ' % (prospect.user_id.name)
-                msg = 'The sales person (%s) has failed to contact the new prospect (%s). A debit is applicable for %s, for not contacting the lead within the stipulated time of 30minutes.' % (prospect.user_id.name, prospect.name, prospect.user_id.name)
+                msg = 'The sales person (%s) has failed to contact the new prospect (%s). A debit is applicable to %s, for not contacting the lead within the stipulated time of 30minutes.' % (prospect.user_id.name, prospect.name, prospect.user_id.name)
 
                 prospect.message_post(
                 body = msg,
