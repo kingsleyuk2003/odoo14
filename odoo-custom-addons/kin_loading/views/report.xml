@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+		 <record id="loading_programme_excel_report" model="ir.actions.report">
+            <field name="name">Loading Programme</field>
+            <field name="model">loading.programme</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.loading_programme_excel</field>
+            <field name="report_file">loading programme excel</field>
+<!--            <field name="print_report_name">'Delivery Note/Waybill - %s - %s' % (object.partner_id.name or '', object.name)</field>-->
+<!--           <field name="binding_model_id" ref="model_loading_programme"/>-->
+<!--            <field name="binding_type">report</field>-->
+        </record>
+
+    </data>
+</odoo>

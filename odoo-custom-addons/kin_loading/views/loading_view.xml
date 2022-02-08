@@ -50,7 +50,8 @@
                         <button name="%(action_disapproval_reason)d" type="action" states="confirm" string="Dis-Approve" groups="kin_loading.group_depot_manager" />
                         <button name="action_cancel" states="confirm,approve" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
                         <button name="action_draft" states="confirm,approve,cancel" type="object" string="Reset to Draft" confirm="Are you sure you want to Reset the Loading Programme?" />
-                        <button name="%(action_loading_programme_wizard)d" type="action" states="approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_depot_officer,kin_loading.group_depot_manager" />
+                        <button name="btn_loading_programme_excel_export"  type="object" states="approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_show_excel_export_lp_button" />
+                        <button name="btn_loading_programme_pdf_export"  type="object" states="approve" string="Export Loading Programme in PDF"  class="oe_highlight" groups="kin_loading.group_show_pdf_export_lp_button" />
                         <field name="state" widget="statusbar"  />
                     </header>
                     <sheet>
@@ -627,6 +628,7 @@
                       <page string="Ticket Details" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                        <field name="is_loading_ticket"   invisible="1" />
                           <group col="4"  >
+                              <field name="meter_no" />
                              <field name="product_id" />
                             <field name="ticket_load_qty" />
                             <field name="total_dispatch_qty" />
@@ -634,8 +636,8 @@
                             <field name="waybill_no" />
                             <field name="truck_no" />
                             <field name="ticket_date" />
-                            <field name="dpr_info_id" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
-                            <field name="dpr_status" readonly="1"  force_save="1" />
+                            <field name="dpr_info_id" context="{'loading_programme_date':parent.programme_date}" domain="[('customer_id','=',partner_id)]" options="{'no_open':True,'no_create':True}"  />
+                            <field name="dpr_status"  />
                             <field name="dpr_no" readonly="1"   force_save="1"/>
                             <field name="location_addr_id" />
                               <field name="dpr_expiry_date" readonly="1" force_save="1"  />

@@ -11,5 +11,4 @@ from . import mass_confirm_order
 from . import sales_order_disapprove
 from . import block_ticket
 from . import unblock_ticket
-from . import loading_programme_wizard
 from . import mass_email_sot
