@@ -16,9 +16,12 @@ Heyden Modifications
     'website': 'http://kinsolve.com',
      'depends': ['base','kin_loading'],
     'data': [
+        'security/ir.model.access.csv',
        'report/report_deliveryslip.xml',
-        'report/report_loading_ticket.xml',
-        'views/loading.xml',
+       'report/report_loading_ticket.xml',
+       'wizard/sales_atl_wizard_view.xml',
+        'views/report.xml',
+       'views/loading.xml',
 
     ],
     'test':[],
