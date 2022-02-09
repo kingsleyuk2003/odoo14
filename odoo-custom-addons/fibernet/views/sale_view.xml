@@ -591,10 +591,40 @@
               </field>
         </record>
 
+         <record id="view_prospect_filter" model="ir.ui.view">
+            <field name="name">Prospect Search</field>
+            <field name="model">prospect</field>
+            <field name="arch" type="xml">
+                <search string="Prospect Search">
+                    <field name="name" string="Name" filter_domain="[('name','ilike',self)]"/>
+                     <field name="address"  />
+                     <field name="email" />
+                     <field name="area_id"  />
+                    <field name="user_id"/>
+                    <field name="state" />
+                    <separator/>
+                    <filter string="New" name="New" domain="[('state', '=', 'new')]"/>
+                    <filter string="Contacted" name="Contacted" domain="[('state', '=', 'contacted')]"/>
+
+                    <group expand="0" string="Group By" >
+                        <filter name="area" string="Area" context="{'group_by':'area_id'}"/>
+                        <filter string="Sales Person" name="Sales Person" context="{'group_by':'user_id'}" />
+                         <filter name="grp_state" string="Status" context="{'group_by':'state'}"/>
+                        <separator/>
+                         <filter name="opened_date" string="Opened Date" context="{'group_by':'open_date'}" help="Opened Date"/>
+                         <filter name="expiry_date" string="Expiry Date" context="{'group_by':'expiry_date'}" help="Expiry Date"/>
+                        <filter name="contacted_date" string="Contacted Date" context="{'group_by':'contacted_date'}" help="Contacted Date"/>
+
+                    </group>
+                </search>
+            </field>
+        </record>
+
          <record id="action_prospect" model="ir.actions.act_window">
             <field name="res_model">prospect</field>
             <field name="name">Prospect</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+               <field name="context">{'search_default_grp_state' : 1}</field>
         </record>
 
          <menuitem id="menu_prospect" name="Prospects" parent="sale.sale_order_menu" action="action_prospect" sequence="14"/>

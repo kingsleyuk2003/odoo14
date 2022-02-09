@@ -266,7 +266,7 @@
                     <page  string="Call Log" attrs="{'invisible': [('category_code', '!=', 'call_log' )]}" >
                          <group col="4" string="Potential Customer" >
                             <field name="prospect_name"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
-                             <field name="prospect_area_id"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
+                             <field name="prospect_area_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
                              <field name="prospect_address"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
 
                              <field name="prospect_phone"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />

@@ -156,16 +156,16 @@
         <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
     </record>
 
-<!--	 <record id="sale_person_prospect_personal_rule" model="ir.rule">-->
-<!--        <field name="name">Personal Sales Person Prospects</field>-->
-<!--        <field ref="model_prospect" name="model_id"/>-->
-<!--        <field name="domain_force">[('user_id','=',user.id)]</field>-->
-<!--        <field name="perm_read" eval="True" />-->
-<!--		 <field name="perm_create" eval="False" />-->
-<!--		 <field name="perm_unlink" eval="False" />-->
-<!--		 <field name="perm_write" eval="False" />-->
-<!--		 <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>-->
-<!--    </record>-->
+	 <record id="sale_person_prospect_personal_rule" model="ir.rule">
+        <field name="name">Personal Sales Person Prospects</field>
+        <field ref="model_prospect" name="model_id"/>
+        <field name="domain_force">[('user_id','=',user.id)]</field>
+        <field name="perm_read" eval="True" />
+		 <field name="perm_create" eval="False" />
+		 <field name="perm_unlink" eval="False" />
+		 <field name="perm_write" eval="False" />
+		 <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+    </record>
 
 	<record id="see_all_prospect_rule" model="ir.rule">
         <field name="name">All Sales Person Prospects</field>

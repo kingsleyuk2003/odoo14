@@ -833,7 +833,7 @@ class Prospect(models.Model):
         self.contacted_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         #send email to ticket opener, which is probably csc group
-        users = self.request_ticket_id.initiator_ticket_group_id.sudo().user_ids
+        users = self.sudo().request_ticket_id.initiator_ticket_group_id.sudo().user_ids
         partn_ids = []
         user_names = ''
         msg = 'The Prospect (%s) has been contacted by %s with comment: <p>%s</p>' % (
