@@ -768,12 +768,13 @@ class Ticket(models.Model):
         inv.installation_ticket_id = self.id
         self.invoice_id = inv
 
-        #Send Email to accountants
-        grp_name = 'account.group_account_invoice'
-        subject = 'A New Sales Quote has been Submitted'
-        msg = _('This installation ticket has been closed by  %s and an invoice has been created for the Ticket with ID %s.') % (
-                                  self.env.user.name, self.name)
-        self.send_email(grp_name, subject, msg)
+        #Send Email to accountants.
+        # This is sending to other groups that dont need to see it also
+        # grp_name = 'account.group_account_invoice'
+        # subject = 'A New Sales Quote has been Submitted'
+        # msg = _('This installation ticket has been closed by  %s and an invoice has been created for the Ticket with ID %s.') % (
+        #                           self.env.user.name, self.name)
+        # self.send_email(grp_name, subject, msg)
 
         return inv
 
