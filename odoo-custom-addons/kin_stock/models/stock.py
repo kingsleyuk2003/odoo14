@@ -149,9 +149,9 @@ class StockPicking(models.Model):
 
     invoice_id = fields.Many2one('account.move' , copy=False)
     invoice_count = fields.Integer(compute="_compute_invoice_count", string='# of Invoices', copy=False, default=0, store=True)
-    purchase_id = fields.Many2one('purchase.order', copy=False,)
+    purchase_id = fields.Many2one('purchase.order', string="Purchase Order" ,copy=False,)
     po_count = fields.Integer(compute="_compute_po_count", string='# of Purchase Orders', copy=False, default=0, store=True)
-    sale_id = fields.Many2one('sale.order', copy=False,)
+    sale_id = fields.Many2one('sale.order',  string="Sale Order"  ,copy=False,)
     so_count = fields.Integer(compute="_compute_so_count", string='# of Sales Orders', copy=False, default=0, store=True)
     location_id = fields.Many2one('stock.location', "Source Location",
         default=lambda self: self.env['stock.picking.type'].browse(

@@ -20,7 +20,7 @@ class SalesAtlReport(models.TransientModel):
         start_date = form['start_date']
         end_date = form['end_date']
         type = form['type']
-        stock_dispatch_location_ids = form['stock_dispatch_location_ids']
+        sales_atl_location_ids = form['sales_atl_location_ids']
         product_ids = form['product_ids']
         partner_id = form['partner_id']
         ticket_ids = form['ticket_ids']
@@ -44,8 +44,8 @@ class SalesAtlReport(models.TransientModel):
             where_type = ""
 
         where_loc = ''
-        if stock_dispatch_location_ids :
-            where_loc = "sm.location_id in (%s) AND" % ','.join(str(sl_id) for sl_id in stock_dispatch_location_ids)
+        if sales_atl_location_ids :
+            where_loc = "sm.location_id in (%s) AND" % ','.join(str(sl_id) for sl_id in sales_atl_location_ids)
 
         where_prod = ''
         if product_ids :
@@ -66,34 +66,36 @@ class SalesAtlReport(models.TransientModel):
 
         # LEFT JOIN works similar to INNER JOIN but with the extra advantage of showing empty join parameter fields (uncompulsory join fields). It is good for join fields that don't have value. It will still show the records. Unlike INNER JOIN (for compulsory join fields) which will omit those records
         sql_statement = """SELECT row_number() over(order by sm.date) as sn, sm.id, sm.origin, sm.product_uom, sm.price_unit,
-                                sm.product_uom_qty, sm.company_id, sm.date,  sm.product_qty, sm.location_id,
+                                sm.product_uom_qty, sm.company_id, sm.date,   sm.location_id,
                                 sm.picking_type_id, sm.state, sm.partner_id, sm.product_id,  sm.picking_id, sm.location_dest_id,
-                                sm.purchase_line_id, sm.sale_order_line_id, sm.purchase_order_line_id,
+                                sm.purchase_line_id, sm.sale_line_id, sml.qty_done, spl.name as vessel ,atl_id, atl_date,
                                 sm.name as product_name, sl.name as stock_location_name, pn.name as partner_name,
-                                sp.waybill_no, sp.valid_driver_license, lm.name as loading_meter , sp.truck_no, loaded_date,
-                                receiving_station_address, receiving_station_management, receiving_manager_phone, truck_driver_phone,
-                                is_block_ticket, is_loading_ticket, is_exdepot_ticket, truck_time_in , truck_time_out,
-                                loader_partner.name as loader_name, dispatch_partner.name as dispatch_officer, dispatch_date,
-                                seal_no_top,  seal_no_bottom, sp.station_code, sp.dpr_no, location_addr_id as location , sp.name as ticket_name,  sp.picking_type_code,
-                                other_information as other_info
-                          FROM stock_move as sm
-                          INNER JOIN stock_location as sl
+                                sp.waybill_no,  sp.truck_no, loaded_date,
+                                address, receiving_station_management, receiving_manager_phone, truck_driver_phone,
+                                is_block_ticket, is_loading_ticket, is_exdepot_ticket, loader_partner.name as loader_name, dispatch_date, sp.dpr_no, location_addr_id as location , sp.name as ticket_name,  sp.picking_type_code
+                          FROM stock_move_line as sml
+                          LEFT JOIN stock_production_lot as spl
+                          ON sml.lot_id = spl.id 
+                          LEFT JOIN stock_move as sm 
+                          ON sml.move_id = sm.id
+                          LEFT JOIN stock_location as sl
                           ON sm.location_id = sl.id
                           LEFT JOIN stock_picking as sp
                           ON sm.picking_id = sp.id
                           LEFT JOIN res_partner as pn
                           ON sm.partner_id = pn.id
-                          LEFT JOIN loading_meter as lm
-                          ON sp.meter_id = lm.id
                           LEFT JOIN res_users as loader
                           ON sp.loader_id = loader.id
                           LEFT JOIN res_partner as loader_partner
-                          ON loader.id = loader_partner.id
-                          LEFT JOIN res_users as dispatcher
-                          ON sp.dispatch_officer_id = dispatcher.id
-                          LEFT JOIN res_partner as dispatch_partner
-                          ON dispatcher.id = dispatch_partner.id
-
+                          ON loader.id = loader_partner.id    
+                          LEFT JOIN sale_order_line 
+                          ON sm.sale_line_id = sale_order_line.id 
+                          LEFT JOIN sale_order
+                          ON sale_order_line.id = sale_order.id 
+                          LEFT JOIN stock_move_line
+                          ON sale_order_line.id = stock_move_line.id 
+                          LEFT JOIN dpr_info 
+                          ON sp.dpr_info_id = dpr_info.id
                           WHERE
                           """ + where_start_date +"""
                            """ + where_type +"""
@@ -102,7 +104,6 @@ class SalesAtlReport(models.TransientModel):
                          """ + where_tik + """
                          """ + where_wb + """
                          """ + where_partner +"""
-                         loaded_date <= %s AND
                          sm.state IN ('done')
                         """
         args = (end_date,)
@@ -127,7 +128,7 @@ class SalesAtlReport(models.TransientModel):
         if not end_date:
             end_date = datetime.today().strftime('%Y-%m-%d')
 
-        stock_dispatch_location_ids = data['form']['stock_dispatch_location_ids']
+        stock_dispatch_location_ids = data['form']['sales_atl_location_ids']
         stklocs = ''
         if stock_dispatch_location_ids :
             for operating_unit_id in stock_dispatch_location_ids:
@@ -136,7 +137,7 @@ class SalesAtlReport(models.TransientModel):
         else:
             stklocs = 'All Depots'
 
-        report_worksheet = workbook.add_worksheet('Stock Dispatch Report')
+        report_worksheet = workbook.add_worksheet('SALES/ATL Report')
         header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 24})
         title_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 14})
         head_format = workbook.add_format({'bold': True, 'border': 1, 'font_size': 10,'bg_color':'blue','color':'white'})
@@ -188,8 +189,6 @@ class SalesAtlReport(models.TransientModel):
         report_worksheet.set_column(2, 2, 25)
         report_worksheet.set_column(3, 20, 10)
 
-
-
         product_obj = self.env['product.product']
         for product_id in product_ids:
             report_worksheet.set_row(row, 20)
@@ -198,45 +197,46 @@ class SalesAtlReport(models.TransientModel):
             report_worksheet.merge_range(row, col, row, 9, product_name, title_format)
             row += 2
 
-
-            report_worksheet.write_row(row, col, ('S/N', 'Dispatched Date','Customer' , 'Vehicle ID', 'Meter No.', 'Loaded Date','Location' , 'Source Ref', 'Ticket ID' ,'Waybill No.', 'Product','Qty.','Cost Price', 'Dispatched By','Other Info.', 'Depot','Receiving Station Address', 'DPR No.','Loading Ticket', 'Ex-Depot Ticket' ,'Picking Operation') , head_format)
+            report_worksheet.write_row(row, col, ('S/N', 'ATL NO.', 'ATL DATE','ATL NAME' , 'ATL QTY', 'CUM. ATL QTY' , 'BAL. QTY'  , 'TRUCK NO.' ,'LOADED DATE','DISPATCHED DATE','LOCATION' , 'SOURCE REF', 'TICKET ID' ,'WAYBILL NO.', 'PRODUCT', 'COST' , 'DEPOT','DESTINATION','picking type','VESSEL') , head_format)
             row += 1
             total_qty = 0
             first_row = row
             a1_notation_total_qty_start = xl_rowcol_to_cell(row, 1)
+            cum_qty = 0
+            cum_bal = 0
             for list_dict in list_dicts:
                 if list_dict['product_id'] == product_id:
-                    report_worksheet.write(row, 0, list_dict['sn'],cell_wrap_format)
-                    report_worksheet.write(row, 1, list_dict['date'] and datetime.strptime(list_dict['date'],'%Y-%m-%d %H:%M:%S').strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format) or False
-                    report_worksheet.write(row, 2, list_dict['partner_name'], cell_wrap_format)
-                    report_worksheet.write(row, 3, list_dict['truck_no'], cell_wrap_format)
-                    report_worksheet.write(row, 4, list_dict['loading_meter'], cell_wrap_format)
-                    report_worksheet.write(row, 5, list_dict['loaded_date'] and datetime.strptime(list_dict['loaded_date'], '%Y-%m-%d').strftime('%d/%m/%Y'), cell_wrap_format) or False
-                    report_worksheet.write(row, 6, list_dict['location'], cell_wrap_format)
-                    report_worksheet.write(row, 7, list_dict['origin'], cell_wrap_format)
-                    report_worksheet.write(row, 8, list_dict['ticket_name'], cell_wrap_format)
-                    report_worksheet.write(row, 9, list_dict['waybill_no'], cell_wrap_format)
-                    report_worksheet.write(row, 10, list_dict['product_name'], cell_wrap_format)
-                    if  list_dict['picking_type_code'] == 'incoming':
-                        product_uom_qty =  -list_dict['product_uom_qty']
+                    if list_dict['picking_type_code'] == 'incoming':
+                        product_uom_qty = -list_dict['qty_done']
                     else:
-                        product_uom_qty =  list_dict['product_uom_qty']
-                    report_worksheet.write(row, 11, product_uom_qty, cell_number)
-                    report_worksheet.write(row, 12, list_dict['price_unit'], cell_amount)
-                    report_worksheet.write(row, 13, list_dict['dispatch_officer'], cell_wrap_format)
-                    report_worksheet.write(row, 14, list_dict['other_info'], cell_wrap_format)
-                    report_worksheet.write(row, 15, list_dict['stock_location_name'], cell_wrap_format)
-                    report_worksheet.write(row, 16, list_dict['receiving_station_address'], cell_wrap_format)
-                    report_worksheet.write(row, 17, list_dict['station_code'], cell_wrap_format)
-                    report_worksheet.write(row, 18, list_dict['dpr_no'], cell_wrap_format)
-                    report_worksheet.write(row, 19, list_dict['is_loading_ticket'], cell_wrap_format)
-                    report_worksheet.write(row, 20, list_dict['is_exdepot_ticket'], cell_wrap_format)
-                    report_worksheet.write(row, 21, list_dict['picking_type_code'], cell_wrap_format)
+                        product_uom_qty = list_dict['qty_done']
+                    cum_qty += product_uom_qty
+                    cum_bal -= product_uom_qty
+                    report_worksheet.write(row, 0, list_dict['sn'],cell_wrap_format)
+                    report_worksheet.write(row, 1, list_dict['atl_id'], cell_wrap_format)
+                    report_worksheet.write(row, 2, list_dict['atl_date'] and list_dict['date'].strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format) or False
+                    report_worksheet.write(row, 3, list_dict['partner_name'], cell_wrap_format)
+                    report_worksheet.write(row, 4, product_uom_qty, cell_number)
+                    report_worksheet.write(row, 5, cum_qty, cell_number)
+                    report_worksheet.write(row, 6, cum_bal, cell_number)
+                    report_worksheet.write(row, 7, list_dict['truck_no'], cell_wrap_format)
+                    report_worksheet.write(row, 8, list_dict['loaded_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
+                    report_worksheet.write(row, 9, list_dict['dispatch_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
+                    report_worksheet.write(row, 10, list_dict['location'], cell_wrap_format)
+                    report_worksheet.write(row, 11, list_dict['origin'], cell_wrap_format)
+                    report_worksheet.write(row, 12, list_dict['ticket_name'], cell_wrap_format)
+                    report_worksheet.write(row, 13, list_dict['waybill_no'], cell_wrap_format)
+                    report_worksheet.write(row, 14, list_dict['product_name'], cell_wrap_format)
+                    report_worksheet.write(row, 15, list_dict['price_unit'], cell_amount)
+                    report_worksheet.write(row, 16, list_dict['stock_location_name'], cell_wrap_format)
+                    report_worksheet.write(row, 17, list_dict['address'], cell_wrap_format)
+                    report_worksheet.write(row, 18, list_dict['picking_type_code'], cell_wrap_format)
+                    report_worksheet.write(row, 19, list_dict['vessel'], cell_wrap_format)
                     row += 1
                     total_qty += product_uom_qty
                 last_row  = row
-                a1_notation_ref = xl_range(first_row, 11, last_row, 11)
-                report_worksheet.write(row, 11, '=SUM(' + a1_notation_ref + ')', cell_total_currency, total_qty)
+                a1_notation_ref = xl_range(first_row, 4, last_row, 4)
+                report_worksheet.write(row, 4, '=SUM(' + a1_notation_ref + ')', cell_total_currency, total_qty)
             row += 1
         return
 

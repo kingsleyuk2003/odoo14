@@ -49,9 +49,6 @@ class StockMoveLoading(models.Model):
             'company_id': self.company_id.id,
         }
 
-        if self.picking_id.is_loading_ticket == True:
-            vals['qty_done'] = self.picking_id.ticket_load_qty
-
         if quantity:
             rounding = self.env['decimal.precision'].precision_get('Product Unit of Measure')
             uom_quantity = self.product_id.uom_id._compute_quantity(quantity, self.product_uom,
@@ -60,9 +57,9 @@ class StockMoveLoading(models.Model):
             uom_quantity_back_to_product_uom = self.product_uom._compute_quantity(uom_quantity, self.product_id.uom_id,
                                                                                   rounding_method='HALF-UP')
             if float_compare(quantity, uom_quantity_back_to_product_uom, precision_digits=rounding) == 0:
-                vals = dict(vals, product_uom_qty=uom_quantity)
+                vals = dict(vals, product_uom_qty=uom_quantity,qty_done=uom_quantity)
             else:
-                vals = dict(vals, product_uom_qty=quantity, product_uom_id=self.product_id.uom_id.id)
+                vals = dict(vals, product_uom_qty=quantity,qty_done=uom_quantity, product_uom_id=self.product_id.uom_id.id)
         if reserved_quant:
             vals = dict(
                 vals,
@@ -301,6 +298,8 @@ class StockPickingExtend(models.Model):
         pickings_without_lots = self.browse()
         products_without_lots = self.env['product.product']
         for picking in self:
+            picking.move_line_ids_without_package.unlink()
+            picking.action_assign()
             if not picking.move_lines and not picking.move_line_ids:
                 pickings_without_moves |= picking
 
@@ -944,9 +943,6 @@ class StockPickingExtend(models.Model):
     loader_id = fields.Many2one('res.users',string="Loader's Name")
     loaded_date = fields.Date(string='Loaded Date')
     # quantity_loaded = fields.Float('Quantity Loaded')
-    seal_no_top = fields.Char(string='Seal No. Top')
-    seal_no_bottom  = fields.Char(string='Seal No. Bottom')
-    is_water_content = fields.Boolean(string='Water Content')
     depot_officer_id = fields.Many2one('res.users', string="Dispatch Officer's Name")
     dispatch_date = fields.Date(string='Dispatch Date')
     supervisor_officer_id = fields.Many2one('res.users', string="Supervisor's Name")
@@ -992,7 +988,6 @@ class StockPickingExtend(models.Model):
     is_throughput_ticket = fields.Boolean('Throughput Ticket')
     is_internal_use_ticket = fields.Boolean('Internal Use Ticket')
     is_retail_station_ticket = fields.Boolean('Retail Station Ticket')
-    valid_driver_license = fields.Char(string="Valid Driver's License")
     receiving_station_address = fields.Char(string="Receiving Customer's Address")
     receiving_station_management = fields.Char(string="Receiving Station Manager")
     receiving_manager_phone = fields.Char(string="Receiving Manager's Phone")
@@ -1128,11 +1123,15 @@ class LoadingProgramme(models.Model):
         return self.write({'state': 'confirm','depot_officer_id':self.env.user.id,'depot_officer_date':depot_officer_date})
 
 
+
+
+
     def action_approve(self):
         self.check_blocked_tickets()
 
         for ticket in self.ticket_ids:
             ticket.is_loading_programme_approved = True
+            ticket.action_assign()
 
         # Notify Dispatch officers/Inventory users
         self.send_email(grp_name='kin_loading.group_dispatch_officer',
@@ -2012,8 +2011,9 @@ class SaleOrderLoading(models.Model):
             'help': action.help,
             'type': action.type,
             'view_mode': 'tree',
+            'views': [(self.env.ref('kin_loading.vpicktree_depot').id, 'tree'),
+                      (self.env.ref('kin_loading.view_picking_depot_form').id, 'form')],
             'view_id': self.env.ref('kin_loading.vpicktree_depot').id,
-            'target': 'new',
             'context': action.context,
             'res_model': action.res_model,
         }
@@ -2551,6 +2551,9 @@ class SaleOrderLoading(models.Model):
                         self.partner_id.name, self.name)))
 
         self.state = 'atl_approved'
+        self.atl_id = self.env['ir.sequence'].next_by_code('atl_code')
+        self.atl_approved_user_id = self.env.user
+        self.atl_date = self.date.today()
         self.is_has_advance_invoice = True
         self.is_cancelled_invoice = False
         self.is_advance_invoice_validated = True
@@ -2883,12 +2886,15 @@ class SaleOrderLoading(models.Model):
                                       default=0)
     stock_move_ids = fields.One2many('stock.move', 'throughput_so_transfer_movement_id', string='Throughput Stock Moves Entry(s)')
 
-    atl_partner_id = fields.Many2one('res.partner', related='partner_id', string='Customer')
+    atl_partner_id = fields.Many2one('res.partner', related='partner_id', string='ATL Name')
     atl_product_id = fields.Many2one('product.product', compute="_compute_atl_fields", string='Product')
-    atl_qty = fields.Float(compute="_compute_atl_fields", string='Quantity')
+    atl_qty = fields.Float(compute="_compute_atl_fields", string='ATL Quantity')
     atl_payment_mode_id = fields.Many2one('payment.mode',  string='Mode of Payment')
     atl_depot_id = fields.Many2one('depot', string='Depot')
     atl_jetty_id = fields.Many2one('jetty', string='Jetty')
+    atl_id = fields.Char(string='ATL ID')
+    atl_approved_user_id = fields.Many2one('res.users',string='ATL Approved By')
+    atl_date = fields.Date(string='ATL Date')
 
 
 

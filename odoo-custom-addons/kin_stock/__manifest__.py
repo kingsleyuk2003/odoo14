@@ -14,7 +14,7 @@ Stock Extra Customization
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['stock','stock_account','purchase','sale','account'],
+    'depends': ['stock','stock_account','purchase','sale','sale_stock','account'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',

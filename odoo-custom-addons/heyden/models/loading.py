@@ -24,7 +24,7 @@ class StockPicking(models.Model):
         # if self.is_loading_ticket_printed :
         #     raise UserError(_('Sorry, Loading Ticket can only be printed once'))
         self.is_loading_ticket_printed = True
-        return self.env['report'].get_action(self, 'heyden.action_report_loading_ticket_heyden')
+        return self.env.ref('heyden.action_report_loading_ticket_heyden').report_action(self)
 
 
     def btn_print_waybill(self):

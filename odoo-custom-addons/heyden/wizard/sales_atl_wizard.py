@@ -24,7 +24,7 @@ class SalesAtlWizard(models.TransientModel):
         context = self.env.context or {}
         wiz_data = self.read([])[0] #converts all objects to lists that can be easily be passed to the report
         data = {'name': 'Sales ATL Report', 'active_ids': context.get('active_ids', [])}
-        data['form'] = {'start_date' : wiz_data['start_date'],'type':wiz_data['type'],'end_date':wiz_data['end_date'],'product_ids' : wiz_data['product_ids'],'stock_dispatch_location_ids' : wiz_data['stock_dispatch_location_ids'],'partner_id' : wiz_data['partner_id'],'ticket_ids' : wiz_data['ticket_ids'],'waybill_no' : wiz_data['waybill_no']}
+        data['form'] = {'start_date' : wiz_data['start_date'],'type':wiz_data['type'],'end_date':wiz_data['end_date'],'product_ids' : wiz_data['product_ids'],'sales_atl_location_ids' : wiz_data['sales_atl_location_ids'],'partner_id' : wiz_data['partner_id'],'ticket_ids' : wiz_data['ticket_ids'],'waybill_no' : wiz_data['waybill_no']}
         return self.env.ref('heyden.sales_atl_excel_report').report_action(self,data)
 
 

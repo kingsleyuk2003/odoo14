@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<openerp>
+<odoo>
 	<data>
+
+        <record model="ir.sequence" id="seq_atl_id">
+        <field name="name">ATL ID</field>
+        <field name="code">atl_code</field>
+        <field name="prefix">ATL/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False" />
+    </record>
 
 
     <record model="ir.sequence" id="seq_loading_programme_id">
@@ -55,4 +63,4 @@
 
 
 	</data>
-</openerp>
+</odoo>
