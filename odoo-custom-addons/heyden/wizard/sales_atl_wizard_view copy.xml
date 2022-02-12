@@ -7,12 +7,17 @@
                     <field name="arch" type="xml" >
                     <form string="Sales/ATL Wizard" >
                         <strong>This wizard will help  generate the Sales/ATL excel report </strong>
-
+                         <group col="4" colspan="4" >
+                             <field name="start_date" />
+                             <field name="type" required="1" />
+                             <field name="end_date" />
+                        </group>
                         <group col="4" colspan="4" >
-                             <field name="lot_id" options="{'no_open':True,'no_create':True}"  required="1" />
-                              <field name="type" required="1" />
+                                <field name="sales_atl_location_ids" widget="many2many_tags" domain="[('usage','in',['internal','supplier'])]" options="{'no_open':True,'no_create':True}" />
                                 <field name="product_ids"  widget="many2many_tags" domain="[('type','=','product')]"  options="{'no_open':True,'no_create':True}" />
-                                 <field name="sales_atl_location_ids" widget="many2many_tags" domain="[('usage','in',['internal','supplier'])]" options="{'no_open':True,'no_create':True}" required="1" />
+                                <field name="partner_id" options="{'no_open':True,'no_create':True}"  />
+                                <field name="waybill_no"   />
+                                <field name="ticket_ids" widget="many2many_tags" options="{'no_open':True,'no_create':True}"  />
                         </group>
                          <footer>
                                 <button default_focus="1"  name="sales_atl_report" string="Export" type="object"  colspan="2" class="oe_highlight" />

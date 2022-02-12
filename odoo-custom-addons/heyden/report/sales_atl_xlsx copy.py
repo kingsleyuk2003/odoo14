@@ -15,41 +15,23 @@ class SalesAtlReport(models.TransientModel):
     _name = 'report.heyden.sales_atl_excel'
     _inherit = 'report.report_xlsx.abstract'
 
-    def _get_discharged_qty(self,form):
-        product_ids = form['product_ids']
-        lot_id = form['lot_id']
-        sales_atl_location_ids = form['sales_atl_location_ids']
-
-        where_prod = ''
-        if product_ids:
-            where_prod = "product_id in (%s) AND" % ','.join(str(pr_id) for pr_id in product_ids)
-
-        where_lot = ''
-        if lot_id:
-            where_lot = "lot_id in (%s) AND" % (lot_id[0])
-
-        where_loc = ''
-        if sales_atl_location_ids:
-            where_loc = "location_dest_id in (%s) AND" % ','.join(str(sl_id) for sl_id in sales_atl_location_ids)
-
-        sql_statement = """SELECT sum(qty_done)
-                                  FROM stock_move_line
-                                  WHERE
-                                 """ + where_lot + """
-                                 """ + where_prod + """                        
-                                 """ + where_loc + """
-                                 state IN ('done')
-                                """
-        self.env.cr.execute(sql_statement)
-        dictAll = self.env.cr.dictfetchall()
-        return dictAll
-
 
     def _get_data(self,form):
+        start_date = form['start_date']
+        end_date = form['end_date']
         type = form['type']
-        product_ids = form['product_ids']
-        lot_id = form['lot_id']
         sales_atl_location_ids = form['sales_atl_location_ids']
+        product_ids = form['product_ids']
+        partner_id = form['partner_id']
+        ticket_ids = form['ticket_ids']
+        waybill_no = form['waybill_no']
+
+        where_start_date = ''
+        if start_date :
+            where_start_date = "loaded_date >= '%s' AND" % (start_date)
+
+        if not end_date :
+            end_date = datetime.today().strftime('%Y-%m-%d')
 
         where_type = ''
         if type == 'is_throughput':
@@ -61,17 +43,26 @@ class SalesAtlReport(models.TransientModel):
         elif type == 'all':
             where_type = ""
 
+        where_loc = ''
+        if sales_atl_location_ids :
+            where_loc = "sm.location_id in (%s) AND" % ','.join(str(sl_id) for sl_id in sales_atl_location_ids)
+
         where_prod = ''
         if product_ids :
             where_prod = "sm.product_id in (%s) AND" % ','.join(str(pr_id) for pr_id in product_ids)
 
-        where_lot = ''
-        if lot_id:
-            where_lot = "sml.lot_id in (%s) AND" % (lot_id[0])
+        where_partner = ''
+        if partner_id:
+            where_partner = "sm.partner_id in (%s) AND" % (partner_id[0])
 
-        where_loc = ''
-        if sales_atl_location_ids:
-            where_loc = "sm.location_id in (%s) AND" % ','.join(str(sl_id) for sl_id in sales_atl_location_ids)
+        where_tik = ''
+        if ticket_ids:
+            where_tik = "sp.id in (%s) AND" % ','.join(str(tk_id) for tk_id in ticket_ids)
+
+        where_wb = ''
+        if waybill_no:
+            where_wb = "sp.waybill_no ilike '%s' AND" % (waybill_no)
+
 
         # LEFT JOIN works similar to INNER JOIN but with the extra advantage of showing empty join parameter fields (uncompulsory join fields). It is good for join fields that don't have value. It will still show the records. Unlike INNER JOIN (for compulsory join fields) which will omit those records
         sql_statement = """SELECT row_number() over(order by sm.date) as sn, sm.id, sm.origin, sm.product_uom, sm.price_unit,
@@ -106,13 +97,17 @@ class SalesAtlReport(models.TransientModel):
                           LEFT JOIN dpr_info 
                           ON sp.dpr_info_id = dpr_info.id
                           WHERE
+                          """ + where_start_date +"""
                            """ + where_type +"""
-                         """ + where_lot + """
-                         """ + where_prod + """      
                          """ + where_loc + """
+                         """ + where_prod + """
+                         """ + where_tik + """
+                         """ + where_wb + """
+                         """ + where_partner +"""
                          sm.state IN ('done')
                         """
-        self.env.cr.execute(sql_statement)
+        args = (end_date,)
+        self.env.cr.execute(sql_statement,args)
         dictAll = self.env.cr.dictfetchall()
 
         return dictAll
@@ -121,7 +116,6 @@ class SalesAtlReport(models.TransientModel):
     def generate_xlsx_report(self, workbook, data, objects):
         user_company = self.env.user.company_id
         list_dicts = self._get_data(data['form'])
-        discharged_qty = self._get_discharged_qty(data['form'])[0]['sum']
 
         product_ids = data['form']['product_ids']
         if not product_ids:
@@ -129,12 +123,17 @@ class SalesAtlReport(models.TransientModel):
             for pr_id in pro_ids:
                 product_ids.append(pr_id.id)
 
+        start_date = data['form']['start_date']
+        end_date = data['form']['end_date']
+        if not end_date:
+            end_date = datetime.today().strftime('%Y-%m-%d')
+
         stock_dispatch_location_ids = data['form']['sales_atl_location_ids']
         stklocs = ''
-        if stock_dispatch_location_ids:
-            for sdl_id in stock_dispatch_location_ids:
-                sl_name = self.env['stock.location'].browse(sdl_id).name
-                stklocs += ',' + sl_name
+        if stock_dispatch_location_ids :
+            for operating_unit_id in stock_dispatch_location_ids:
+                sl_name = self.env['stock.location'].browse(operating_unit_id).name
+                stklocs +=',' + sl_name
         else:
             stklocs = 'All Depots'
 
@@ -162,30 +161,33 @@ class SalesAtlReport(models.TransientModel):
         # Title Format
         report_worksheet.set_row(2, 20)
 
-        # Vessel
-        lot_obj = self.env['stock.production.lot']
-        lot_id = data['form']['lot_id']
-
         type = data['form']['type']
         if type == 'is_throughput':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL Throughput Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'Throughput Stock Dispatch Report for %s ' % stklocs.strip(','), title_format)
         elif type == 'is_internal_use':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL Internal Use Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'Internal Use Stock Dispatch Report for %s ' % stklocs.strip(','),
+                                         title_format)
         elif type == 'is_indepot':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL In Depot Stock Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'In Depot Stock Dispatch Report for %s ' % stklocs.strip(','), title_format)
         elif type == 'all':
-            report_worksheet.merge_range(2, 0, 2, 10, 'All SALES/ATL Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'All Stock Dispatch Report for %s ' % stklocs.strip(','), title_format)
 
+        # Period
         report_worksheet.set_row(3, 20)
-        report_worksheet.merge_range(3, 0, 3, 10, 'DISCHARGED QTY: %s    VESSEL: %s' % ('{:,.2f}'.format(discharged_qty) ,lot_obj.browse(lot_id[0]).name)  , title_format)
+        if start_date and end_date:
+            report_worksheet.merge_range(3, 0, 3, 10,
+                                          'Period: ' + datetime.strptime(start_date, '%Y-%m-%d').strftime(
+                                              '%d/%m/%Y') + '  to ' + datetime.strptime(end_date, '%Y-%m-%d').strftime(
+                                              '%d/%m/%Y'), title_format)
+        else:
+            report_worksheet.merge_range(3, 0, 3, 10, 'Period: All', title_format)
 
         col = 0
-        row = 3
-        report_worksheet.set_column(0, 0, 3)
-        report_worksheet.set_column(1, 1, 15)
-        report_worksheet.set_column(2, 2, 10)
-        report_worksheet.set_column(3, 3, 20)
-        report_worksheet.set_column(4, 20, 10)
+        row = 5
+        report_worksheet.set_column(0, 0, 5)
+        report_worksheet.set_column(1, 1, 10)
+        report_worksheet.set_column(2, 2, 25)
+        report_worksheet.set_column(3, 20, 10)
 
         product_obj = self.env['product.product']
         for product_id in product_ids:
@@ -195,13 +197,13 @@ class SalesAtlReport(models.TransientModel):
             report_worksheet.merge_range(row, col, row, 9, product_name, title_format)
             row += 2
 
-            report_worksheet.write_row(row, col, ('S/N', 'ATL NO.', 'ATL DATE','ATL NAME' , 'ATL QTY', 'CUM. ATL QTY' , 'BAL. QTY'  , 'TRUCK NO.' ,'LOADED DATE','DISPATCHED DATE','LOCATION' , 'SOURCE REF', 'TICKET ID' ,'WAYBILL NO.', 'DEPOT','DESTINATION') , head_format)
+            report_worksheet.write_row(row, col, ('S/N', 'ATL NO.', 'ATL DATE','ATL NAME' , 'ATL QTY', 'CUM. ATL QTY' , 'BAL. QTY'  , 'TRUCK NO.' ,'LOADED DATE','DISPATCHED DATE','LOCATION' , 'SOURCE REF', 'TICKET ID' ,'WAYBILL NO.', 'PRODUCT', 'COST' , 'DEPOT','DESTINATION','picking type','VESSEL') , head_format)
             row += 1
             total_qty = 0
             first_row = row
             a1_notation_total_qty_start = xl_rowcol_to_cell(row, 1)
             cum_qty = 0
-            cum_bal = discharged_qty
+            cum_bal = 0
             for list_dict in list_dicts:
                 if list_dict['product_id'] == product_id:
                     if list_dict['picking_type_code'] == 'incoming':
@@ -219,14 +221,17 @@ class SalesAtlReport(models.TransientModel):
                     report_worksheet.write(row, 6, cum_bal, cell_number)
                     report_worksheet.write(row, 7, list_dict['truck_no'], cell_wrap_format)
                     report_worksheet.write(row, 8, list_dict['loaded_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
-                    report_worksheet.write(row, 9, list_dict['dispatch_date'] and list_dict['dispatch_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
+                    report_worksheet.write(row, 9, list_dict['dispatch_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
                     report_worksheet.write(row, 10, list_dict['location'], cell_wrap_format)
                     report_worksheet.write(row, 11, list_dict['origin'], cell_wrap_format)
                     report_worksheet.write(row, 12, list_dict['ticket_name'], cell_wrap_format)
                     report_worksheet.write(row, 13, list_dict['waybill_no'], cell_wrap_format)
-                    report_worksheet.write(row, 14, list_dict['stock_location_name'], cell_wrap_format)
-                    report_worksheet.write(row, 15, list_dict['address'], cell_wrap_format)
-
+                    report_worksheet.write(row, 14, list_dict['product_name'], cell_wrap_format)
+                    report_worksheet.write(row, 15, list_dict['price_unit'], cell_amount)
+                    report_worksheet.write(row, 16, list_dict['stock_location_name'], cell_wrap_format)
+                    report_worksheet.write(row, 17, list_dict['address'], cell_wrap_format)
+                    report_worksheet.write(row, 18, list_dict['picking_type_code'], cell_wrap_format)
+                    report_worksheet.write(row, 19, list_dict['vessel'], cell_wrap_format)
                     row += 1
                     total_qty += product_uom_qty
                 last_row  = row

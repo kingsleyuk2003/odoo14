@@ -290,7 +290,8 @@ class StockPickingExtend(models.Model):
                 raise UserError('Sorry, Wait for the Ticket to be Programmed before you can dispatch the goods')
             if self.loading_programme_id.state != 'approve':
                 raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.loading_programme_id.state))
-
+        if self.is_loading_ticket or self.is_exdepot_ticket or self.is_throughput_ticket or self.is_internal_use_ticket:
+            self.waybill_no = self.env['ir.sequence'].next_by_code('waybill_id')
 
         # Sanity checks.
         pickings_without_moves = self.browse()
@@ -298,8 +299,9 @@ class StockPickingExtend(models.Model):
         pickings_without_lots = self.browse()
         products_without_lots = self.env['product.product']
         for picking in self:
-            picking.move_line_ids_without_package.unlink()
-            picking.action_assign()
+            if self.is_loading_ticket == True:
+                picking.move_line_ids_without_package.unlink()
+                picking.action_assign()
             if not picking.move_lines and not picking.move_line_ids:
                 pickings_without_moves |= picking
 
@@ -695,7 +697,7 @@ class StockPickingExtend(models.Model):
     
     def do_transfer(self):
 
-        if self.is_loading_ticket or self.is_exdepot_ticket or self.is_throughput_ticket and self.is_internal_use_ticket:
+        if self.is_loading_ticket or self.is_exdepot_ticket or self.is_throughput_ticket or self.is_internal_use_ticket:
             self.waybill_no = self.env['ir.sequence'].next_by_code('waybill_id')
 
             if self.is_throughput_ticket :
@@ -1169,6 +1171,7 @@ class LoadingProgramme(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id("kin_loading.action_depot_dispatch")
         action['views'] = [
             (self.env.ref('kin_loading.vpicktree_depot').id, 'tree'),
+            (self.env.ref('kin_loading.view_picking_depot_form').id, 'form')
         ]
         action['context'] = self.env.context
         ticket_ids = self.mapped('ticket_ids')
@@ -1177,7 +1180,6 @@ class LoadingProgramme(models.Model):
         if len(ticket_ids) > 1:
             action['domain'] = [('id', 'in', ticket_ids.ids)]
         elif len(ticket_ids) == 1:
-            action['views'] = [(self.env.ref('kin_loading.view_picking_depot_form').id, 'form'),]
             action['res_id'] = ticket_ids.ids[0]
         else:
             action = {'type': 'ir.actions.act_window_close'}
@@ -2553,7 +2555,7 @@ class SaleOrderLoading(models.Model):
         self.state = 'atl_approved'
         self.atl_id = self.env['ir.sequence'].next_by_code('atl_code')
         self.atl_approved_user_id = self.env.user
-        self.atl_date = self.date.today()
+        self.atl_date = datetime.today()
         self.is_has_advance_invoice = True
         self.is_cancelled_invoice = False
         self.is_advance_invoice_validated = True

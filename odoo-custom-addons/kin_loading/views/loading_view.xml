@@ -708,10 +708,10 @@
 
                         </group>
                         <group col="4"  string="Approvals and Date" >
-                             <field name="depot_officer_id" />
-                             <field name="dispatch_date" />
-                            <field name="supervisor_officer_id" />
-                            <field name="supervisor_date" />
+                             <field name="depot_officer_id" readonly="1" />
+                             <field name="dispatch_date" readonly="1" />
+                            <field name="supervisor_officer_id" readonly="1" />
+                            <field name="supervisor_date" readonly="1" />
                             <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
                         </group>
                     </page>

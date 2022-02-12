@@ -24,14 +24,20 @@ class SalesAtlWizard(models.TransientModel):
         context = self.env.context or {}
         wiz_data = self.read([])[0] #converts all objects to lists that can be easily be passed to the report
         data = {'name': 'Sales ATL Report', 'active_ids': context.get('active_ids', [])}
-        data['form'] = {'lot_id':wiz_data['lot_id'],'type':wiz_data['type'],'product_ids' : wiz_data['product_ids'],'sales_atl_location_ids' : wiz_data['sales_atl_location_ids']}
+        data['form'] = {'start_date' : wiz_data['start_date'],'type':wiz_data['type'],'end_date':wiz_data['end_date'],'product_ids' : wiz_data['product_ids'],'sales_atl_location_ids' : wiz_data['sales_atl_location_ids'],'partner_id' : wiz_data['partner_id'],'ticket_ids' : wiz_data['ticket_ids'],'waybill_no' : wiz_data['waybill_no']}
         return self.env.ref('heyden.sales_atl_excel_report').report_action(self,data)
 
 
+
+
     name = fields.Char(string='Name')
-    sales_atl_location_ids = fields.Many2many('stock.location', 'sales_atl_wizard_rel', 'sales_atl_wizard_id', 'sales_atl_loc_id', string='Stock Locations')
+    sales_atl_location_ids = fields.Many2many('stock.location', 'sales_atl_wizard_rel', 'sales_atl_wizard_id','sales_atl_loc_id', string='Stock Locations')
     product_ids = fields.Many2many('product.product', 'prod_atl_rel', 'sales_atl_wizard_id', 'sales_atl_loc_id', string='Products')
-    lot_id = fields.Many2one('stock.production.lot',string='Vessel')
+    start_date = fields.Date('Start Loaded Date')
+    end_date = fields.Date('End Loaded Date')
+    partner_id = fields.Many2one('res.partner', string='Customer')
+    ticket_ids = fields.Many2many('stock.picking', string='Ticket(S)')
+    waybill_no = fields.Char(string='Waybill')
     type = fields.Selection( [('is_indepot', 'In Depot'), ('is_throughput', 'Throughput'), ('is_internal_use', 'Internal Use'), ('all', 'All Operation Type')],string='Operation Type')
 
 

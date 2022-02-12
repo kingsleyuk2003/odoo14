@@ -31,4 +31,8 @@ class StockPicking(models.Model):
         # if self.is_waybill_printed:
         #     raise UserError(_('Sorry, Waybill can only be printed once'))
         self.is_waybill_printed = True
+        if not self.dispatch_date :
+            self.dispatch_date = date.today()
+            self.loaded_date = self.dispatch_date
+            self.depot_officer_id = self.env.user
         return self.env.ref('heyden.action_report_delivery_heyden').report_action(self)
