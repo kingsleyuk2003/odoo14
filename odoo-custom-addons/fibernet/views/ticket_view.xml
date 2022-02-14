@@ -656,6 +656,7 @@
                      <field name="is_cx" />
                      <field name="is_team_lead" />
                      <field name="is_bpsq_hcx" />
+                     <field name="is_request_ticket_group" />
                  </field>
             </field>
           </record>

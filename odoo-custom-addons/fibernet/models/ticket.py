@@ -33,6 +33,7 @@ class UserGroups(models.Model):
     is_cx = fields.Boolean(string='Is CX')
     is_team_lead = fields.Boolean(string='Is Teamlead')
     is_bpsq_hcx = fields.Boolean(string='Is BPSQ/HCX')
+    is_request_ticket_group = fields.Boolean(string='Is Request Ticket Group')
 
 
 
@@ -150,8 +151,13 @@ class Ticket(models.Model):
     def _set_assigned_user_group_from_area(self):
         for rec in self:
             user_ticket_group_id = rec.area_customer_id.user_ticket_group_id
-            if user_ticket_group_id :
-                rec.user_ticket_group_id =user_ticket_group_id
+            request_ticket_group = self.env['user.ticket.group'].search([('is_request_ticket_group', '=', True)], limit=1)
+            category_code = self.category_id.code
+            if user_ticket_group_id:
+                rec.user_ticket_group_id = user_ticket_group_id
+            if user_ticket_group_id and category_code == 'request':
+                rec.user_ticket_group_id = request_ticket_group
+                rec.prospect_area_id = self.area_customer_id
 
 
     def send_email(self, grp_name, subject, msg):

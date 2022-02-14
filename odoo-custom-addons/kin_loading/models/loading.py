@@ -181,6 +181,139 @@ class StockPickingExtend(models.Model):
     #     return True
 
 
+    def _get_invoiceable_lines(self, final=False):
+        invoiceable_line_ids = []
+        pending_section = None
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        for line in self.order_line:
+            if line.display_type == 'line_section':
+                # Only invoice the section if one of its lines is invoiceable
+                pending_section = line
+                continue
+            if (line.qty_to_invoice == 0 and final) or line.display_type == 'line_note':
+                if pending_section:
+                    invoiceable_line_ids.append(pending_section.id)
+                    pending_section = None
+                invoiceable_line_ids.append(line.id)
+        return self.env['sale.order.line'].browse(invoiceable_line_ids)
+
+
+    def _create_final_invoice_depot(self,grouped=False, final=False):
+        order = self.sale_id
+        # 1) Create invoices.
+        invoice_vals_list = []
+        invoice_item_sequence = 0 # Incremental sequencing to keep the lines order on the invoice.
+
+        order = order.with_company(order.company_id)
+        current_section_vals = None
+        down_payments = order.env['sale.order.line']
+
+        invoice_vals = order._prepare_invoice()
+        invoiceable_lines = order._get_invoiceable_lines(final=final)
+
+        if not any(not line.display_type for line in invoiceable_lines):
+            raise self._nothing_to_invoice_error()
+
+        invoice_line_vals = []
+        down_payment_section_added = False
+        for line in invoiceable_lines:
+            if not down_payment_section_added and line.is_downpayment:
+                # Create a dedicated section for the down payments
+                # (put at the end of the invoiceable_lines)
+                invoice_line_vals.append(
+                    (0, 0, order._prepare_down_payment_section_line(
+                        sequence=invoice_item_sequence,
+                    )),
+                )
+                dp_section = True
+                invoice_item_sequence += 1
+            invoice_line_vals.append(
+                (0, 0, line._prepare_invoice_line(
+                    sequence=invoice_item_sequence,
+                )),
+            )
+            invoice_item_sequence += 1
+
+        invoice_vals['invoice_line_ids'] += invoice_line_vals
+        invoice_vals_list.append(invoice_vals)
+
+
+        if not invoice_vals_list:
+            raise self._nothing_to_invoice_error()
+
+        # 2) Manage 'grouped' parameter: group by (partner_id, currency_id).
+        if not grouped:
+            new_invoice_vals_list = []
+            invoice_grouping_keys = self._get_invoice_grouping_keys()
+            for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: [x.get(grouping_key) for grouping_key in invoice_grouping_keys]):
+                origins = set()
+                payment_refs = set()
+                refs = set()
+                ref_invoice_vals = None
+                for invoice_vals in invoices:
+                    if not ref_invoice_vals:
+                        ref_invoice_vals = invoice_vals
+                    else:
+                        ref_invoice_vals['invoice_line_ids'] += invoice_vals['invoice_line_ids']
+                    origins.add(invoice_vals['invoice_origin'])
+                    payment_refs.add(invoice_vals['payment_reference'])
+                    refs.add(invoice_vals['ref'])
+                ref_invoice_vals.update({
+                    'ref': ', '.join(refs)[:2000],
+                    'invoice_origin': ', '.join(origins),
+                    'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+                })
+                new_invoice_vals_list.append(ref_invoice_vals)
+            invoice_vals_list = new_invoice_vals_list
+
+        # 3) Create invoices.
+
+        # As part of the invoice creation, we make sure the sequence of multiple SO do not interfere
+        # in a single invoice. Example:
+        # SO 1:
+        # - Section A (sequence: 10)
+        # - Product A (sequence: 11)
+        # SO 2:
+        # - Section B (sequence: 10)
+        # - Product B (sequence: 11)
+        #
+        # If SO 1 & 2 are grouped in the same invoice, the result will be:
+        # - Section A (sequence: 10)
+        # - Section B (sequence: 10)
+        # - Product A (sequence: 11)
+        # - Product B (sequence: 11)
+        #
+        # Resequencing should be safe, however we resequence only if there are less invoices than
+        # orders, meaning a grouping might have been done. This could also mean that only a part
+        # of the selected SO are invoiceable, but resequencing in this case shouldn't be an issue.
+        if len(invoice_vals_list) < len(self):
+            SaleOrderLine = self.env['sale.order.line']
+            for invoice in invoice_vals_list:
+                sequence = 1
+                for line in invoice['invoice_line_ids']:
+                    line[2]['sequence'] = SaleOrderLine._get_invoice_line_sequence(new=sequence, old=line[2]['sequence'])
+                    sequence += 1
+
+        # Manage the creation of invoices in sudo because a salesperson must be able to generate an invoice from a
+        # sale order without "billing" access rights. However, he should not be able to create an invoice from scratch.
+        moves = self.env['account.move'].sudo().with_context(default_move_type='out_invoice').create(invoice_vals_list)
+
+        # 4) Some moves might actually be refunds: convert them if the total amount is negative
+        # We do this after the moves have been created since we need taxes, etc. to know if the total
+        # is actually negative or not
+        if final:
+            moves.sudo().filtered(lambda m: m.amount_total < 0).action_switch_invoice_into_refund_credit_note()
+        for move in moves:
+            move.message_post_with_view('mail.message_origin_link',
+                values={'self': move, 'origin': move.line_ids.mapped('sale_line_ids.order_id')},
+                subtype_id=self.env.ref('mail.mt_note').id
+            )
+        moves.action_post()
+        return moves
+
+
+
+
 
     @api.onchange('dest_depot_type_id')
     def onchange_dest_depot_type_id(self):
@@ -277,7 +410,8 @@ class StockPickingExtend(models.Model):
         raise UserError('This report needs to be implemented in a sub module')
         return
 
-    def button_validate(self):
+    def button_vtalidate(self):
+        self.do_transfer()
         # Clean-up the context key at validation to avoid forcing the creation of immediate
         # transfers.
         ctx = dict(self.env.context)
@@ -290,8 +424,21 @@ class StockPickingExtend(models.Model):
                 raise UserError('Sorry, Wait for the Ticket to be Programmed before you can dispatch the goods')
             if self.loading_programme_id.state != 'approve':
                 raise UserError('Sorry, you cannot dispatch this goods, because the loading programme is in %s state' % (self.loading_programme_id.state))
+
         if self.is_loading_ticket or self.is_exdepot_ticket or self.is_throughput_ticket or self.is_internal_use_ticket:
             self.waybill_no = self.env['ir.sequence'].next_by_code('waybill_id')
+
+            if self.is_throughput_ticket :
+                self.waybill_no  = self.env['ir.sequence'].next_by_code('thru_delv_code')
+
+            if self.is_internal_use_ticket:
+                self.waybill_no = self.env['ir.sequence'].next_by_code('intu_delv_code')
+
+            if self.is_block_ticket :
+                raise UserError(_("Sorry, Ticket is currently blocked and cannot be Dispatched"))
+
+            if not self.is_exdepot_ticket and self.picking_type_code == 'outgoing' and self.sale_id and self.ticket_load_qty != self.total_dispatch_qty  :
+                raise UserError(_('The Total Dispatched Qty. Must be Equal the Requested Ticket Load Qty. Please Check your Compartment Qty.'))
 
         # Sanity checks.
         pickings_without_moves = self.browse()
@@ -379,11 +526,11 @@ class StockPickingExtend(models.Model):
 
     def create_customer_invoice_loading_ticket(self,inv_refund=False):
 
-        inv_obj = self.env['account.invoice']
+        inv_obj = self.env['account.move']
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
         invoices = {}
 
-        journal_id = self.env['account.invoice'].default_get(['journal_id'])['journal_id']
+        journal_id = self.env['account.move'].default_get(['journal_id'])['journal_id']
         if not journal_id:
             raise UserError(_('Please define an accounting sale journal for this company.'))
 
@@ -568,58 +715,6 @@ class StockPickingExtend(models.Model):
     #     return super(StockPickingExtend,self).do_new_transfer()
 
 
-    def do_transfer_load(self, cr, uid, ids, context=None):
-        """
-            If no pack operation, we do simple action_done of the picking
-            Otherwise, do the pack operations
-        """
-        if not context:
-            context = {}
-        notrack_context = dict(context, mail_notrack=True)
-        stock_move_obj = self.pool.get('stock.move')
-        self.create_lots_for_picking(cr, uid, ids, context=context)
-        for picking in self.browse(cr, uid, ids, context=context):
-            if not picking.pack_operation_ids:
-                self.action_done(cr, uid, [picking.id], context=context)
-                continue
-            else:
-                need_rereserve, all_op_processed = self.picking_recompute_remaining_quantities(cr, uid, picking, context=context)
-                #create extra moves in the picking (unexpected product moves coming from pack operations)
-                todo_move_ids = []
-                if not all_op_processed:
-                    # See reference for resolution: https://github.com/odoo/odoo/issues/27456  and https://github.com/odoo/odoo/pull/30159
-                    #raise UserError(_('System is about to create extra stock move. Please contact the admin')) # I put the error line to intercept any extra move that may want to be created when validating a picking document. It happened on ROG database which makes the stock not to balance withe the customer balance stock, so i need to see the essence of this extra move
-                    todo_move_ids += self._create_extra_moves(cr, uid, picking, context=context)
-
-                #split move lines if needed
-                toassign_move_ids = []
-                for move in picking.move_lines:
-                    remaining_qty = move.remaining_qty
-                    if move.state in ('done', 'cancel'):
-                        #ignore stock moves cancelled or already done
-                        continue
-                    elif move.state == 'draft':
-                        toassign_move_ids.append(move.id)
-                    if float_compare(remaining_qty, 0,  precision_rounding = move.product_id.uom_id.rounding) == 0:
-                        if move.state in ('draft', 'assigned', 'confirmed'):
-                            todo_move_ids.append(move.id)
-                    elif float_compare(remaining_qty,0, precision_rounding = move.product_id.uom_id.rounding) > 0 and \
-                                float_compare(remaining_qty, move.product_qty, precision_rounding = move.product_id.uom_id.rounding) < 0:
-                        new_move = stock_move_obj.split(cr, uid, move, remaining_qty, context=notrack_context)
-                        todo_move_ids.append(move.id)
-                        #Assign move as it was assigned before
-                        toassign_move_ids.append(new_move)
-                todo_move_ids = list(set(todo_move_ids))
-                if need_rereserve or not all_op_processed:
-                    if not picking.location_id.usage in ("supplier", "production", "inventory"):
-                        self.rereserve_quants(cr, uid, picking, move_ids=todo_move_ids, context=context)
-                    self.do_recompute_remaining_quantities(cr, uid, [picking.id], context=context)
-                if todo_move_ids and not context.get('do_only_split'):
-                    self.pool.get('stock.move').action_done(cr, uid, todo_move_ids, context=notrack_context)
-                elif context.get('do_only_split'):
-                    context = dict(context, split=todo_move_ids)
-            self._create_backorder(cr, uid, picking, context=context)
-        return True
 
 
     def transfer_create_invoice_loading_ticket(self):
@@ -696,79 +791,57 @@ class StockPickingExtend(models.Model):
 
     
     def do_transfer(self):
+        if not self.is_throughput_ticket:
 
-        if self.is_loading_ticket or self.is_exdepot_ticket or self.is_throughput_ticket or self.is_internal_use_ticket:
-            self.waybill_no = self.env['ir.sequence'].next_by_code('waybill_id')
+            sale_order = self.sale_id
+            picking_type_code = self.picking_type_code
+            invoic_obj = self.invoice_id or False
+            if picking_type_code == "incoming" and sale_order and invoic_obj:  # Create a Customer refund invoice
+                self.transfer_create_refund_invoice()  # return inwards
 
-            if self.is_throughput_ticket :
-                self.waybill_no  = self.env['ir.sequence'].next_by_code('thru_delv_code')
+            is_delivery_invoicing_policy = False
+            backorder = self.backorder_id
 
-            if self.is_internal_use_ticket:
-                self.waybill_no = self.env['ir.sequence'].next_by_code('intu_delv_code')
+            # for picking_line in self.pack_operation_ids:
+            #     if picking_line.product_id.invoice_policy == "delivery":
+            #         is_delivery_invoicing_policy = True  # if at least one picking line product invoicing policy is based on delivered quantity
 
-            if self.is_block_ticket :
-                raise UserError(_("Sorry, Ticket is currently blocked and cannot be Dispatched"))
+            # if backorder and not is_delivery_invoicing_policy:  # Don't create the invoice, if it is a backorder and the invoicing policy is based on ordered quantity
+            #     return res
 
+            if picking_type_code == "outgoing" and sale_order:  # Create a Customer Invoice
+                self.transfer_create_invoice_loading_ticket()
 
-            if not self.is_exdepot_ticket and self.picking_type_code == 'outgoing' and self.sale_id and self.ticket_load_qty != self.total_dispatch_qty  :
-                raise UserError(_('The Total Dispatched Qty. Must be Equal the Requested Ticket Load Qty. Please Check your Compartment Qty.'))
+                ############################################################################################
+                ######   FOR PURCHASES VENDOR BILLS AND PURCHASE RETURNS
 
-            res = self.do_transfer_load()
+            is_received_purchase_method = False
+            backorder = self.backorder_id
 
-            # The Shipment Date Set after Validation
-            self.shipment_date = fields.Datetime.now()
+            for picking_line in self.pack_operation_ids:
+                if picking_line.product_id.purchase_method == "receive":
+                    is_received_purchase_method = True
 
-            # Send email to QC for
-            if self.picking_type_id.is_send_quality_control_notification:
-                self.transfer_to_quality_control()
+            # if backorder and not is_received_purchase_method:  # Don't create the invoice, if it is a backorder and the purchase method is based on ordered quantity
+            #     return res
 
-            is_create_invoice = self.picking_type_id.is_create_invoice
-            if is_create_invoice and not self.is_throughput_ticket:
+            purchase_order = self.purchase_id
+            if picking_type_code == "incoming" and purchase_order:  # Create a Vendor Bill
+                self.transfer_create_bill()
 
-                sale_order = self.sale_id
-                picking_type_code = self.picking_type_code
-                invoic_obj = self.invoice_id or False
-                if picking_type_code == "incoming" and sale_order and invoic_obj:  # Create a Customer refund invoice
-                    self.transfer_create_refund_invoice()  # return inwards
-
-                is_delivery_invoicing_policy = False
-                backorder = self.backorder_id
-
-                for picking_line in self.pack_operation_ids:
-                    if picking_line.product_id.invoice_policy == "delivery":
-                        is_delivery_invoicing_policy = True  # if at least one picking line product invoicing policy is based on delivered quantity
-
-                if backorder and not is_delivery_invoicing_policy:  # Don't create the invoice, if it is a backorder and the invoicing policy is based on ordered quantity
-                    return res
-
-                if picking_type_code == "outgoing" and sale_order:  # Create a Customer Invoice
-                    self.transfer_create_invoice_loading_ticket()
+            # Create purchase refund bill to supplier
+            prev_picking_obj = self.previous_picking_id
+            if prev_picking_obj:
+                prev_purchase_order = prev_picking_obj.purchase_id or False
+                prev_invoice_id = prev_picking_obj.invoice_id or False
+                if picking_type_code == "outgoing" and prev_purchase_order and prev_invoice_id:  # Create a Return goods Invoice
+                    self.transfer_create_refund_bill()
 
 
-                    ############################################################################################
-                    ######   FOR PURCHASES VENDOR BILLS AND PURCHASE RETURNS
 
-                is_received_purchase_method = False
-                backorder = self.backorder_id
 
-                for picking_line in self.pack_operation_ids:
-                    if picking_line.product_id.purchase_method == "receive":
-                        is_received_purchase_method = True
 
-                if backorder and not is_received_purchase_method:  # Don't create the invoice, if it is a backorder and the purchase method is based on ordered quantity
-                    return res
 
-                purchase_order = self.purchase_id
-                if picking_type_code == "incoming" and purchase_order:  # Create a Vendor Bill
-                    self.transfer_create_bill()
-
-                # Create purchase refund bill to supplier
-                prev_picking_obj = self.previous_picking_id
-                if prev_picking_obj:
-                    prev_purchase_order = prev_picking_obj.purchase_id or False
-                    prev_invoice_id = prev_picking_obj.invoice_id or False
-                    if picking_type_code == "outgoing" and prev_purchase_order and prev_invoice_id:  # Create a Return goods Invoice
-                        self.transfer_create_refund_bill()
         else:
             res = super(StockPickingExtend, self).do_transfer()
 
@@ -865,7 +938,7 @@ class StockPickingExtend(models.Model):
             if rec.picking_type_code == "outgoing":
                 rec.product_id =  rec.move_lines and rec.move_lines[0].product_id or False
                 rec.ticket_load_qty = rec.move_lines and rec.move_lines[0].product_qty or False
-                rec.total_dispatch_qty = int(rec.comp1_vol) + int(rec.comp2_vol) + int(rec.comp3_vol) + int(rec.comp4_vol) + int(rec.comp5_vol) + int(rec.comp6_vol) + int(rec.comp7_vol) + int(rec.comp8_vol)
+                rec.total_dispatch_qty = rec.comp1_vol + rec.comp2_vol + rec.comp3_vol + rec.comp4_vol + rec.comp5_vol + rec.comp6_vol + rec.comp7_vol + rec.comp8_vol
 
 
 
@@ -955,22 +1028,22 @@ class StockPickingExtend(models.Model):
                                              ondelete='restrict', string='Loading Programme')
     waybill_no = fields.Char('Waybill No.',readonly=True)
     # ref_no = fields.Char('Ref. No.')
-    comp1_receipt = fields.Char('1')
-    comp2_receipt = fields.Char('2')
-    comp3_receipt = fields.Char('3')
-    comp4_receipt = fields.Char('4')
-    comp5_receipt = fields.Char('5')
-    comp6_receipt = fields.Char('6')
-    comp7_receipt = fields.Char('7')
-    comp8_receipt = fields.Char('8')
-    comp1_vol = fields.Char('1')
-    comp2_vol = fields.Char('2')
-    comp3_vol = fields.Char('3')
-    comp4_vol = fields.Char('4')
-    comp5_vol = fields.Char('5')
-    comp6_vol = fields.Char('6')
-    comp7_vol = fields.Char('7')
-    comp8_vol = fields.Char('8')
+    comp1_receipt = fields.Float('1')
+    comp2_receipt = fields.Float('2')
+    comp3_receipt = fields.Float('3')
+    comp4_receipt = fields.Float('4')
+    comp5_receipt = fields.Float('5')
+    comp6_receipt = fields.Float('6')
+    comp7_receipt = fields.Float('7')
+    comp8_receipt = fields.Float('8')
+    comp1_vol = fields.Float('1')
+    comp2_vol = fields.Float('2')
+    comp3_vol = fields.Float('3')
+    comp4_vol = fields.Float('4')
+    comp5_vol = fields.Float('5')
+    comp6_vol = fields.Float('6')
+    comp7_vol = fields.Float('7')
+    comp8_vol = fields.Float('8')
     ticket_id = fields.Char(related='name',string="Ticket")
     # supervisor_id = fields.Many2one('res.users', string="Supervisor's  Name")
     # supervisor_date = fields.Date(string="Supervisor's Date")

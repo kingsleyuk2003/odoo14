@@ -22,7 +22,7 @@ class ResConfigSettings(models.TransientModel):
     def set_values(self):
         super(ResConfigSettings, self).set_values()
         self.env['ir.config_parameter'].sudo().set_param('create_vendor_bill', self.post_vendor_bill)
-        self.env['ir.config_parameter'].sudo().set_param('create_customer_invoice', self.post_customer_invoice)
+        self.env['ir.config_parameter'].sudo().set_param('create_customer_invoice', self.create_customer_invoice)
         self.env['ir.config_parameter'].sudo().set_param('post_vendor_bill', self.post_vendor_bill)
         self.env['ir.config_parameter'].sudo().set_param('post_customer_invoice', self.post_customer_invoice)
         self.env['ir.config_parameter'].sudo().set_param('allow_over_transfer', self.allow_over_transfer)
