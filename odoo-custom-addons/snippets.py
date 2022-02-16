@@ -673,8 +673,13 @@ def create_customer_invoice(self, order):
                         sale_order_line_id.product_id.categ_id.name))
 
             default_analytic_account = self.env['account.analytic.default'].account_get(
-                sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
-                sale_order_line_id.order_id.user_id.id, date.today())
+                product_id=sale_order_line_id.product_id.id,
+                partner_id=sale_order_line_id.order_id.partner_id.id,
+                account_id=account.id,
+                user_id=sale_order_line_id.order_id.user_id.id,
+                date=date.today(),
+                company_id=sale_order_line_id.company_id.id
+            )
 
             inv_line = {
                 'name': sale_order_line_id.name,

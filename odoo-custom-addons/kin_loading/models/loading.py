@@ -181,137 +181,145 @@ class StockPickingExtend(models.Model):
     #     return True
 
 
-    def _get_invoiceable_lines(self, final=False):
+    def _get_defferred_revenue_deduction_line(self):
+        inv_line_adv = []
+        for stock_move in self.move_lines:
+            sale_order_line_id = stock_move.sale_line_id
+            # Move from deferred revenue to sales revenue
+            if sale_order_line_id.order_id.is_has_advance_invoice:
+                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+                if not product_deferred_revenue_id:
+                    raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
+                        sale_order_line_id.product_id.name)))
+
+                account = product_deferred_revenue_id.account_unearned_revenue_id or product_deferred_revenue_id.categ_id.account_unearned_revenue_id
+                if not account:
+                    raise UserError(_(
+                        'Please define unearned revenue account for this product: "%s" (id:%d) - or for its category: "%s".') % (
+                                        product_deferred_revenue_id.name, product_deferred_revenue_id.id,
+                                        product_deferred_revenue_id.categ_id.name))
+
+                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
+                if fpos:
+                    account = fpos.map_account(account)
+
+                default_analytic_account = self.env['account.analytic.default'].account_get(
+                    product_id=sale_order_line_id.product_id.id,
+                    partner_id=sale_order_line_id.order_id.partner_id.id,
+                    account_id=account.id,
+                    user_id=sale_order_line_id.order_id.user_id.id,
+                    date=date.today(),
+                    company_id=sale_order_line_id.company_id.id
+                )
+
+                amount = sale_order_line_id.price_total / sale_order_line_id.product_uom_qty
+                if amount <= 0.00:
+                    raise UserError(_('The value of the down payment amount must be positive.'))
+
+                unearned_taxes = sale_order_line_id.product_id.taxes_id
+                if sale_order_line_id.order_id.fiscal_position_id and unearned_taxes:
+                    tax_ids = sale_order_line_id.order_id.fiscal_position_id.map_tax(unearned_taxes).ids
+                else:
+                    tax_ids = unearned_taxes.ids
+
+                line_adv = {
+                    'name': _(" %s Move Unearned Revenue to Sales Revenue of %s for %s") % (
+                    stock_move.product_id.name, amount * -stock_move.product_qty,
+                    sale_order_line_id.order_id.name),
+                    'sequence': sale_order_line_id.sequence,
+                    'ref': sale_order_line_id.order_id.name,
+                    'account_id': account.id,
+                    'price_unit': amount,
+                    'quantity': -stock_move.product_qty,
+                    'discount': 0.0,
+                    'product_uom_id': stock_move.product_uom.id,
+                    'product_id': product_deferred_revenue_id.id, # This causes the validated invoice to create COG entries from Goods Dispatched
+                    'tax_ids': [(6, 0, tax_ids)],
+                    'analytic_account_id': default_analytic_account and default_analytic_account.analytic_id.id,
+                    'sale_line_ids': [(6, 0, [sale_order_line_id.id])]  # Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
+                }
+            inv_line_adv.append(line_adv)
+        return inv_line_adv
+
+    def _get_invoiceable_lines(self):
         invoiceable_line_ids = []
-        pending_section = None
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        for line in self.order_line:
-            if line.display_type == 'line_section':
-                # Only invoice the section if one of its lines is invoiceable
-                pending_section = line
-                continue
-            if (line.qty_to_invoice == 0 and final) or line.display_type == 'line_note':
-                if pending_section:
-                    invoiceable_line_ids.append(pending_section.id)
-                    pending_section = None
-                invoiceable_line_ids.append(line.id)
-        return self.env['sale.order.line'].browse(invoiceable_line_ids)
+
+        for stock_move in self.move_lines:
+            sale_order_line_id = stock_move.sale_line_id
+
+            if not sale_order_line_id:
+                raise UserError(
+                    _('Sorry, Dispatch cannot be validated and invoice cannot be generated, since no sales order line is linked to the stock move'))
+
+            if not float_is_zero(stock_move.product_qty, precision_digits=precision):
+                account = sale_order_line_id.product_id.property_account_income_id or sale_order_line_id.product_id.categ_id.property_account_income_categ_id
+                if not account:
+                    raise UserError(
+                        _('Please define income account for this product: "%s" (id:%d) - or for its category: "%s".') % (
+                        sale_order_line_id.product_id.name, sale_order_line_id.product_id.id,
+                        sale_order_line_id.product_id.categ_id.name))
+
+                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
+                if fpos:
+                    account = fpos.map_account(account)
+
+                default_analytic_account = self.env['account.analytic.default'].account_get(
+                    product_id=sale_order_line_id.product_id.id,
+                    partner_id=sale_order_line_id.order_id.partner_id.id ,
+                    account_id=account.id,
+                    user_id=sale_order_line_id.order_id.user_id.id,
+                    date=date.today(),
+                    company_id=sale_order_line_id.company_id.id
+                )
+
+                inv_line = {
+                    'name': sale_order_line_id.name,
+                    'sequence': sale_order_line_id.sequence,
+                    'ref': sale_order_line_id.order_id.name,
+                    'account_id': account.id,
+                    'price_unit': sale_order_line_id.price_unit,
+                    'quantity': stock_move.product_qty,
+                    'discount': sale_order_line_id.discount,
+                    'product_uom_id': stock_move.product_uom.id,
+                    'product_id': stock_move.product_id.id or False,
+                    'tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
+                    'analytic_account_id':  default_analytic_account and default_analytic_account.analytic_id.id,
+                    'sale_line_ids': [(6, 0, [sale_order_line_id.id])] # Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
+                }
+            invoiceable_line_ids.append(inv_line)
+
+        return invoiceable_line_ids
 
 
     def _create_final_invoice_depot(self,grouped=False, final=False):
         order = self.sale_id
         # 1) Create invoices.
         invoice_vals_list = []
-        invoice_item_sequence = 0 # Incremental sequencing to keep the lines order on the invoice.
-
         order = order.with_company(order.company_id)
-        current_section_vals = None
-        down_payments = order.env['sale.order.line']
 
         invoice_vals = order._prepare_invoice()
-        invoiceable_lines = order._get_invoiceable_lines(final=final)
-
-        if not any(not line.display_type for line in invoiceable_lines):
-            raise self._nothing_to_invoice_error()
-
-        invoice_line_vals = []
-        down_payment_section_added = False
-        for line in invoiceable_lines:
-            if not down_payment_section_added and line.is_downpayment:
-                # Create a dedicated section for the down payments
-                # (put at the end of the invoiceable_lines)
-                invoice_line_vals.append(
-                    (0, 0, order._prepare_down_payment_section_line(
-                        sequence=invoice_item_sequence,
-                    )),
-                )
-                dp_section = True
-                invoice_item_sequence += 1
-            invoice_line_vals.append(
-                (0, 0, line._prepare_invoice_line(
-                    sequence=invoice_item_sequence,
-                )),
-            )
-            invoice_item_sequence += 1
-
+        invoice_vals['is_from_inventory'] = True
+        invoice_line_vals = self._get_invoiceable_lines()
         invoice_vals['invoice_line_ids'] += invoice_line_vals
+        inv_line_def_vals = self._get_defferred_revenue_deduction_line()
+        invoice_vals['invoice_line_ids'] += inv_line_def_vals
         invoice_vals_list.append(invoice_vals)
-
-
-        if not invoice_vals_list:
-            raise self._nothing_to_invoice_error()
-
-        # 2) Manage 'grouped' parameter: group by (partner_id, currency_id).
-        if not grouped:
-            new_invoice_vals_list = []
-            invoice_grouping_keys = self._get_invoice_grouping_keys()
-            for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: [x.get(grouping_key) for grouping_key in invoice_grouping_keys]):
-                origins = set()
-                payment_refs = set()
-                refs = set()
-                ref_invoice_vals = None
-                for invoice_vals in invoices:
-                    if not ref_invoice_vals:
-                        ref_invoice_vals = invoice_vals
-                    else:
-                        ref_invoice_vals['invoice_line_ids'] += invoice_vals['invoice_line_ids']
-                    origins.add(invoice_vals['invoice_origin'])
-                    payment_refs.add(invoice_vals['payment_reference'])
-                    refs.add(invoice_vals['ref'])
-                ref_invoice_vals.update({
-                    'ref': ', '.join(refs)[:2000],
-                    'invoice_origin': ', '.join(origins),
-                    'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
-                })
-                new_invoice_vals_list.append(ref_invoice_vals)
-            invoice_vals_list = new_invoice_vals_list
-
-        # 3) Create invoices.
-
-        # As part of the invoice creation, we make sure the sequence of multiple SO do not interfere
-        # in a single invoice. Example:
-        # SO 1:
-        # - Section A (sequence: 10)
-        # - Product A (sequence: 11)
-        # SO 2:
-        # - Section B (sequence: 10)
-        # - Product B (sequence: 11)
-        #
-        # If SO 1 & 2 are grouped in the same invoice, the result will be:
-        # - Section A (sequence: 10)
-        # - Section B (sequence: 10)
-        # - Product A (sequence: 11)
-        # - Product B (sequence: 11)
-        #
-        # Resequencing should be safe, however we resequence only if there are less invoices than
-        # orders, meaning a grouping might have been done. This could also mean that only a part
-        # of the selected SO are invoiceable, but resequencing in this case shouldn't be an issue.
-        if len(invoice_vals_list) < len(self):
-            SaleOrderLine = self.env['sale.order.line']
-            for invoice in invoice_vals_list:
-                sequence = 1
-                for line in invoice['invoice_line_ids']:
-                    line[2]['sequence'] = SaleOrderLine._get_invoice_line_sequence(new=sequence, old=line[2]['sequence'])
-                    sequence += 1
 
         # Manage the creation of invoices in sudo because a salesperson must be able to generate an invoice from a
         # sale order without "billing" access rights. However, he should not be able to create an invoice from scratch.
         moves = self.env['account.move'].sudo().with_context(default_move_type='out_invoice').create(invoice_vals_list)
 
-        # 4) Some moves might actually be refunds: convert them if the total amount is negative
-        # We do this after the moves have been created since we need taxes, etc. to know if the total
-        # is actually negative or not
-        if final:
-            moves.sudo().filtered(lambda m: m.amount_total < 0).action_switch_invoice_into_refund_credit_note()
         for move in moves:
             move.message_post_with_view('mail.message_origin_link',
                 values={'self': move, 'origin': move.line_ids.mapped('sale_line_ids.order_id')},
                 subtype_id=self.env.ref('mail.mt_note').id
             )
+            move.is_has_advance_invoice = True
+            move.picking_id = self
+            self.invoice_id = move
         moves.action_post()
         return moves
-
-
 
 
 
@@ -410,8 +418,7 @@ class StockPickingExtend(models.Model):
         raise UserError('This report needs to be implemented in a sub module')
         return
 
-    def button_vtalidate(self):
-        self.do_transfer()
+    def button_validate(self):
         # Clean-up the context key at validation to avoid forcing the creation of immediate
         # transfers.
         ctx = dict(self.env.context)
@@ -506,6 +513,8 @@ class StockPickingExtend(models.Model):
             pickings_to_backorder = self
         pickings_not_to_backorder.with_context(cancel_backorder=True)._action_done()
         pickings_to_backorder.with_context(cancel_backorder=False)._action_done()
+
+        self._create_final_invoice_depot()
         return True
 
 
@@ -524,143 +533,6 @@ class StockPickingExtend(models.Model):
     #     return res
 
 
-    def create_customer_invoice_loading_ticket(self,inv_refund=False):
-
-        inv_obj = self.env['account.move']
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        invoices = {}
-
-        journal_id = self.env['account.move'].default_get(['journal_id'])['journal_id']
-        if not journal_id:
-            raise UserError(_('Please define an accounting sale journal for this company.'))
-
-        sale_order = self.sale_id
-        invoice_vals = {
-            'name': sale_order.client_order_ref or '',
-            'origin': sale_order.name,
-            'type': 'out_invoice',
-            'reference': sale_order.client_order_ref or self.name,
-            'account_id': sale_order.partner_invoice_id.property_account_receivable_id.id,
-            'partner_id': sale_order.partner_invoice_id.id,
-            'journal_id': journal_id,
-            'currency_id': sale_order.pricelist_id.currency_id.id,
-            'comment': sale_order.note,
-            'payment_term_id': sale_order.payment_term_id.id,
-            'fiscal_position_id': sale_order.fiscal_position_id.id or sale_order.partner_invoice_id.property_account_position_id.id,
-            'company_id': sale_order.company_id.id,
-            'user_id': sale_order.user_id and sale_order.user_id.id,
-            'team_id': sale_order.team_id.id,
-            'incoterms_id' : sale_order.incoterm.id or False,
-            'is_from_inventory': True,
-        }
-        invoice = inv_obj.create(invoice_vals)
-
-        lines = []
-        for picking_line in self.pack_operation_ids:
-            move_id = picking_line.linked_move_operation_ids.mapped('move_id')
-            sale_order_line_id = move_id.sale_order_line_id
-
-            if not sale_order_line_id :
-                raise UserError(_('Sorry, Dispatch cannot be validated and invoice cannot be generated, since no sales order line is linked to the stock move') )
-
-            if not float_is_zero(picking_line.product_qty, precision_digits=precision):
-                account = sale_order_line_id.product_id.property_account_income_id
-                if not account:
-                    raise UserError(_('Please define income account for this product: "%s" (id:%d) ') % (sale_order_line_id.product_id.name, sale_order_line_id.product_id.id))
-
-                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
-                if fpos:
-                    account = fpos.map_account(account)
-
-                default_analytic_account = self.env['account.analytic.default'].account_get(sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id, sale_order_line_id.order_id.user_id.id, date.today())
-
-                inv_line = {
-                        'name': sale_order_line_id.name,
-                        'sequence': sale_order_line_id.sequence,
-                        'origin': sale_order_line_id.order_id.name,
-                        'account_id': account.id,
-                        'price_unit': sale_order_line_id.price_unit,
-                        'quantity':  picking_line.product_qty,
-                        'discount': sale_order_line_id.discount,
-                        'uom_id': picking_line.product_uom_id.id,
-                        'product_id': picking_line.product_id.id or False,
-                       'invoice_line_tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
-                       'account_analytic_id':  sale_order_line_id.order_id.project_id.id  or default_analytic_account and default_analytic_account.analytic_id.id,
-                       'invoice_id': invoice.id ,
-                       'sale_line_ids': [(6, 0, [sale_order_line_id.id])]  #Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
-                }
-                self.env['account.invoice.line'].create(inv_line)
-
-                # Advance Payment Invoice line
-                if sale_order_line_id.order_id.is_has_advance_invoice:
-
-                    # since product is selected in the invoice line, the system generates more entries to record COG. We don't want it for advance invoice. so we resort to creating a GL advance account per product
-                    # account_id = False
-                    # pro_id = self.env['ir.values'].get_default('sale.config.settings', 'deposit_product_id_setting')
-                    # if not pro_id:
-                    #     raise UserError(_('Please set the advance payment invoice product in the sales settings'))
-                    # product_id = self.env['product.product'].browse(pro_id)
-                    # unearned_income = picking_line.product_id.unearned_income_id
-                    # unearned_taxes = product_id.taxes_id
-                    #
-                    # if product_id.id:
-                    #     account_id = unearned_income.id
-                    #
-                    # if not account_id:
-                    #     raise UserError(
-                    #         _(
-                    #             'There is no income account defined for this product: "%s". ') % \
-                    #         (product_id.name,))
-                    product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
-                    if not product_deferred_revenue_id:
-                        raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
-                        sale_order_line_id.product_id.name)))
-
-                    account = product_deferred_revenue_id.account_unearned_revenue_id
-                    if not account:
-                        raise UserError(_(
-                            'Please define unearned revenue account for this product: "%s" (id:%d) ') % (
-                            product_deferred_revenue_id.name, product_deferred_revenue_id.id))
-
-                    fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
-                    if fpos:
-                        account = fpos.map_account(account)
-
-                    default_analytic_account = self.env['account.analytic.default'].account_get(
-                        sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id,
-                        sale_order_line_id.order_id.user_id.id, date.today())
-
-                    amount = sale_order_line_id.price_total / sale_order_line_id.product_uom_qty
-                    if amount <= 0.00:
-                        raise UserError(_('The value of the down payment amount must be positive.'))
-
-                    unearned_taxes = sale_order_line_id.product_id.taxes_id
-                    if sale_order_line_id.order_id.fiscal_position_id and unearned_taxes:
-                        tax_ids = sale_order_line_id.order_id.fiscal_position_id.map_tax(unearned_taxes).ids
-                    else:
-                        tax_ids = unearned_taxes.ids
-
-                    inv_line_adv = {
-                        'name': _("Advance payment %s (Unearned Revenue) deduction of %s for %s") % (picking_line.product_id.name, amount * -picking_line.product_qty,
-                        sale_order_line_id.order_id.name),
-                        'sequence': sale_order_line_id.sequence,
-                        'origin': sale_order_line_id.order_id.name,
-                        'account_id': account.id,
-                        'price_unit': amount,
-                        'quantity': -picking_line.product_qty,
-                        'discount': 0.0,
-                        'uom_id': picking_line.product_id.uom_id.id,
-                        'product_id': product_deferred_revenue_id.id, # # This causes the validated invoice to create COG entries from Goods Dispatched
-                        'invoice_line_tax_ids': [(6, 0, tax_ids)],
-                        'account_analytic_id': sale_order_line_id.order_id.project_id.id or default_analytic_account and default_analytic_account.analytic_id.id,
-                        'invoice_id': invoice.id,
-                        'sale_line_ids': [(6, 0, [sale_order_line_id.id])]  # Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
-                    }
-                    invoice.is_has_advance_invoice = True
-                    self.env['account.invoice.line'].create(inv_line_adv)
-
-        # invoice.compute_taxes()
-        return invoice
 
 
     
@@ -2789,98 +2661,6 @@ class SaleOrderLoading(models.Model):
         self.state = 'draft'
 
 
-    def action_create_advance_invoice(self):
-        if self.is_has_advance_invoice :
-            raise UserError(_('Sorry, an advance payment invoice has already been created for this sales order. So you may not create again'))
-        inv_obj = self.env['account.invoice']
-
-        inv_obj = self.env['account.invoice']
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-
-        journal_id = self.env['account.invoice'].default_get(['journal_id'])['journal_id']
-        if not journal_id:
-            raise UserError(_('Please define an accounting sale journal for this company.'))
-
-        sale_order = self
-        invoice_vals = {
-            'origin': sale_order.name,
-            'type': 'out_invoice',
-            'reference': sale_order.client_order_ref or self.name,
-            'account_id': sale_order.partner_invoice_id.property_account_receivable_id.id,
-            'partner_id': sale_order.partner_invoice_id.id,
-            'journal_id': journal_id,
-            'currency_id': sale_order.pricelist_id.currency_id.id,
-            'comment': sale_order.note,
-            'payment_term_id': sale_order.payment_term_id.id,
-            'fiscal_position_id': sale_order.fiscal_position_id.id or sale_order.partner_invoice_id.property_account_position_id.id,
-            'company_id': sale_order.company_id.id,
-            'user_id': sale_order.user_id and sale_order.user_id.id,
-            'team_id': sale_order.team_id.id,
-            'incoterms_id': sale_order.incoterm.id or False,
-            'sale_id' :sale_order.id,
-        }
-        invoice = inv_obj.create(invoice_vals)
-
-        for sale_order_line_id in self.order_line :
-            if not float_is_zero(sale_order_line_id.product_uom_qty, precision_digits=precision):
-
-                # since product is selected in the invoice line, the system generates more entries to record COG. We don't want it for advance invoice. so we resort to creating a GL advance account per product
-                # account_id = False
-                # pro_id = self.env['ir.values'].get_default('sale.config.settings', 'deposit_product_id_setting')
-                # if not pro_id:
-                #     raise UserError(_('Please set the advance payment product in the sales settings'))
-                # product_id = self.env['product.product'].browse(pro_id)
-                # unearned_income = product_id.property_account_income_id
-                #
-                # if product_id.id:
-                #     account_id = unearned_income.id
-                #
-                # if not account_id:
-                #     raise UserError(
-                #         _(
-                #             'There is no income account defined for this product: "%s". ') % \
-                #         (product_id.name,))
-
-                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
-                if not product_deferred_revenue_id:
-                    raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
-                    sale_order_line_id.product_id.name)))
-
-                account = product_deferred_revenue_id.account_unearned_revenue_id
-                if not account:
-                    raise UserError(_('Please define unearned revenue account for this product: "%s" (id:%d) ') % (product_deferred_revenue_id.name, product_deferred_revenue_id.id))
-
-                fpos = sale_order_line_id.order_id.fiscal_position_id or sale_order_line_id.order_id.partner_id.property_account_position_id
-                if fpos:
-                    account = fpos.map_account(account)
-
-                default_analytic_account = self.env['account.analytic.default'].account_get(sale_order_line_id.product_id.id, sale_order_line_id.order_id.partner_id.id, sale_order_line_id.order_id.user_id.id, date.today())
-
-                inv_line = {
-                        'name': sale_order_line_id.name,
-                        'sequence': sale_order_line_id.sequence,
-                        'origin': sale_order_line_id.order_id.name,
-                        'account_id': account.id,
-                        'price_unit': sale_order_line_id.price_unit,
-                        'quantity':  sale_order_line_id.product_uom_qty,
-                        'discount': sale_order_line_id.discount,
-                        'uom_id': sale_order_line_id.product_uom.id,
-                       'product_id': product_deferred_revenue_id.id , # This will no longer causes the validated invoice to create COG entries from Goods Dispatched, because a service product is used instead of a stock product
-                       'invoice_line_tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
-                       'account_analytic_id':  sale_order_line_id.order_id.project_id.id  or default_analytic_account and default_analytic_account.analytic_id.id,
-                       'invoice_id': invoice.id ,
-                       'sale_line_ids': [(6, 0, [sale_order_line_id.id])]  #Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
-                }
-                self.env['account.invoice.line'].create(inv_line)
-
-        self.is_has_advance_invoice = True
-        self.is_advance_invoice_validated = True
-        self.advance_invoice_id = invoice
-        invoice.is_advance_invoice = True
-        invoice.compute_taxes()
-        return invoice
-
-    
     def btn_view_stock_moves(self):
         context = dict(self.env.context or {})
         context['active_id'] = self.id
