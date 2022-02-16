@@ -187,7 +187,7 @@ class StockPickingExtend(models.Model):
             sale_order_line_id = stock_move.sale_line_id
             # Move from deferred revenue to sales revenue
             if sale_order_line_id.order_id.is_has_advance_invoice:
-                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id # this generates multiple lines when it just linked to the unearned account directly
                 if not product_deferred_revenue_id:
                     raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                         sale_order_line_id.product_id.name)))
@@ -316,7 +316,7 @@ class StockPickingExtend(models.Model):
                 subtype_id=self.env.ref('mail.mt_note').id
             )
             move.is_has_advance_invoice = True
-            move.picking_id = self
+            move.picking_ids = self
             self.invoice_id = move
         moves.action_post()
         return moves
@@ -661,63 +661,6 @@ class StockPickingExtend(models.Model):
 
 
 
-    
-    def do_transfer(self):
-        if not self.is_throughput_ticket:
-
-            sale_order = self.sale_id
-            picking_type_code = self.picking_type_code
-            invoic_obj = self.invoice_id or False
-            if picking_type_code == "incoming" and sale_order and invoic_obj:  # Create a Customer refund invoice
-                self.transfer_create_refund_invoice()  # return inwards
-
-            is_delivery_invoicing_policy = False
-            backorder = self.backorder_id
-
-            # for picking_line in self.pack_operation_ids:
-            #     if picking_line.product_id.invoice_policy == "delivery":
-            #         is_delivery_invoicing_policy = True  # if at least one picking line product invoicing policy is based on delivered quantity
-
-            # if backorder and not is_delivery_invoicing_policy:  # Don't create the invoice, if it is a backorder and the invoicing policy is based on ordered quantity
-            #     return res
-
-            if picking_type_code == "outgoing" and sale_order:  # Create a Customer Invoice
-                self.transfer_create_invoice_loading_ticket()
-
-                ############################################################################################
-                ######   FOR PURCHASES VENDOR BILLS AND PURCHASE RETURNS
-
-            is_received_purchase_method = False
-            backorder = self.backorder_id
-
-            for picking_line in self.pack_operation_ids:
-                if picking_line.product_id.purchase_method == "receive":
-                    is_received_purchase_method = True
-
-            # if backorder and not is_received_purchase_method:  # Don't create the invoice, if it is a backorder and the purchase method is based on ordered quantity
-            #     return res
-
-            purchase_order = self.purchase_id
-            if picking_type_code == "incoming" and purchase_order:  # Create a Vendor Bill
-                self.transfer_create_bill()
-
-            # Create purchase refund bill to supplier
-            prev_picking_obj = self.previous_picking_id
-            if prev_picking_obj:
-                prev_purchase_order = prev_picking_obj.purchase_id or False
-                prev_invoice_id = prev_picking_obj.invoice_id or False
-                if picking_type_code == "outgoing" and prev_purchase_order and prev_invoice_id:  # Create a Return goods Invoice
-                    self.transfer_create_refund_bill()
-
-
-
-
-
-
-        else:
-            res = super(StockPickingExtend, self).do_transfer()
-
-        return res
 
     
     def write(self,vals):
@@ -801,9 +744,6 @@ class StockPickingExtend(models.Model):
         res = super(StockPickingExtend, self).create(vals)
         return res
 
-
-
-
     @api.depends('comp1_vol','comp2_vol','comp3_vol','comp4_vol','comp5_vol','comp6_vol','comp7_vol','comp8_vol')
     def _compute_ticket_param(self):
         for rec in self:
@@ -811,10 +751,6 @@ class StockPickingExtend(models.Model):
                 rec.product_id =  rec.move_lines and rec.move_lines[0].product_id or False
                 rec.ticket_load_qty = rec.move_lines and rec.move_lines[0].product_qty or False
                 rec.total_dispatch_qty = rec.comp1_vol + rec.comp2_vol + rec.comp3_vol + rec.comp4_vol + rec.comp5_vol + rec.comp6_vol + rec.comp7_vol + rec.comp8_vol
-
-
-
-
 
     def action_assign(self):
         is_other_sale = self.env.context.get('is_other_sale',False)
@@ -1156,6 +1092,24 @@ class LoadingProgramme(models.Model):
 class AccountMoveExtend(models.Model):
     _inherit = 'account.move'
 
+    def action_view_picking(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("kin_loading.action_depot_dispatch")
+        action['views'] = [
+            (self.env.ref('kin_loading.vpicktree_depot').id, 'tree'),
+            (self.env.ref('kin_loading.view_picking_depot_form').id, 'form')
+        ]
+        action['context'] = self.env.context
+        ticket_ids = self.mapped('picking_ids')
+        action['domain'] = [('id', 'in', ticket_ids.ids)]
+
+        if len(ticket_ids) > 1:
+            action['domain'] = [('id', 'in', ticket_ids.ids)]
+        elif len(ticket_ids) == 1:
+            action['res_id'] = ticket_ids.ids[0]
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
+
     def action_post(self):
         # Authorization to load
         #check for sales order that generated the advance invoice and change the state of the sales order to ATL awaiting approva;
@@ -1179,7 +1133,14 @@ class AccountMoveExtend(models.Model):
         return res
 
 
-
+    def _post(self, soft=True):
+        res = super(AccountMoveExtend, self)._post(soft)
+        for line in self.line_ids:
+            if line.debit == 0 and line.credit == 0:
+                self.state = 'draft'
+                line.sudo().unlink()  # removes the account receivable zero line when the deffered revenue is transferred to Sales revenue, when the final invoice is created
+                self.state = 'posted'
+        return res
 
 
     def write(self, vals):
@@ -2830,9 +2791,9 @@ class SaleOrderLineLoading(models.Model):
             'display_type': self.display_type,
             'sequence': self.sequence,
             'name': self.name,
-            'product_id' : self.product_id.product_deferred_revenue_id.id,
+            #'product_id' : self.product_id.product_deferred_revenue_id.id,
             'account_id':deferred_revenue,
-            'product_uom_id': self.product_uom.id,
+           # 'product_uom_id': self.product_uom.id,
             'quantity': self.product_uom_qty,
             'discount': self.discount,
             'price_unit': self.price_unit,

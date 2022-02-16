@@ -36,6 +36,10 @@
             <field name="model">account.move</field>
             <field name="inherit_id" ref="account.view_move_form" />
             <field name="arch" type="xml">
+                <xpath expr="//form" position="attributes" >
+                    <attribute name="duplicate">0</attribute>
+                </xpath>
+
                 <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
                 </field>
