@@ -13,5 +13,50 @@
 <!--            <field name="binding_type">report</field>-->
         </record>
 
+
+        <record id="stock_dispatch_excel_report" model="ir.actions.report">
+            <field name="name">Stock Dispatch Report</field>
+            <field name="model">stock.dispatch.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.report_stock_dispatch</field>
+            <field name="report_file">Stock Dispatch Report</field>
+        </record>
+
+
+         <record id="sales_loading_report" model="ir.actions.report">
+            <field name="name">Stock Dispatch Report</field>
+            <field name="model">sales.loading.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.report_sales_loading_report</field>
+            <field name="report_file">Sales Report</field>
+        </record>
+
+
+        <record id="stock_picking_report" model="ir.actions.report">
+            <field name="name">Loading Ticket Report</field>
+            <field name="model">stock.picking.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.report_stock_picking</field>
+            <field name="report_file">Loading Ticket Report</field>
+        </record>
+
+        <record id="customer_stock_summary_report" model="ir.actions.report">
+            <field name="name">Customer Stock Summary Report</field>
+            <field name="model">customer.stock.summary.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.report_customer_stock_summary</field>
+            <field name="report_file">Customer Stock Summary Report</field>
+        </record>
+
+
+        <record id="customer_stock_report" model="ir.actions.report">
+            <field name="name">Customer Stock Report</field>
+            <field name="model">customer.stock.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_loading.report_customer_stock</field>
+            <field name="report_file">Customer Stock Report</field>
+        </record>
+
+
     </data>
 </odoo>

@@ -2,10 +2,10 @@
 <odoo>
     <data>
         <record  id="view_sales_loading_report_wizard" model="ir.ui.view" >
-                <field name="name">Order Lines Report Wizard</field>
+                <field name="name">Sales Report Wizard</field>
                 <field name="model">sales.loading.report.wizard</field>
                 <field name="arch" type="xml" >
-                <form string="Order Lines Report Wizard" >
+                <form string="Sales Report Wizard" >
                   <strong>This wizard will help you generate a sales order lines report in .xlsx file</strong>
                      <group col="4" colspan="4" >
                          <field name="start_date" />
@@ -21,7 +21,7 @@
                         <field name="root_order_transfer_id"   options="{'no_open':True,'no_create':True}"  />
                     </group>
                         <footer>
-                            <button default_focus="1" icon="gtk-execute" name="sales_loading_excel_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
+                            <button default_focus="1"  name="sales_loading_excel_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
                             or <button special="cancel" class="oe_link"  string="Cancel"  />
                         </footer>
                 </form>
@@ -29,9 +29,8 @@
         </record>
 
 		<record id="action_sales_loading_report_wizard" model="ir.actions.act_window">
-            <field name="name">Generate Order Lines Report</field>
+            <field name="name">Generate Sales Report</field>
             <field name="res_model">sales.loading.report.wizard</field>
-
             <field name="view_mode">form</field>
             <field name="view_id" ref="view_sales_loading_report_wizard"/>
             <field name="context">{}</field>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data>
+		<record id="action_report_summary_of_transactions" model="ir.actions.report">
+            <field name="name">Summary of Transactions</field>
+            <field name="model">res.partner</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">kin_loading.report_order_sot</field>
+            <field name="report_file">Summary of Transactions</field>
+            <field name="print_report_name">'Summary of Transactions - %s' % (object.name or '')</field>
+           <field name="binding_model_id" ref="model_res_partner"/>
+            <field name="binding_type">report</field>
+        </record>
+
+
+		<template id="external_layout_standard_summary_of_transactions"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-3 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+<!--            <div class="row">-->
+<!--                <div class="col-6" name="company_address">-->
+<!--                    <div t-field="company.partner_id"  t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'  />-->
+<!--                </div>-->
+<!--            </div>-->
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+            <div class="text-center" style="border-bottom: 1px solid black;">
+<!--                <ul class="list-inline mb4">-->
+<!--                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem-->
+<!--                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>-->
+<!--                    <li t-if="company.email" class="list-inline-item d-inline"><span t-field="company.email"/></li>-->
+<!--                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>-->
+<!--                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>-->
+<!--                </ul>-->
+
+                <div name="financial_infos">
+                    <span t-field="company.report_footer"/>
+                </div>
+
+<!--                <div t-if="report_type == 'pdf'" class="text-muted">-->
+<!--                    Page: <span class="page"/> / <span class="topage"/>-->
+<!--                </div>-->
+                 <br />
+            </div>
+        </div>
+    </template>
+
+		<template id="summary_of_transactions_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t  t-call="kin_loading.external_layout_standard_summary_of_transactions"><t t-raw="0"/></t>
+    </template>
+
+
+	<template id="report_order_sot">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="web.html_container">
+				<t t-call="kin_loading.summary_of_transactions_layout">
+						<div class="page"  >  <!-- Start of Page -->
+							<br/>
+							<div class="row">
+								<div class="col-12 text-center"  >
+									<h3><b>Summary of Transactions (SOT)</b></h3>
+								</div>
+							</div>
+							<br/>
+							<div class="row">
+								<div class="col-6"  >
+									<b>Customer's Name : </b><span t-field="o.name" />
+								</div>
+								<div class="col-6"  >
+									<b>Customer's No. : </b><span t-field="o.ref" />
+								</div>
+							</div>
+
+							<t t-set="total_balance" t-value="0" />
+							<t t-foreach="o.sale_order_ids" t-as="order"> <!-- Beg. of order loop -->
+								<br />
+								<br />
+								<div class="row">
+									<div class="col-12"  >
+										<b>Order ID : <span t-field="order.name" /></b>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-12 text-center"  >
+										<b><u>Purchases</u></b>
+									</div>
+								</div>
+								<div class="row" >
+									<div class="col-12"  >
+										<table  class="table table-sm table-bordered"  >
+											<thead>
+												<tr>
+													<th><span>Date</span></th>
+													<th><span>Product</span></th>
+													<th><span>Qty. (Ltrs)</span></th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr t-foreach="order.order_line" t-as="order_line">
+													<td t-if="not order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.order_id.date_order"/></td>
+													<td t-if="not order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.product_id.name"/></td>
+													<td t-if="not order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.product_uom_qty"/></td>
+	<!--												<td t-if="p.appears_on_payslip" ><span t-esc="'{:,.2f}'.format(p.total)" /></td>-->
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<br />
+								<div class="row">
+									<div class="col-12 text-center"  >
+										<b><u>Received From Others</u></b>
+									</div>
+								</div>
+								<div class="row" >
+									<div class="col-12"  >
+										<table  class="table table-sm table-bordered"  >
+											<thead>
+												<tr>
+													<th><span>Date</span></th>
+													<th><span>Received From</span></th>
+													<th><span>Product</span></th>
+													<th><span>Qty. (Ltrs)</span></th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr t-foreach="order.order_line" t-as="order_line">
+													<td t-if="order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.order_id.date_order"/></td>
+													<td t-if="order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.order_id.parent_sales_order_transfer_id.partner_id.name"/></td>
+													<td t-if="order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.product_id.name"/></td>
+													<td t-if="order_line.order_id.parent_sales_order_transfer_id" ><span t-field="order_line.product_uom_qty"/></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<br />
+								<div class="row">
+									<div class="col-12 text-center"  >
+										<b><u>Transferred</u></b>
+									</div>
+								</div>
+								<div class="row" >
+									<div class="col-12"  >
+										<table  class="table table-sm table-bordered"  >
+											<thead>
+												<tr>
+													<th><span>Date</span></th>
+													<th><span>Transferred To</span></th>
+													<th><span>Product</span></th>
+													<th><span>Qty. (Ltrs)</span></th>
+												</tr>
+											</thead>
+											<tbody>
+												<t t-foreach="order.child_sale_order_transfer_ids" t-as="child_order">
+													<tr t-foreach="child_order.order_line" t-as="order_line">
+														<td><span t-field="order_line.order_id.date_order"/></td>
+														<td><span t-field="order_line.order_partner_id.name"/></td>
+														<td><span t-field="order_line.product_id.name"/></td>
+														<td><span t-field="order_line.product_uom_qty"/></td>
+													</tr>
+												</t>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<br />
+								<div class="row">
+									<div class="col-12 text-center"  >
+										<b><u>Loaded</u></b>
+									</div>
+								</div>
+								<div class="row" >
+									<div class="col-12"  >
+										<table  class="table table-sm table-bordered"  >
+											<thead>
+												<tr>
+													<th><span>Date</span></th>
+													<th><span>Product</span></th>
+													<th><span>Qty. (Ltrs)</span></th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr t-foreach="order.picking_ids" t-as="picking_id">
+													<td t-if="picking_id.state == 'done'" ><span t-field="picking_id.loaded_date"/></td>
+													<td t-if="picking_id.state == 'done'" ><span t-field="picking_id.product_id.name"/></td>
+													<td t-if="picking_id.state == 'done'"><span t-field="picking_id.total_dispatch_qty"/></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<br />
+								<br />
+								<div class="row">
+									<div class="col-12"  >
+										<t t-set="total_balance" t-value="total_balance + order.order_line[0].balance_qty" />
+										<b><span t-field="order.name" /> Balance Qty. : <span t-field="order.order_line[0].balance_qty" /></b>
+									</div>
+								</div>
+							</t> <!-- End of of order loop -->
+							<br />
+							<br />
+							<div class="row">
+								<div class="col-12"  >
+									<h4><b>Total Balance Qty. for all Orders: <span t-esc="'{:,.2f}'.format(total_balance)" /></b></h4>
+								</div>
+							</div>
+
+						</div> <!-- End of Page -->
+				</t>
+			</t>
+		</t>
+	</template>
+
+
+
+
+	</data>
+</odoo>

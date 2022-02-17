@@ -20,7 +20,7 @@
                             <field name="ticket_ids" widget="many2many_tags" options="{'no_open':True,'no_create':True}"  />
                     </group>
                      <footer>
-                            <button default_focus="1" icon="gtk-execute" name="stock_dispatch_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
+                            <button default_focus="1"  name="stock_dispatch_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
                             or <button special="cancel" class="oe_link"  string="Cancel"  />
                      </footer>
                 </form>

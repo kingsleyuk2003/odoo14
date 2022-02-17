@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data  noupdate="1" >
+
+
+
+		<record id="paperformat_a4_landscape" model="report.paperformat">
+            <field name="name">Landscape A4</field>
+            <field name="default" eval="True" />
+            <field name="format">A4</field>
+            <field name="page_height">0</field>
+            <field name="page_width">0</field>
+            <field name="orientation">Landscape</field>
+            <field name="margin_top">40</field>
+            <field name="margin_bottom">23</field>
+            <field name="margin_left">7</field>
+            <field name="margin_right">7</field>
+            <field name="header_line" eval="False" />
+            <field name="header_spacing">35</field>
+            <field name="dpi">90</field>
+        </record>
+
+		<!-- Note that you can simply replace the old report menu by using thesame "string" name as the old report-->
+		<!-- Or by referencing the parent report id e.g. kin_report.receipt_custom -->
+        <!-- e.g. if the old menu has the name string="Purchase Order", then new menu can still maintain thesame string name-->
+
+        <report
+		    id="tarmac_excel_report"
+		    model="tarmac.report.parser"
+		    string="Tarmac Loading Record Report"
+		    report_type="xlsx"
+		    name="kin_loading.report_tarmac_report"
+		    file="kin_loading.report_tarmac_report"
+		    attachment_use="False"
+        />
+		<record id="tarmac_excel_report" model="ir.actions.report.xml" >
+            <field name="groups_id" eval="[(6, 0, [ref('group_security_officer')])]"  />
+        </record>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </data>
+</odoo>

@@ -2,10 +2,10 @@
 <odoo>
     <data>
          <record  id="view_stock_picking_wizard" model="ir.ui.view" >
-                <field name="name">Stock Picking Report</field>
+                <field name="name">Loading Ticket Report</field>
                 <field name="model">stock.picking.wizard</field>
                 <field name="arch" type="xml" >
-                <form string="Stock Picking Wizard" >
+                <form string="Loading Ticket Report Wizard" >
                     <strong>This wizard will help  generate the .xls file loading ticket report for the customer</strong>
 
                      <group col="4" colspan="4" >
@@ -21,7 +21,7 @@
 
                     </group>
                      <footer>
-                            <button default_focus="1" icon="gtk-execute" name="stock_picking_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
+                            <button default_focus="1"  name="stock_picking_report" string="Export" type="object"  colspan="2" class="oe_highlight" />
                             or <button special="cancel" class="oe_link"  string="Cancel"  />
                      </footer>
                 </form>
@@ -31,7 +31,6 @@
 		<record id="action_stock_picking_wizard" model="ir.actions.act_window">
             <field name="name">Generate Loading Ticket Report</field>
             <field name="res_model">stock.picking.wizard</field>
-
             <field name="view_mode">form</field>
             <field name="view_id" ref="view_stock_picking_wizard"/>
             <field name="context">{}</field>

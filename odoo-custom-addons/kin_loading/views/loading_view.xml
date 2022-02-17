@@ -12,12 +12,14 @@
         <menuitem id="menu_dispatch_operation" name="Reports" parent="menu_root_dispatch_operation" sequence="1000"  />
         <menuitem id="menu_depot_configuration" name="Configuration" parent="menu_root_dispatch_operation" sequence="1001"  />
 
-<!--        <menuitem id="menu_sale_loading_report" name="Sales Report" parent="menu_dispatch_operation" sequence="4" action="action_sales_loading_report_wizard" icon="STOCK_PRINT" />-->
-<!--        <menuitem id="menu_stock_dispatch" name="Stock Dispatch Report" parent="menu_dispatch_operation" sequence="5" action="action_stock_dispatch_wizard" icon="STOCK_PRINT" />-->
-<!--        <menuitem id="menu_stock_picking_loading" name="Loading Ticket Report" parent="menu_dispatch_operation" sequence="6" action="action_stock_picking_wizard" icon="STOCK_PRINT" />-->
-<!--        <menuitem id="menu_customer_stock_summary_report" name="Customer Stock Summary Report" parent="menu_dispatch_operation" sequence="8" action="action_customer_stock_summary_report_wizard" icon="STOCK_PRINT" />-->
-<!--        <menuitem id="menu_sale_order_loading_report" name="Sales Report"  action="action_sales_loading_report_wizard" parent="base.menu_sale_report"  sequence="29"  icon="STOCK_PRINT" />-->
-<!--                -->
+        <menuitem id="menu_sale_loading_report" name="Depot Sales Report" parent="sale.menu_sale_report" sequence="4" action="action_sales_loading_report_wizard"  />
+
+        <menuitem id="menu_stock_dispatch" name="Stock Dispatch Report" parent="menu_dispatch_operation" sequence="5" action="action_stock_dispatch_wizard"  />
+        <menuitem id="menu_stock_picking_loading" name="Loading Ticket Report" parent="menu_dispatch_operation" sequence="6" action="action_stock_picking_wizard" />
+        <menuitem id="menu_customer_stock_summary_report" name="Customer Stock Summary Report" parent="menu_dispatch_operation" sequence="8" action="action_customer_stock_summary_report_wizard"  />
+        <menuitem id="menu_customer_stock_report" name="Customer Stock Report" parent="menu_dispatch_operation" sequence="9" action="action_customer_stock_report_wizard"  />
+        <menuitem id="menu_sale_order_loading_report" name="Depot Sales Report"  action="action_sales_loading_report_wizard"  parent="menu_dispatch_operation"  sequence="29"   />
+
 
         <menuitem id="menu_loading_operation" name="Loading Operations" parent="stock.menu_stock_root" sequence="2" groups="group_depot_officer,group_depot_manager" />
         <menuitem id="menu_root_loading_programme_operation" name="Loading Programme" parent="menu_root_dispatch_operation" sequence="1" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />

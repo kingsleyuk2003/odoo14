@@ -17,3 +17,9 @@ access_block_ticket_wizard_user,block.ticket.wizard user,model_block_ticket_wiza
 access_cancel_qty_wizard_user,cancel.qty.wizard user,model_cancel_qty_wizard,group_show_create_loading_ticket,1,1,1,1
 access_transfer_order_wizard_user,transfer.order.wizard user,model_transfer_order_wizard,group_show_create_loading_ticket,1,1,1,1
 access_sale_order_disapprove_wizard_user,sale.order.disapprove.wizard user,model_sale_order_disapprove_wizard,sales_team.group_sale_salesman_all_leads,1,1,1,1
+access_stock_dispatch_wizard_user,stock.dispatch.wizard user,model_stock_dispatch_wizard,kin_loading.group_depot_officer,1,1,1,1
+access_sales_loading_report_wizard_user,sales.loading.report.wizard user,model_sales_loading_report_wizard,kin_loading.group_depot_officer,1,1,1,1
+access_stock_picking_wizard_user,stock.picking.wizard user,model_stock_picking_wizard,kin_loading.group_depot_officer,1,1,1,1
+access_customer_stock_summary_report_wizard_user,customer.stock.summary.report.wizard user,model_customer_stock_summary_report_wizard,kin_loading.group_depot_officer,1,1,1,1
+access_customer_stock_report_wizard_user,customer.stock.report.wizard user,model_customer_stock_report_wizard,kin_loading.group_depot_officer,1,1,1,1
+access_mass_email_sot_wizard_user,mass.email.sot.wizard user,model_mass_email_sot_wizard,base.group_user,1,1,1,1

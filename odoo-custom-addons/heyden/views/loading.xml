@@ -3,6 +3,7 @@
     <data>
 
         <menuitem id="menu_sales_atl" name="Sales/ATL Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
+        <menuitem id="menu_sales_atl_report" name="Sales/ATL Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
 
         <record id="view_picking_form_stock_heyden" model="ir.ui.view">
             <field name="name">stock.picking.form.stock.heyden</field>

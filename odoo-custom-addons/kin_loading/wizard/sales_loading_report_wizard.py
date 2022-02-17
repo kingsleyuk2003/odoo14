@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-# Copyright 2017  Kinsolve Solutions
-# Copyright 2017 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
+# Copyright 2022  Kinsolve Solutions
+# Copyright 2022 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
 # License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
 
 from odoo import models, fields, api
@@ -23,14 +23,10 @@ class SalesLoadingReportWizard(models.TransientModel):
     def sales_loading_excel_report(self):
         context = self.env.context or {}
         wiz_data = self.read([])[0] #converts all objects to lists that can be easily be passed to the report
-        data = {'name': 'Approved Order Lines Report', 'active_ids': context.get('active_ids', [])}
+        data = {'name': 'Sales Report', 'active_ids': context.get('active_ids', [])}
         data['form'] = {'start_date' : wiz_data['start_date'],'end_date':wiz_data['end_date'],'type':wiz_data['type'],'partner_id' : wiz_data['partner_id'], 'partner_root_id' : wiz_data['partner_root_id'],'include_root_customer_order': wiz_data['include_root_customer_order'] ,'root_order_transfer_id' : wiz_data['root_order_transfer_id'],'parent_sales_order_transfer_id' : wiz_data['parent_sales_order_transfer_id'], 'product_ids' : wiz_data['product_ids']}
-        return {
-                    'name':'Sales Order Lines Report',
-                    'type': 'ir.actions.report.xml',
-                    'report_name': 'kin_loading.report_sales_loading_report',
-                    'datas': data, #It is required you use datas as parameter, otherwise it will transfer data correctly.
-                    }
+        return self.env.ref('kin_loading.sales_loading_report').report_action(self, data)
+
 
     start_date = fields.Date('Start Date')
     end_date = fields.Date('End Date')
