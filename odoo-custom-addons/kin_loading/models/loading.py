@@ -187,7 +187,7 @@ class StockPickingExtend(models.Model):
             sale_order_line_id = stock_move.sale_line_id
             # Move from deferred revenue to sales revenue
             if sale_order_line_id.order_id.is_has_advance_invoice:
-                product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id # this generates multiple lines when it just linked to the unearned account directly
+                product_deferred_revenue_id = sale_order_line_id.product_id
                 if not product_deferred_revenue_id:
                     raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
                         sale_order_line_id.product_id.name)))
@@ -232,8 +232,8 @@ class StockPickingExtend(models.Model):
                     'price_unit': amount,
                     'quantity': -stock_move.product_qty,
                     'discount': 0.0,
-                    'product_uom_id': stock_move.product_uom.id,
-                    'product_id': product_deferred_revenue_id.id, # This causes the validated invoice to create COG entries from Goods Dispatched
+                    # 'product_uom_id': stock_move.product_uom.id,
+                    # 'product_id': product_deferred_revenue_id.id, # This causes the validated invoice to create COG entries from Goods Dispatched
                     'tax_ids': [(6, 0, tax_ids)],
                     'analytic_account_id': default_analytic_account and default_analytic_account.analytic_id.id,
                     'sale_line_ids': [(6, 0, [sale_order_line_id.id])]  # Never remove this sale_line_ids. This determines the cost of goods sold using the FIFO and not from the product page
@@ -514,7 +514,8 @@ class StockPickingExtend(models.Model):
         pickings_not_to_backorder.with_context(cancel_backorder=True)._action_done()
         pickings_to_backorder.with_context(cancel_backorder=False)._action_done()
 
-        self._create_final_invoice_depot()
+        if self.is_loading_ticket == True:
+            self._create_final_invoice_depot()
         return True
 
 
@@ -1359,9 +1360,9 @@ class SaleOrderLoading(models.Model):
                 raise UserError(
                     (_('Sorry, you cannot transfer product qty. that is more that the remaining balance qty.')))
 
-            product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+            product_deferred_revenue_id = sale_order_line_id.product_id
             if not product_deferred_revenue_id:
-                raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
+                raise UserError(_('Please Define a Unearned Revenue Account for the %s, on the Product Page' % (
                     sale_order_line_id.product_id.name)))
 
             account = product_deferred_revenue_id.account_unearned_revenue_id
@@ -1387,8 +1388,8 @@ class SaleOrderLoading(models.Model):
                 'name': 'Transferred product qty. value for %s, from %s to %s' % (
                 self.name, sale_order_line_id.order_id.partner_id.name.split('\n')[0][:64], recipient_id.name),
                 'display_type': False,
-                'product_id': product_deferred_revenue_id.id,
-                'product_uom_id': sale_order_line_id.product_uom.id,
+                #'product_id': product_deferred_revenue_id.id,
+                #'product_uom_id': sale_order_line_id.product_uom.id,
                 'account_id': account.id,
                 'quantity': transfer_requested_qty,
                 'discount': sale_order_line_id.discount,
@@ -1998,9 +1999,9 @@ class SaleOrderLoading(models.Model):
     def _prepare_account_move_line(self, order_line=False, move=False):
         self.ensure_one()
         sale_order_line_id = order_line
-        product_deferred_revenue_id = sale_order_line_id.product_id.product_deferred_revenue_id
+        product_deferred_revenue_id = sale_order_line_id.product_id
         if not product_deferred_revenue_id:
-            raise UserError(_('Please Define a Deferred Revenue Product for the %s, on the Product Page' % (
+            raise UserError(_('Please Define a Unearned Revenue Account for the %s, on the Product Page' % (
                 sale_order_line_id.product_id.name)))
 
         account = product_deferred_revenue_id.account_unearned_revenue_id
@@ -2030,8 +2031,8 @@ class SaleOrderLoading(models.Model):
             'display_type': False,
             'sequence': 10,
             'name': 'Cancelled Order for %s' % self.name.split('\n')[0][:64],
-            'product_id': product_deferred_revenue_id.id,
-            'product_uom_id': sale_order_line_id.product_uom.id,
+            #'product_id': product_deferred_revenue_id.id,
+            #'product_uom_id': sale_order_line_id.product_uom.id,
             'quantity': qty_bal,
             'price_unit': sale_order_line_id.price_unit,
             'tax_ids': [(6, 0, sale_order_line_id.tax_id.ids)],
@@ -2783,7 +2784,7 @@ class SaleOrderLineLoading(models.Model):
 
     def _prepare_invoice_line(self, **optional_values):
         self.ensure_one()
-        deferred_revenue = self.product_id.product_deferred_revenue_id.account_unearned_revenue_id.id
+        deferred_revenue = self.product_id.account_unearned_revenue_id.id
         if not deferred_revenue:
             raise UserError(_('Please contact the Administrator to set the Unearned revenue account for %s', self.product_id.name))
 
@@ -2793,7 +2794,7 @@ class SaleOrderLineLoading(models.Model):
             'name': self.name,
             #'product_id' : self.product_id.product_deferred_revenue_id.id,
             'account_id':deferred_revenue,
-           # 'product_uom_id': self.product_uom.id,
+           #'product_uom_id': self.product_uom.id,
             'quantity': self.product_uom_qty,
             'discount': self.discount,
             'price_unit': self.price_unit,
@@ -3471,8 +3472,8 @@ class ProductProductLoading(models.Model):
     ], string='White Product')
 
     account_unearned_revenue_id = fields.Many2one('account.account',string='Unearned Revenue Account' )
-    is_deferred_revenue = fields.Boolean(string='Is Deferred Revenue')
-    product_deferred_revenue_id = fields.Many2one('product.template', string='Product Deferred Revenue')
+    #is_deferred_revenue = fields.Boolean(string='Is Deferred Revenue')
+    #product_deferred_revenue_id = fields.Many2one('product.template', string='Product Deferred Revenue')
 
 
 class Depot(models.Model):
