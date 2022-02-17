@@ -1463,14 +1463,14 @@
                 <field name="categ_id" position="after">
                    <field name="white_product" />
                     <field name="account_unearned_revenue_id"  />
-                     <field name="product_deferred_revenue_id" domain="[('is_deferred_revenue','=',True)]" />
+<!--                     <field name="product_deferred_revenue_id" domain="[('is_deferred_revenue','=',True)]" />-->
                 </field>
-                <div name="options" position="inside" >
-                         <div>
-                             <field name="is_deferred_revenue"/>
-                             <label for="is_deferred_revenue"/>
-                         </div>
-                    </div>
+<!--                <div name="options" position="inside" >-->
+<!--                         <div>-->
+<!--                             <field name="is_deferred_revenue"/>-->
+<!--                             <label for="is_deferred_revenue"/>-->
+<!--                         </div>-->
+<!--                    </div>-->
             </field>
         </record>
 
