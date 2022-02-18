@@ -85,6 +85,84 @@
             </field>
         </record>
 
+        <!-- Sales Ordee Lines -->
+        <record id="view_order_line_tree_extend" model="ir.ui.view">
+            <field name="name">sale.order.line.tree.extend</field>
+            <field name="model">sale.order.line</field>
+            <field name="arch" type="xml">
+                <tree string="Sales Order Lines"  create="0" delete="0" edit="0"  >
+                    <field name="product_id" />
+                    <field name="order_id"/>
+                    <field name="order_partner_id"/>
+                    <field name="salesman_id"/>
+                    <field name="product_uom_qty" string="Qty"/>
+                    <field name="qty_delivered"/>
+                    <field name="qty_invoiced"/>
+                    <field name="qty_to_invoice"/>
+                    <field name="product_uom" string="Unit of Measure" groups="product.group_uom"/>
+                    <field name="price_subtotal" sum="Total" widget="monetary"/>
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+         <record model="ir.ui.view" id="sales_order_line_pivot">
+            <field name="name">sale.order.line.pivot</field>
+            <field name="model">sale.order.line</field>
+            <field name="arch" type="xml">
+                <pivot string="Sales Order Line" >
+                    <field name="product_id" type="row"/>
+                    <field name="price_subtotal" type="measure"/>
+                </pivot>
+            </field>
+        </record>
+        <record model="ir.ui.view" id="sales_order_line_graph">
+            <field name="name">sale.order.line.graph</field>
+            <field name="model">sale.order.line</field>
+            <field name="arch" type="xml">
+                <graph string="Sales Order Lines">
+                    <field name="product_id"  type="row"/>
+                    <field name="price_subtotal" type="measure"/>
+                </graph>
+            </field>
+        </record>
+
+        <record id="view_sales_order_line_search_extend" model="ir.ui.view">
+            <field name="name">sale.order.line.search</field>
+            <field name="model">sale.order.line</field>
+            <field name="arch" type="xml">
+                <search string="Search Sales Order Lines">
+                    <field name="order_id" />
+                    <field name="order_partner_id" operator="child_of" />
+                    <field name="product_id" />
+                    <field name="salesman_id" />
+                    <group expand="0" string="Group By">
+                         <filter name="groupby_state" string="Status" domain="[]" context="{'group_by':'state'}"/>
+                        <filter name="groupby_product" string="Product" domain="[]" context="{'group_by':'product_id'}"/>
+                         <filter name="groupby_cust" string="Customer" domain="[]" context="{'group_by':'order_partner_id'}"/>
+                        <filter name="groupby_order" string="Order" domain="[]" context="{'group_by':'order_id'}"/>
+                        <filter name="groupby_salesperson" string="Salesperson" domain="[]" context="{'group_by':'salesman_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_sale_order_lines" model="ir.actions.act_window">
+            <field name="name">Sale Order Lines</field>
+            <field name="res_model">sale.order.line</field>
+            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_state': 1,'search_default_groupby_cust': 1}</field>
+            <field name="domain">[('state', 'not in', ['draft', 'cancel'])]</field>
+            <field name="view_mode">tree,pivot,graph</field>
+            <field name="view_id" ref="view_order_line_tree_extend"/>
+             <field name="search_view_id" ref="view_sales_order_line_search_extend"/>
+        </record>
+
+        <menuitem id="menu_sale_order_lines" name="Sales Analysis"
+                action="action_sale_order_lines" parent="sale.menu_sale_report"
+                sequence="31"/>
+
+
+
         <record id="crm_team_view_form_extend" model="ir.ui.view">
             <field name="name">crm.team.form.extend</field>
             <field name="model">crm.team</field>

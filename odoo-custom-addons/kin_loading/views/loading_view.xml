@@ -323,99 +323,94 @@
 
 
 
-<!-- <record id="view_sales_order_line_search_extend_loading" model="ir.ui.view">-->
-<!--            <field name="name">sale.order.line.search</field>-->
-<!--            <field name="model">sale.order.line</field>-->
-<!--             <field name="inherit_id" ref="kin_sales.view_sales_order_line_search_extend"  />-->
-<!--            <field name="arch" type="xml">-->
-<!--               <field name="order_id" position="before" >-->
-<!--                     <field name="advance_invoice_name"  filter_domain="[('advance_invoice_name','ilike',self)]" />-->
-<!--                </field>-->
-<!--            </field>-->
-<!--        </record>-->
+ <record id="view_sales_order_line_search_extend_loading" model="ir.ui.view">
+            <field name="name">sale.order.line.search</field>
+            <field name="model">sale.order.line</field>
+             <field name="inherit_id" ref="kin_sales.view_sales_order_line_search_extend"  />
+            <field name="arch" type="xml">
+               <field name="order_id" position="before" >
+                     <field name="advance_invoice_name"  filter_domain="[('advance_invoice_name','ilike',self)]" />
+                </field>
+            </field>
+        </record>
 
         <!-- Kin Sales -->
-<!--         <record id="view_order_line_tree_extend_loading" model="ir.ui.view">-->
-<!--            <field name="name">sale.order.line.tree.extend.loading</field>-->
-<!--            <field name="model">sale.order.line</field>-->
-<!--             <field name="inherit_id" ref="kin_sales.view_order_line_tree_extend" />-->
-<!--            <field name="arch" type="xml">-->
-<!--                <field name="product_id" position="before" >-->
-<!--                     <button name="action_view_order"     string="Go To Order" type="object"    />-->
+         <record id="view_order_line_tree_extend_loading" model="ir.ui.view">
+            <field name="name">sale.order.line.tree.extend.loading</field>
+            <field name="model">sale.order.line</field>
+             <field name="inherit_id" ref="kin_sales.view_order_line_tree_extend" />
+            <field name="arch" type="xml">
+                <field name="product_id" position="before" >
+                     <button name="action_view_order" class="oe_highlight"  string="Go To Sales" type="object"    />
+                </field>
+                <field name="order_id" position="after" >
+                     <field name="advance_invoice_id"  readonly="1"/>
+                </field>
+                <field name="product_uom_qty" position="after" >
+                     <field name="transfer_created_qty" readonly="1" />
+                     <field name="cancelled_remaining_qty" readonly="1" />
+                     <field name="ticket_remaining_qty" />
+                     <field name="ticket_created_qty"  />
+                </field>
+                <field name="product_uom_qty" position="attributes" >
+                    <attribute name="string" >Ordered Qty.</attribute>
+                </field>
+                <field name="qty_delivered" position="after" >
+                     <field name="unloaded_balance_qty"  />
+                    <field name="balance_qty" />
+                     <field name="parent_sales_order_transfer_id" readonly="1"/>
+                          <field name="root_order_transfer_id" readonly="1" />
+                         <field name="root_customer_id" readonly="1" />
+                </field>
+                 <field name="qty_delivered" position="attributes" >
+                     <attribute name="string" >Dispatched Qty.</attribute>
+                 </field>
+            </field>
+         </record>
 
-<!--                </field>-->
-<!--                <field name="order_id" position="after" >-->
-<!--                     <field name="advance_invoice_id"  readonly="1"/>-->
-<!--                </field>-->
-<!--                <field name="product_uom_qty" position="after" >-->
+         <record id="action_sale_order_loading_ticket_lines" model="ir.actions.act_window">
+            <field name="name">In Depot Sales</field>
+            <field name="res_model">sale.order.line</field>
+            <field name="context">{'search_default_groupby_state': 1,'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>
+            <field name="domain">[('state', 'not in', ['draft', 'cancel']),('is_throughput_order','=',False),('is_internal_use_order','=',False)]</field>
+            <field name="view_mode">tree,pivot,graph</field>
+            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>
+             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>
+        </record>
 
-<!--                     <field name="transfer_created_qty" readonly="1" />-->
-<!--                     <field name="cancelled_remaining_qty" readonly="1" />-->
-<!--                     <field name="ticket_remaining_qty" />-->
-<!--                     <field name="ticket_created_qty"  />-->
-<!--                </field>-->
-<!--                <field name="product_uom_qty" position="attributes" >-->
-<!--                    <attribute name="string" >Ordered Qty.</attribute>-->
-<!--                </field>-->
-<!--                <field name="qty_delivered" position="after" >-->
-<!--                     <field name="unloaded_balance_qty"  />-->
-<!--                    <field name="balance_qty" />-->
-<!--                     <field name="parent_sales_order_transfer_id" readonly="1"/>-->
-<!--                          <field name="root_order_transfer_id" readonly="1" />-->
-<!--                         <field name="root_customer_id" readonly="1" />-->
-
-<!--                </field>-->
-<!--                 <field name="qty_delivered" position="attributes" >-->
-<!--                     <attribute name="string" >Dispatched Qty.</attribute>-->
-<!--                 </field>-->
-<!--            </field>-->
-<!--         </record>-->
-
-<!--         <record id="action_sale_order_loading_ticket_lines" model="ir.actions.act_window">-->
-<!--            <field name="name">In Depot Order Lines</field>-->
-<!--            <field name="res_model">sale.order.line</field>-->
-<!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
-<!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_throughput_order','=',False),('is_internal_use_order','=',False)]</field>-->
-<!--            <field name="view_mode">tree,pivot,graph</field>-->
-<!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
-<!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
-<!--        </record>-->
-
-<!--         <menuitem action="action_sale_order_loading_ticket_lines"-->
-<!--            id="menu_sale_order_lines_loading" parent="menu_root_in_depot_operation"-->
-<!--            sequence="1" />-->
+         <menuitem action="action_sale_order_loading_ticket_lines"   id="menu_sale_order_lines_loading" parent="menu_root_in_depot_operation"    sequence="1" />
 
 
-<!--        &lt;!&ndash; Throughput Order Lines &ndash;&gt;-->
-<!--         <record id="action_sale_order_throughput_lines" model="ir.actions.act_window">-->
-<!--            <field name="name">Throughput Order Lines</field>-->
-<!--            <field name="res_model">sale.order.line</field>-->
-<!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
-<!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_throughput_order','=',True)]</field>-->
-<!--            <field name="view_mode">tree,pivot,graph</field>-->
-<!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
-<!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
-<!--        </record>-->
+        <!-- Throughput Order Lines -->
+         <record id="action_sale_order_throughput_lines" model="ir.actions.act_window">
+            <field name="name">Throughput Sales</field>
+            <field name="res_model">sale.order.line</field>
+            <field name="context">{'search_default_groupby_state': 1,'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>
+            <field name="domain">[('state', 'not in', ['draft', 'cancel']),('is_throughput_order','=',True)]</field>
+            <field name="view_mode">tree,pivot,graph</field>
+            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>
+             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>
+        </record>
 
-<!--         <menuitem action="action_sale_order_throughput_lines"-->
-<!--            id="menu_sale_order_lines_throughput_loading" parent="menu_root_throughput_operation"-->
-<!--            sequence="2" />-->
+         <menuitem action="action_sale_order_throughput_lines"
+            id="menu_sale_order_lines_throughput_loading" parent="menu_root_throughput_operation"
+            sequence="2" />
 
 
-<!--        &lt;!&ndash; Internal Use Transfer  order lines &ndash;&gt;-->
-<!--         <record id="action_sale_order_internal_use_lines" model="ir.actions.act_window">-->
-<!--            <field name="name">Internal Use Transfer Order Lines</field>-->
-<!--            <field name="res_model">sale.order.line</field>-->
-<!--            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>-->
-<!--            <field name="domain">[('state', 'in', ['sale', 'done']),('is_internal_use_order','=',True)]</field>-->
-<!--            <field name="view_mode">tree,pivot,graph</field>-->
-<!--            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>-->
-<!--             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>-->
-<!--        </record>-->
+        <!-- Internal Use Transfer  order lines -->
+         <record id="action_sale_order_internal_use_lines" model="ir.actions.act_window">
+            <field name="name">Internal Use Sales</field>
+            <field name="res_model">sale.order.line</field>
+            <field name="context">{'search_default_groupby_state': 1,'search_default_groupby_product': 1,'search_default_groupby_cust': 1}</field>
+            <field name="domain">[('state', 'not in', ['draft', 'cancel']),('is_internal_use_order','=',True)]</field>
+            <field name="view_mode">tree,pivot,graph</field>
+            <field name="view_id" ref="kin_sales.view_order_line_tree_extend"/>
+             <field name="search_view_id" ref="kin_sales.view_sales_order_line_search_extend"/>
+        </record>
 
-<!--         <menuitem action="action_sale_order_internal_use_lines"-->
-<!--            id="menu_sale_order_lines_internal_use_loading" parent="menu_root_internal_use_operation"-->
-<!--            sequence="2" />-->
+         <menuitem action="action_sale_order_internal_use_lines"
+            id="menu_sale_order_lines_internal_use_loading" parent="menu_root_internal_use_operation"
+            sequence="2" />
 
 
 
@@ -754,6 +749,26 @@
             </field>
         </record>
 
+        <record id="view_picking_form_depot_filter" model="ir.ui.view">
+            <field name="name">stock.picking.form.depot.select</field>
+            <field name="model">stock.picking</field>
+            <field name="arch" type="xml">
+                <search string="Search Depot Pickings">
+                    <field name="name" string="Ticket ID" filter_domain="[('name','ilike',self)]"/>
+                    <field name="waybill_no" string="Waybill No." />
+                    <field name="partner_id" string="Customer" />
+                     <field name="sale_id" string="Sales Order" filter_domain="[('sale_id','ilike',self)]"/>
+                    <field name="origin" string="Source Document" filter_domain="[('origin','ilike',self)]"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Status" domain="[]" name="grp_state" context="{'group_by':'state'}"/>
+                         <filter string="Product" domain="[]" name="grp_prd" context="{'group_by':'product_id'}" />
+                        <filter string="Customer" domain="[]" name="grp_cust" context="{'group_by':'partner_id'}" />
+                        <filter string="Loaded Date" domain="[]" name="grp_loaded_date" context="{'group_by':'loaded_date'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
          <record id="action_depot_dispatch" model="ir.actions.act_window">
             <field name="name">In Depot Dispatch Transfers</field>
             <field name="res_model">stock.picking</field>
@@ -765,11 +780,11 @@
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">['|',('is_indepot_ticket', '=', True),('is_exdepot_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
-<!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
+            <field name="search_view_id" ref="view_picking_form_depot_filter"/>
         </record>
 
 
-        <menuitem id="menu_depot_form" name="In Depot Loading Ticket / Waybill" parent="menu_root_in_depot_operation" sequence="2" action="action_depot_dispatch"/>
+        <menuitem id="menu_depot_form" name="In Depot Loading Docs." parent="menu_root_in_depot_operation" sequence="2" action="action_depot_dispatch"/>
 
 
 <!-- Throughput Operations -->
@@ -967,10 +982,10 @@
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">[('is_loading_ticket', '=', True),('is_throughput_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
-<!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
+            <field name="search_view_id" ref="view_picking_form_depot_filter"/>
         </record>
 
-        <menuitem id="menu_throughput_form" name="Throughput Loading Ticket / Waybill" parent="menu_root_throughput_operation" sequence="3" action="action_throughput_dispatch"/>
+        <menuitem id="menu_throughput_form" name="Throughput Loading Docs." parent="menu_root_throughput_operation" sequence="3" action="action_throughput_dispatch"/>
 
 
 
@@ -1012,24 +1027,25 @@
                             </h1>
                         </div>
                         <group col="4">
-                            <field name="customer_id"  required="1" />
+                            <field name="customer_id"  required="1" options="{'no_open':True,'no_create':True}" />
                             <field name="product_id"  domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  required="1"  attrs="{'readonly': [('state', '!=', 'draft')]}" options="{'no_open':True,'no_create':True}" />
                             <field name="product_uom" readonly="1" />
                             <field name="date_move" attrs="{'readonly': [('state', '!=', 'draft')]}"  required="1" />
                             <field name="received_qty" required="1" />
                             <field name="operational_loss_perc" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}"  />
                             <field name="operational_loss_qty"  />
-<!--                            <field name="operational_loss_cost" required="1" />-->
+                            <field name="operational_loss_cost" required="1" />
                             <field name="qty"  />
                              <field name="source_location_id"  readonly="1" required="1"  />
                             <field name="user_id" readonly="1"  />
                             <field name="destination_location_id"   required="1" invisible="1" />
-<!--                            <field name="destination_oper_loss_location_id"  readonly="1"  required="1" />-->
+                            <field name="destination_oper_loss_location_id"    required="1" />
                             <field name="note"  attrs="{'readonly': [('state', '!=', 'draft')]}" />
                             <field name="create_date" readonly="1" />
                             <field name="user_confirmed_date" readonly="1" />
                             <field name="user_validate_id" readonly="1"  />
                             <field name="user_validated_date" readonly="1"  />
+                            <field name="company_id" readonly="1" />
                         </group>
                      </sheet>
                     <div class="oe_chatter">
@@ -1280,12 +1296,12 @@
             <field name="view_mode">tree,kanban,form,calendar</field>
             <field name="domain">[('is_loading_ticket', '=', True),('is_internal_use_ticket', '=', True)]</field>
             <field name="context">{'search_default_grp_prd': 1,'search_default_grp_cust': 1,'search_default_grp_state': 1}</field>
-<!--            <field name="search_view_id" ref="view_picking_form_loader_filter"/>-->
+            <field name="search_view_id" ref="view_picking_form_depot_filter"/>
         </record>
 
 
 
-        <menuitem id="menu_internal_use_form" name="Internal Use Loading Ticket / Waybill" parent="menu_root_internal_use_operation" sequence="3" action="action_internal_use_dispatch"/>
+        <menuitem id="menu_internal_use_form" name="Internal Use Loading Docs." parent="menu_root_internal_use_operation" sequence="3" action="action_internal_use_dispatch"/>
 
 
         <!-- Internal Use Transfer -->
@@ -1463,6 +1479,7 @@
                 <field name="categ_id" position="after">
                    <field name="white_product" />
                     <field name="account_unearned_revenue_id"  />
+                    <field name="throughput_income_account_id" />
 <!--                     <field name="product_deferred_revenue_id" domain="[('is_deferred_revenue','=',True)]" />-->
                 </field>
 <!--                <div name="options" position="inside" >-->
@@ -1755,6 +1772,7 @@
             <field name="arch" type="xml">
                  <field name="function" position="before" >
                      <field  name="throughput_location_id" invisible="1" />
+                     <field  name="throughput_rate" />
                  </field>
                 <notebook position="inside" >
                     <page string="DRP Informations">
@@ -2005,6 +2023,9 @@
 
                  <field name="product_id"  position="attributes" >
                     <attribute name="options" >{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="ref" position="after" >
+                    <field name="is_throughput_vessel"  />
                 </field>
             </field>
         </record>

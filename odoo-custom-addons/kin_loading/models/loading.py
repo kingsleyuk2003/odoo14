@@ -181,7 +181,7 @@ class StockPickingExtend(models.Model):
     #     return True
 
 
-    def _get_defferred_revenue_deduction_line(self):
+    def _get_deferred_revenue_deduction_line(self):
         inv_line_adv = []
         for stock_move in self.move_lines:
             sale_order_line_id = stock_move.sale_line_id
@@ -292,17 +292,18 @@ class StockPickingExtend(models.Model):
         return invoiceable_line_ids
 
 
+
     def _create_final_invoice_depot(self,grouped=False, final=False):
         order = self.sale_id
         # 1) Create invoices.
         invoice_vals_list = []
         order = order.with_company(order.company_id)
 
-        invoice_vals = order._prepare_invoice()
+        invoice_vals = self._prepare_invoice()
         invoice_vals['is_from_inventory'] = True
         invoice_line_vals = self._get_invoiceable_lines()
         invoice_vals['invoice_line_ids'] += invoice_line_vals
-        inv_line_def_vals = self._get_defferred_revenue_deduction_line()
+        inv_line_def_vals = self._get_deferred_revenue_deduction_line()
         invoice_vals['invoice_line_ids'] += inv_line_def_vals
         invoice_vals_list.append(invoice_vals)
 
@@ -586,80 +587,6 @@ class StockPickingExtend(models.Model):
     #
     #
     #     return super(StockPickingExtend,self).do_new_transfer()
-
-
-
-
-    def transfer_create_invoice_loading_ticket(self):
-
-        inv_obj = self.create_customer_invoice_loading_ticket()
-        inv_id = inv_obj.id
-
-        if inv_obj:  # if inv_id is empty , maybe as a result of an already created invoice, thus no invoice may be created here. This can happen when sales order is cancelled and open again with another delivery that creates an invoice
-
-            if self.picking_type_id.is_validate_invoice:
-                # #this one below dis npt work because it could not allow payment allocation after opening the invoice and also it could not allow making a zero total amout invoice to paid automatically
-                # inv_obj.action_move_create()
-                # inv_obj.invoice_validate()
-                inv_obj.action_post()
-
-            inv_obj.sale_id = self.sale_id
-            inv_obj.picking_id = self
-            self.invoice_id = inv_obj
-
-            user_ids = []
-            if inv_obj.partner_id and inv_obj.partner_id.user_id:
-                user_ids.append(inv_obj.partner_id.user_id.id)
-
-            # Send Invoice Notification to Selected Users
-            is_send_invoice_notification = self.picking_type_id.is_send_invoice_notification
-            company_email = self.env.user.company_id.email.strip()
-            if is_send_invoice_notification and company_email:
-                # Custom Email Template
-                mail_template = self.env.ref('kin_stock.mail_templ_invoice_delivery')
-                the_url = inv_obj._get_url('account', 'menu_action_invoice_tree1', 'action_invoice_tree1')
-
-                users = []
-                group_obj = self.env.ref('kin_stock.group_receive_inventory_invoice_email')
-                for user in group_obj.users:
-                    users.append(user.id)
-                    if user.partner_id.email and user.partner_id.email.strip():
-                        ctx = {'system_email': company_email,
-                               'accountant_email': user.partner_id.email,
-                               'accountant_name': user.partner_id.name,
-                               'url': the_url,
-                               'origin': inv_obj.origin,
-                               'partner_name': self.partner_id.name
-                               }
-                        mail_template.with_context(ctx).send_mail(self.id, force_send=False)
-                        self.show_alert_box = True
-
-                # Also notify uses of items awaiting pickup
-                stock_person_email = self.env.user.partner_id.email.strip()
-                stock_person_name = self.env.user.name
-
-                if company_email and stock_person_email:
-                    # Custom Email Template
-                    mail_template = self.env.ref('kin_stock.mail_templ_delivery_awaiting_pickup')
-                    ctx = {}
-                    ctx.update({'picking_id': self.id})
-                    the_url = self._get_stock_url('stock', 'all_picking', 'action_picking_tree_all', ctx)
-
-                    user_ids = []
-                    group_obj = self.env.ref('kin_stock.group_receive_stock_delivery_orders_awaiting_pickup_email')
-                    for user in group_obj.users:
-                        if user.partner_id.email and user.partner_id.email.strip():
-                            user_ids.append(user.id)
-                            ctx = {'system_email': company_email,
-                                   'stock_person_name': stock_person_name,
-                                   'stock_person_email': stock_person_email,
-                                   'notify_person_email': user.partner_id.email,
-                                   'notify_person_name': user.partner_id.name,
-                                   'url': the_url
-                                   }
-                            mail_template.with_context(ctx).send_mail(self.id, force_send=False)
-                            # self.message_subscribe_users(user_ids=user_ids)
-
 
 
 
@@ -1558,6 +1485,7 @@ class SaleOrderLoading(models.Model):
                     'client_order_ref': self.name,
                     'parent_sales_order_transfer_id' :self.id,
                     'root_order_transfer_id': tran_root_order_transfer_id.id,
+                    'state' : 'atl_approved',
                     'order_line': [(0, 0, {
                         'name':  sale_order_line_id.product_id.name,
                         'product_id': sale_order_line_id.product_id.id,
@@ -1611,26 +1539,15 @@ class SaleOrderLoading(models.Model):
                 }
 
                 move_id = stock_move_obj.create(vals)
-                move_id.action_confirm()
-                move_id.force_assign()
-                move_id.action_done()
+                move_id._action_assign()
+                move_id._action_confirm()
+                move_id._action_done()
                 move_id.throughput_so_transfer_movement_id = self.id
 
         # send notification
-        partn_ids = []
-        user_names = ''
-        group_obj = self.env.ref('kin_loading.group_notify_transferred_sales')
         msg = 'The Throughput Transfer Order (%s) for (%s), has been created by %s' % (
             transfer_order_id.name, transfer_order_id.partner_id.name, self.env.user.name)
-        for user in group_obj.users:
-            user_names += user.name + ", "
-            partn_ids.append(user.partner_id.id)
-
-        if partn_ids:
-            self.message_post(
-                _(msg),
-                subject='%s' % msg, partner_ids=partn_ids)
-        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+        self.send_email('kin_loading.group_notify_transferred_sales',msg,msg)
 
         return transfer_order_id
 
@@ -2534,17 +2451,15 @@ class SaleOrderLoading(models.Model):
         #                     msg='A New Delivery transfer document for the sales order (%s) has been created.' % self.name)
         #
 
-
-        self.create_advance_invoice_depot()
-        # Send Email to the Accountant
-        self.send_email(grp_name='kin_sales.group_invoice_before_delivery_email',
-                            subject='A New draft advance invoice with source document (%s) has been created for the customer (%s)' % (self.name,self.partner_id.name),
-                            msg='A New Draft Invoice with Source Document Number (%s) has been created. Crosscheck and validate the invoice'  % self.name)
-
-
         #For throughput or internal use orders
-        # if not self.is_throughput_order and not self.is_internal_use_order :
-        #     self.create_advance_invoice()
+        if not self.is_throughput_order and not self.is_internal_use_order :
+            self.create_advance_invoice_depot()
+
+            # Send Email to the Accountant
+            self.send_email(grp_name='kin_sales.group_invoice_before_delivery_email',
+                                subject='A New draft advance invoice with source document (%s) has been created for the customer (%s)' % (self.name,self.partner_id.name),
+                                msg='A New Draft Invoice with Source Document Number (%s) has been created. Crosscheck and validate the invoice'  % self.name)
+
 
         return True
 
@@ -2918,6 +2833,77 @@ class ThroughputReceipt(models.Model):
         return self.write({'state': 'confirm', 'user_id' : self.env.user.id,
                            'user_confirmed_date': datetime.today()})
 
+    def _stock_move_operational_loss(self):
+        lot_id = self.env['stock.production.lot'].search(
+            [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
+        stock_move_obj = self.env['stock.move']
+        if self.operational_loss_cost <= 0:
+            raise UserError(_('Sorry, Operational Loss Cost Price cannot be less than or Equal to Zero'))
+
+        vals = {
+            'name': self.name + ' Operational Loss',
+            'product_id': self.product_id.id,
+            'product_uom': self.product_id.uom_id.id,
+            'price_unit': self.operational_loss_cost,
+            'date': self.date_move,
+            'location_id': self.source_location_id.id,
+            'location_dest_id': self.destination_oper_loss_location_id.id,
+            'product_uom_qty': self.operational_loss_qty,
+            'origin': self.name
+        }
+
+        move_id = stock_move_obj.create(vals)
+        move_id._action_assign()
+        move_id._action_confirm()
+        move_id._action_done()
+        move_id.throughput_receipt_movement_id = self.id
+
+        # self.env['stock.move.line'].create({
+        #     'location_id': self.source_location_id.id,
+        #     'location_dest_id': self.destination_oper_loss_location_id.id,
+        #     'product_id': self.product_id.id,
+        #     'qty_done': self.operational_loss_qty,
+        #     'product_uom_id': self.product_id.uom_id.id,
+        #     # 'lot_id': quant.lot_id.id,
+        #     'move_id': move_id.id,
+        # })
+
+
+    def _stock_move_throughput(self):
+        lot_id = self.env['stock.production.lot'].search(
+            [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
+        stock_move_obj = self.env['stock.move']
+        self.product_id.standard_price = 0
+        vals = {
+            'name': self.name,
+            'product_id': self.product_id.id,
+            'product_uom': self.product_id.uom_id.id,
+            # 'price_unit': 0,
+            'date': self.date_move,
+            'location_id': self.source_location_id.id,
+            'location_dest_id': self.destination_location_id.id,
+            'product_uom_qty': self.qty,
+            'origin': self.name ,
+            'move_line_ids' : [(0, 0, {
+                    'location_id': self.source_location_id.id,
+                    'location_dest_id': self.destination_location_id.id,
+                    'product_id':  self.product_id.id,
+                    'qty_done': self.qty,
+                    'product_uom_id': self.product_id.uom_id.id,
+                    'lot_id': lot_id.id,
+            })],
+        }
+        move_id = stock_move_obj.create(vals)
+        move_id._action_assign()
+        move_id._action_confirm()
+        move_id._action_done()
+        move_id.throughput_receipt_movement_id = self.id
+
+        self.env['stock.move.line'].create({
+
+        })
+
+
 
     def action_validate(self):
         if self.state == 'validate':
@@ -2929,88 +2915,23 @@ class ThroughputReceipt(models.Model):
         if self.operational_loss_perc <= 0:
             raise UserError(_('Sorry, Operational Loss Percentage cannot be less than or Equal to Zero'))
 
-        # if self.operational_loss_cost <= 0:
-        #     raise UserError(_('Sorry, Operational Loss Cost Price cannot be less than or Equal to Zero'))
 
        # create the stock move for the thruput qty
-        stock_move_obj = self.env['stock.move']
-        self.product_id.standard_price = 0
-        vals = {
-            'name': self.name,
-            'product_id': self.product_id.id,
-            'product_uom': self.product_id.uom_id.id,
-            #'price_unit': 0,
-            'date': self.date_move,
-            'location_id': self.source_location_id.id,
-            'location_dest_id': self.destination_location_id.id,
-            'product_uom_qty': self.qty,
-            'origin': self.name
-        }
+        self._stock_move_throughput()
 
-        move_id = stock_move_obj.create(vals)
-        move_id.action_confirm()
-        move_id.force_assign()
-        move_id.action_done()
-        move_id.throughput_receipt_movement_id = self.id
-
-        #Create move for operational loss to  stock
-        # vals = {
-        #     'name': self.name + ' Operational Loss',
-        #     'product_id': self.product_id.id,
-        #     'product_uom': self.product_id.uom_id.id,
-        #     'price_unit': self.operational_loss_cost,
-        #     'date': self.date_move,
-        #     'location_id': self.source_location_id.id,
-        #     'location_dest_id': self.destination_oper_loss_location_id.id,
-        #     'product_uom_qty': self.operational_loss_qty,
-        #     'origin': self.name
-        # }
-        #
-        # move_id = stock_move_obj.create(vals)
-        # move_id.action_confirm()
-        # move_id.force_assign()
-        # move_id.action_done()
-        # move_id.throughput_receipt_movement_id = self.id
+        #Create move for operational loss to stock
+        self._stock_move_operational_loss()
 
         self.sale_order_thruput_id = self.create_throughput_sales_order()
         self.sale_order_thruput_id.throughput_receipt_source_id = self
-        self.sale_order_thruput_id.action_confirm_main_sale()
-
-
-        self.invoice_id = self.create_customer_invoice()
+        self.sale_order_thruput_id.state = 'atl_approved'
+        self.invoice_id = self._create_throughput_invoice_depot()
         self.invoice_id.throughput_receipt_id = self
 
-        partn_inv_ids = []
-        user_names = ''
-        group_obj = self.env.ref('account.group_account_invoice')
-        msg = 'The Throughput Customer Invoice (%s) for (%s), has been created by %s' % (
-            self.invoice_id.name, self.invoice_id.partner_id.name, self.env.user.name)
-        for user in group_obj.users:
-            user_names += user.name + ", "
-            partn_inv_ids.append(user.partner_id.id)
-
-        if partn_inv_ids:
-            self.message_post(
-                _(msg),
-                subject='%s' % msg, partner_ids=partn_inv_ids)
-
         #send notification
-        partn_ids = []
-        group_obj = self.env.ref(
-            'kin_loading.group_throughput_receipt_validate_notification')
         msg = 'The Throughput Receipt (%s) for (%s), has been validated by %s' % (
             self.name, self.customer_id.name, self.env.user.name)
-        for user in group_obj.users:
-            user_names += user.name + ", "
-            partn_ids.append(user.partner_id.id)
-
-        if partn_ids:
-            self.message_post(
-                _(msg),
-                subject='%s' % msg, partner_ids=partn_ids)
-        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
-
+        self.send_email('kin_loading.group_throughput_receipt_validate_notification',msg,msg)
 
         return self.write({'state': 'validate', 'user_validate_id' : self.env.user.id,
                            'user_validated_date': datetime.today()})
@@ -3048,21 +2969,24 @@ class ThroughputReceipt(models.Model):
 
 
     def btn_view_stock_move(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Stock Moves'),
-            'view_type': 'form',
-            'view_mode': 'tree,form',
-            'res_model': 'stock.move',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.stock_move_ids])],
-            # 'context': context,
-            # 'view_id': self.env.ref('account.view_account_bnk_stmt_cashbox').id,
-            # 'res_id': self.env.context.get('cashbox_id'),
-            'target': 'new'
-        }
+        action = self.env["ir.actions.actions"]._for_xml_id("stock.stock_move_action")
+        action['views'] = [
+            (self.env.ref('stock.view_move_tree').id, 'tree'),
+            # (self.env.ref('stock.view_move_form').id, 'form')
+        ]
+        action['context'] = self.env.context
+        stock_move_ids = self.mapped('stock_move_ids')
+        action['domain'] = [('id', 'in', stock_move_ids.ids)]
+
+        if len(stock_move_ids) > 1:
+            action['domain'] = [('id', 'in', stock_move_ids.ids)]
+        elif len(stock_move_ids) == 1:
+            action['views'] = [(self.env.ref('stock.view_move_form').id, 'form'),]
+            action['res_id'] = stock_move_ids.ids[0]
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
+
 
     @api.depends('stock_move_ids')
     def _compute_stock_move_count(self):
@@ -3097,172 +3021,157 @@ class ThroughputReceipt(models.Model):
         self.invoice_count = len(self.invoice_id)
 
 
+
     def action_view_invoice(self):
-        invoices = self.mapped('invoice_ids')
         action = self.env["ir.actions.actions"]._for_xml_id("account.action_move_out_invoice_type")
-        if len(invoices) > 1:
-            action['domain'] = [('id', 'in', invoices.ids)]
-        elif len(invoices) == 1:
-            form_view = [(self.env.ref('account.view_move_form').id, 'form')]
-            if 'views' in action:
-                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
-            else:
-                action['views'] = form_view
-            action['res_id'] = invoices.id
+        action['views'] = [
+            (self.env.ref('account.view_invoice_tree').id, 'tree'),
+        ]
+        action['context'] = self.env.context
+        invoice_ids = self.mapped('invoice_id')
+        action['domain'] = [('id', 'in', invoice_ids.ids)]
+
+        if len(invoice_ids) > 1:
+            action['domain'] = [('id', 'in', invoice_ids.ids)]
+        elif len(invoice_ids) == 1:
+            action['views'] = [(self.env.ref('account.view_move_form').id, 'form'),]
+            action['res_id'] = invoice_ids.ids[0]
         else:
             action = {'type': 'ir.actions.act_window_close'}
-
-        context = {
-            'default_move_type': 'out_invoice',
-        }
-        if len(self) == 1:
-            context.update({
-                'default_partner_id': self.partner_id.id,
-                'default_partner_shipping_id': self.partner_shipping_id.id,
-                'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
-                'default_invoice_origin': self.mapped('name'),
-                'default_user_id': self.user_id.id,
-            })
-        action['context'] = context
         return action
 
 
-    def action_view_invoice(self):
-        invoice_id = self.mapped('invoice_id')
-        imd = self.env['ir.model.data']
-        action = imd.xmlid_to_object('account.action_invoice_tree1')
-        list_view_id = imd.xmlid_to_res_id('account.invoice_tree')
-        form_view_id = imd.xmlid_to_res_id('account.invoice_form')
 
-        result = {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
-                      [False, 'calendar'], [False, 'pivot']],
-            'target': action.target,
-            'context': action.context,
-            'res_model': action.res_model,
-        }
-        if len(invoice_id) > 1:
-            result['domain'] = "[('id','in',%s)]" % invoice_id.id
-        elif len(invoice_id) == 1:
-            result['views'] = [(form_view_id, 'form')]
-            result['res_id'] = invoice_id.id
-        else:
-            result = {'type': 'ir.actions.act_window_close'}
-        return result
-
-
-    def send_email(self, grp_name, msg):
-        # send email
+    def send_email(self, grp_name, subject, msg):
         partn_ids = []
-        group_obj = self.env.ref(grp_name)
         user_names = ''
+        group_obj = self.env.ref(grp_name)
         for user in group_obj.users:
             user_names += user.name + ", "
             partn_ids.append(user.partner_id.id)
-
         if partn_ids:
             # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
             self.message_follower_ids.unlink()
-            self.message_post(body=msg, subject=msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                              force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-        return
 
+    def _get_throughput_move_line(self):
+        product_id = self.product_id
+        customer_id = self.customer_id
+        throughput_rate = customer_id.throughput_rate
+        throughput_income_account_id = self.product_id.throughput_income_account_id
+        inv_line_adv = []
 
-    def create_customer_invoice(self):
+        if customer_id.throughput_rate == 0:
+            raise UserError('Please set the throughput rate for the customer (%s), on the customers database' % (customer_id.name))
 
-        inv_obj = self.env['account.move']
-        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
-        invoices = {}
+        if not throughput_income_account_id :
+            raise UserError(_('Please set the throughput account for the %s, on the Product Page' % (
+                product_id.name)))
 
-        journal_id = self.env['account.invoice'].default_get(['journal_id'])['journal_id']
-        if not journal_id:
-            raise UserError(_('Please define an accounting sale journal for this company.'))
+        account = throughput_income_account_id
+        fpos = customer_id.property_account_position_id
+        if fpos:
+            account = fpos.map_account(throughput_income_account_id)
+
+        default_analytic_account = self.env['account.analytic.default'].account_get(
+                product_id=self.product_id.id,
+                partner_id=customer_id.id,
+                account_id=account.id,
+                user_id=self.env.user.id,
+                date=date.today(),
+                company_id=self.company_id.id
+            )
+
+        amount = self.received_qty * throughput_rate
+        if amount <= 0.00:
+            raise UserError(_('The value of the throughput amount must be positive.'))
+
+        line_adv = {
+                    'name': _(" %s Throughput Income for %s ltrs, from %s") % (product_id.name, self.received_qty , customer_id.name),
+                    'ref': self.name,
+                    'account_id': account.id,
+                    'price_unit': throughput_rate,
+                    'quantity': self.received_qty,
+                    'analytic_account_id': default_analytic_account and default_analytic_account.analytic_id.id,
+                }
+        inv_line_adv.append(line_adv)
+        return inv_line_adv
+
+    def _prepare_invoice(self):
+        """
+        Prepare the dict of values to create the new invoice for a sales order. This method may be
+        overridden to implement custom invoice generation (making sure to call super() to establish
+        a clean extension chain).
+        """
+        self.ensure_one()
+        journal = self.env['account.move'].with_context(default_move_type='out_invoice')._get_default_journal()
+        if not journal:
+            raise UserError(_('Please define an accounting sales journal for the company %s (%s).') % (self.company_id.name, self.company_id.id))
 
         invoice_vals = {
-            'name': self.name ,
-            'origin': self.name ,
-            'type': 'out_invoice',
-            'reference': self.name,
-            'account_id': self.customer_id.property_account_receivable_id.id,
+            'ref': self.name or '',
+            'move_type': 'out_invoice',
+            'narration': self.note,
+            'currency_id': self.company_id.currency_id.id,
             'partner_id': self.customer_id.id,
-            'journal_id': journal_id,
-            'is_throughput_invoice': True,
-            # 'company_id': sale_order.company_id.id,
-            # 'user_id': self.confirmed_by and self.confirmed_by.id,
+           # 'account_id': self.customer_id.property_account_receivable_id.id,
+            'journal_id': journal.id,  # company comes from the journal
+            'invoice_origin': self.name,
+            'invoice_line_ids': [],
+            'company_id': self.company_id.id,
         }
+        return invoice_vals
 
-        invoice = inv_obj.create(invoice_vals)
+    def _create_throughput_invoice_depot(self):
 
-        # lines = []
-        #
-        # if not float_is_zero(1, precision_digits=precision):
-        #     account = self.product_id.property_account_income_id
-        #     if not account:
-        #         raise UserError(
-        #             _('Please define income account for this product: "%s" (id:%d)') % (
-        #             self.product_id.name, self.product_id.id))
-        #
-        #
-        #     default_analytic_account = self.env['account.analytic.default'].account_get(
-        #         self.product_id.id, self.driver_id.id,
-        #         self.confirmed_by.user_id.id, date.today())
-        #
-        #     inv_line = {
-        #         'name': self.ticket_no,
-        #         # 'sequence': self.sequence,
-        #         'origin': self.ticket_no,
-        #         'account_id': account.id,
-        #         'price_unit': self.amount,
-        #         'quantity': 1,
-        #         'uom_id': self.product_id.uom_id.id,
-        #         'product_id': self.product_id.id or False,
-        #         'account_analytic_id':  default_analytic_account and default_analytic_account.analytic_id.id,
-        #         'invoice_id': invoice.id
-        #     }
-        #     self.env['account.invoice.line'].create(inv_line)
-        #
-        #
-        # if not invoice.invoice_line_ids:
-        #     raise UserError(_('There is no invoiceable line.'))
-        #     # If invoice is negative, do a refund invoice instead
-        # if invoice.amount_untaxed < 0:
-        #     invoice.type = 'out_refund'
-        #     for line in invoice.invoice_line_ids:
-        #         line.quantity = -line.quantity
-        # # Use additional field helper function (for account extensions)
-        # for line in invoice.invoice_line_ids:
-        #     line._set_additional_fields(invoice)
-        #     # Necessary to force computation of taxes. In account_invoice, they are triggered
-        #     # by onchanges, which are not triggered when doing a create.
-        # invoice.compute_taxes()
+        invoice_vals_list = []
+        invoice_vals = self._prepare_invoice()
+        invoice_vals['is_throughput_invoice'] = True
+        inv_line_thru_vals = self._get_throughput_move_line()
+        invoice_vals['invoice_line_ids'] += inv_line_thru_vals
+        invoice_vals_list.append(invoice_vals)
 
-        group_name = 'account.group_account_invoice'
-        msg = 'A Throughput Invoice (%s) for Customer (%s), has been Initiated by %s' % (
-        invoice.name, invoice.partner_id.name, self.env.user.name)
-        self.send_email(group_name, msg)
+        # Manage the creation of invoices in sudo because a salesperson must be able to generate an invoice from a
+        # sale order without "billing" access rights. However, he should not be able to create an invoice from scratch.
+        moves = self.env['account.move'].sudo().with_context(default_move_type='out_invoice').create(invoice_vals_list)
 
-        return invoice
+        for move in moves:
+            move.message_post_with_view('mail.message_origin_link',
+                values={'self': move, 'origin': move.line_ids.mapped('sale_line_ids.order_id')},
+                subtype_id=self.env.ref('mail.mt_note').id
+            )
+            move.throughput_receipt_id = self
+            self.invoice_id = move
+            group_name = 'account.group_account_invoice'
+            subject = 'A Throughput Invoice (%s) for Customer (%s)' % (move.name, move.partner_id.name)
+            msg = 'A Throughput Invoice (%s) for Customer (%s), has been Initiated by %s' % (
+                move.name, move.partner_id.name, self.env.user.name)
+            self.send_email(group_name,subject, msg)
+        moves.action_post()
+        return moves
+
+
 
 
     def btn_view_sales_order(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Sales Order'),
-            'view_type': 'form',
-            'view_mode': 'tree,form',
-            'res_model': 'sale.order',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.sale_order_thruput_id])],
-            # 'context': context,
-            # 'view_id': self.env.ref('account.view_account_bnk_stmt_cashbox').id,
-            # 'res_id': self.env.context.get('cashbox_id'),
-            'target': 'new'
-        }
+        action = self.env["ir.actions.actions"]._for_xml_id("sale.action_orders")
+        action['views'] = [
+            (self.env.ref('sale.view_order_tree').id, 'tree'),
+        ]
+        action['context'] = self.env.context
+        sale_id = self.mapped('sale_order_thruput_id')
+        action['domain'] = [('id', 'in',  [x.id for x in sale_id])]
+
+        if len(sale_id) > 1:
+            action['domain'] = [('id', 'in',  [x.id for x in sale_id])]
+        elif len(sale_id) == 1:
+            action['views'] = [(self.env.ref('sale.view_order_form').id, 'form'),]
+            action['res_id'] = sale_id.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
 
 
     @api.depends('sale_order_thruput_id')
@@ -3296,14 +3205,14 @@ class ThroughputReceipt(models.Model):
                                   default=lambda self: datetime.today().strftime('%Y-%m-%d'))
     source_location_id = fields.Many2one('stock.location', string='Source Location', ondelete='restrict',tracking=True,default=get_default_thruput_vendor_location)
     destination_location_id = fields.Many2one('stock.location', string='Destination Location',  ondelete='restrict',tracking=True)
-    # destination_oper_loss_location_id  = fields.Many2one('stock.location',default=get_default_oper_loss_location,  string='Destination Location for Operational Loss', ondelete='restrict',tracking=True)
+    destination_oper_loss_location_id  = fields.Many2one('stock.location',default=get_default_oper_loss_location,  string='Destination Location for Operational Loss', ondelete='restrict',tracking=True)
     product_id = fields.Many2one('product.product',string='Product', ondelete='restrict',tracking=True)
     product_uom = fields.Many2one('uom.uom', related='product_id.uom_id', string='Unit of Measure')
     received_qty = fields.Float('Received Qty.', digits=dp.get_precision('Product Price'),tracking=True)
     operational_loss_perc = fields.Float('Operational Loss %.', digits=dp.get_precision('Operational Loss Qty.'),
                                         tracking=True)
     operational_loss_qty = fields.Float('Operational Loss Qty.',compute="_compute_operational_loss_qty", digits=dp.get_precision('Operational Loss Qty.'),tracking=True)
-    #operational_loss_cost = fields.Float(string='Operational Loss Cost Price')
+    operational_loss_cost = fields.Float(string='Operational Loss Cost Price')
     qty = fields.Float(string='Qty.', compute=_compute_throughput_qty, digits=dp.get_precision('Product Price'), tracking=True)
     stock_move_count = fields.Integer(compute="_compute_stock_move_count", string='# of Stock Moves', copy=False,default=0)
     stock_move_ids = fields.One2many('stock.move', 'throughput_receipt_movement_id', string='Stock Moves Entry(s)')
@@ -3318,13 +3227,29 @@ class ThroughputReceipt(models.Model):
                               ondelete='restrict')
     user_validated_date = fields.Datetime('Validated Date')
     invoice_count = fields.Integer(compute="_compute_invoice_count", string='# of Invoices', copy=False, default=0)
-    invoice_id = fields.Many2one('account.invoice')
+    invoice_id = fields.Many2one('account.move')
+    company_id = fields.Many2one('res.company',string='Company', select=True, default=lambda self: self.env.user.company_id)
 
 
 class InternalUse(models.Model):
     _name = 'kin.internal.use'
     _inherit = ['mail.thread']
     _order = 'date_move desc'
+
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                              force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
 
 
     def action_confirm(self):
@@ -3342,23 +3267,12 @@ class InternalUse(models.Model):
 
         self.sale_order_internal_use_id = self.create_internal_use_sales_order()
         self.sale_order_internal_use_id.internal_use_source_id = self
-        self.sale_order_internal_use_id.action_confirm_main_sale()
+        self.sale_order_internal_use_id.state = 'atl_approved'
 
         # send notification
-        partn_ids = []
-        user_names = ''
-        group_obj = self.env.ref('kin_loading.group_internal_use_validate_notification')
         msg = 'The Internal Use transfer record (%s), has been validated by %s' % (
-            self.name,  self.env.user.name)
-        for user in group_obj.users:
-            user_names += user.name + ", "
-            partn_ids.append(user.partner_id.id)
-
-        if partn_ids:
-            self.message_post(
-                body=_(msg),
-                subject='%s' % msg, partner_ids=partn_ids)
-        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+            self.name, self.env.user.name)
+        self.send_email('kin_loading.group_internal_use_validate_notification',msg,msg)
 
         return self.write({'state': 'validate', 'user_validate_id': self.env.user.id,
                            'user_validated_date': datetime.today()})
@@ -3411,21 +3325,24 @@ class InternalUse(models.Model):
 
 
     def btn_view_sales_order(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Sales Order'),
-            'view_type': 'form',
-            'view_mode': 'tree,form',
-            'res_model': 'sale.order',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.sale_order_internal_use_id])],
-            # 'context': context,
-            # 'view_id': self.env.ref('account.view_account_bnk_stmt_cashbox').id,
-            # 'res_id': self.env.context.get('cashbox_id'),
-            'target': 'new'
-        }
+        action = self.env["ir.actions.actions"]._for_xml_id("sale.action_orders")
+        action['views'] = [
+            (self.env.ref('sale.view_order_tree').id, 'tree'),
+        ]
+        action['context'] = self.env.context
+        sale_id = self.mapped('sale_order_internal_use_id')
+        action['domain'] = [('id', 'in',  [x.id for x in sale_id])]
+
+        if len(sale_id) > 1:
+            action['domain'] = [('id', 'in',  [x.id for x in sale_id])]
+        elif len(sale_id) == 1:
+            action['views'] = [(self.env.ref('sale.view_order_form').id, 'form'),]
+            action['res_id'] = sale_id.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
+
+
 
     @api.depends('sale_order_internal_use_id')
     def _compute_so_count(self):
@@ -3472,6 +3389,7 @@ class ProductProductLoading(models.Model):
     ], string='White Product')
 
     account_unearned_revenue_id = fields.Many2one('account.account',string='Unearned Revenue Account' )
+    throughput_income_account_id = fields.Many2one('account.account', string='Throughput Income Account')
     #is_deferred_revenue = fields.Boolean(string='Is Deferred Revenue')
     #product_deferred_revenue_id = fields.Many2one('product.template', string='Product Deferred Revenue')
 
@@ -3571,6 +3489,11 @@ class ResPartner(models.Model):
         return
 
     throughput_location_id = fields.Many2one('stock.location',string='Throughput Location')
+    throughput_rate = fields.Float(string='Throughput Rate')
     dpr_info_ids = fields.One2many('dpr.info','customer_id',string='DPR Informations')
 
 
+class StockProductionLot(models.Model):
+    _inherit = 'stock.production.lot'
+    
+    is_throughput_vessel = fields.Boolean(string='Is Throughput Vessel')
