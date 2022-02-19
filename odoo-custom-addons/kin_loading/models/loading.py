@@ -11,7 +11,7 @@ from datetime import *
 from urllib.parse import urlencode
 from urllib.parse import urljoin
 from odoo.exceptions import AccessError, UserError, ValidationError
-
+from ast import literal_eval
 
 
 
@@ -158,7 +158,7 @@ class StockMoveLoading(models.Model):
         move_id.picking_id._compute_ticket_param()
         return res
 
-    throughput_receipt_movement_id = fields.Many2one('kin.throughput.receipt', string="Throughput Receipt Movement", readonly=True)
+
     throughput_so_transfer_movement_id = fields.Many2one('sale.order', string="Throughput Sales Order Transfer", readonly=True)
 
 
@@ -179,6 +179,21 @@ class StockPickingExtend(models.Model):
     #         waybill_action_template.ir_values_id.sudo().unlink()
     #
     #     return True
+
+
+
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
     def _get_deferred_revenue_deduction_line(self):
@@ -291,7 +306,30 @@ class StockPickingExtend(models.Model):
 
         return invoiceable_line_ids
 
+    def _prepare_invoice(self):
+        """
+        Prepare the dict of values to create the new invoice for a sales order. This method may be
+        overridden to implement custom invoice generation (making sure to call super() to establish
+        a clean extension chain).
+        """
+        self.ensure_one()
+        journal = self.env['account.move'].with_context(default_move_type='out_invoice')._get_default_journal()
+        if not journal:
+            raise UserError(_('Please define an accounting sales journal for the company %s (%s).') % (
+            self.company_id.name, self.company_id.id))
 
+        invoice_vals = {
+            'ref': self.name or '',
+            'move_type': 'out_invoice',
+            'narration': self.note,
+            'currency_id': self.partner_id.currency_id.id,
+            'partner_id': self.partner_id.id,
+            'journal_id': journal.id,  # company comes from the journal
+            'invoice_origin': self.name,
+            'invoice_line_ids': [],
+            'company_id': self.company_id.id,
+        }
+        return invoice_vals
 
     def _create_final_invoice_depot(self,grouped=False, final=False):
         order = self.sale_id
@@ -351,11 +389,6 @@ class StockPickingExtend(models.Model):
         }
 
 
-
-
-
-
-    
     def action_cancel(self):
         res = super(StockPickingExtend,self).action_cancel()
         sale_order = self.sale_id
@@ -365,26 +398,18 @@ class StockPickingExtend(models.Model):
                 line._compute_procurement_qty()
         return res
 
-
     
     def btn_block_ticket(self,msg):
-        if self.state == 'cancel':
-            raise UserError(_('No need for the block, since Loading Ticket is already cancelled'))
+        if self.state in ('done','cancel'):
+            raise UserError(_('No need for the block, since Loading Ticket is already done/cancelled'))
         self.is_block_ticket = True
         self.block_reason = msg
         self.block_date = datetime.today()
         self.block_user_id = self.env.user
 
-        user_ids = []
-        group_obj = self.env.ref('kin_loading.group_receive_block_ticket_notification')
-        for user in group_obj.users:
-            user_ids.append(user.partner_id.id)
-
-            self.message_post(_(
-                'The Loading Ticket (%s), belonging to %s, has been blocked by %s, with reason: %s.') % (
-                                  self.name, self.partner_id.name, self.env.user.name,self.block_reason),
-                              subject='A Loading Ticket has been blocked', partner_ids=[user_ids],
-                              subtype_xmlid='mail.mt_comment', force_send=False)
+        subject = 'The Loading Ticket (%s), belonging to %s, has been blocked by %s' % (self.name, self.partner_id.name, self.env.user.name)
+        msg = 'The Loading Ticket (%s), belonging to %s, has been blocked by %s, with reason: %s.' % (self.name, self.partner_id.name, self.env.user.name,self.block_reason)
+        self.send_email('kin_loading.group_receive_block_ticket_notification',subject,msg)
 
         return
 
@@ -445,7 +470,7 @@ class StockPickingExtend(models.Model):
             if self.is_block_ticket :
                 raise UserError(_("Sorry, Ticket is currently blocked and cannot be Dispatched"))
 
-            if not self.is_exdepot_ticket and self.picking_type_code == 'outgoing' and self.sale_id and self.ticket_load_qty != self.total_dispatch_qty  :
+            if not self.is_exdepot_ticket and self.picking_type_code == 'outgoing' and self.sale_id and float_round(self.ticket_load_qty, precision_digits=2) != float_round(self.total_dispatch_qty , precision_digits=2)  :
                 raise UserError(_('The Total Dispatched Qty. Must be Equal the Requested Ticket Load Qty. Please Check your Compartment Qty.'))
 
         # Sanity checks.
@@ -505,18 +530,28 @@ class StockPickingExtend(models.Model):
         if res is not True:
             return res
 
-        # Call `_action_done`.
-        if self.env.context.get('picking_ids_not_to_backorder'):
-            pickings_not_to_backorder = self.browse(self.env.context['picking_ids_not_to_backorder'])
-            pickings_to_backorder = self - pickings_not_to_backorder
-        else:
-            pickings_not_to_backorder = self.env['stock.picking']
-            pickings_to_backorder = self
-        pickings_not_to_backorder.with_context(cancel_backorder=True)._action_done()
-        pickings_to_backorder.with_context(cancel_backorder=False)._action_done()
+        if not self.is_throughput_ticket and not self.is_internal_use_ticket:
+            #  this is for first stock interim move
+            if self.env.context.get('picking_ids_not_to_backorder'):
+                pickings_not_to_backorder = self.browse(self.env.context['picking_ids_not_to_backorder'])
+                pickings_to_backorder = self - pickings_not_to_backorder
+            else:
+                pickings_not_to_backorder = self.env['stock.picking']
+                pickings_to_backorder = self
+            pickings_not_to_backorder.with_context(cancel_backorder=True)._action_done()
+            pickings_to_backorder.with_context(cancel_backorder=False)._action_done()
 
-        if self.is_loading_ticket == True:
-            self._create_final_invoice_depot()
+            # set picking document links
+            scraps = self.env['stock.scrap'].search([('picking_id', '=', self.id)])
+            valuation_layers = (self.move_lines + scraps.move_id).stock_valuation_layer_ids
+            for valuation in valuation_layers:
+                valuation.account_move_id.picking_id = self
+
+            if self.is_loading_ticket == True:
+                # this is for second stock interim move
+                self._create_final_invoice_depot()
+        else:
+            self.state = 'done'
         return True
 
 
@@ -824,7 +859,7 @@ class StockPickingExtend(models.Model):
     dpr_expiry_date = fields.Date('DPR Expiry Date')
     amount_in_words = fields.Char(
         string="Amount in Words", store=True, compute=_compute_amount_in_words)
-
+    throughput_receipt_picking_id = fields.Many2one('kin.throughput.receipt', string="Throughput Receipt Picking", readonly=True)
 
 
 
@@ -2836,113 +2871,64 @@ class ThroughputReceipt(models.Model):
     def _stock_move_operational_loss(self):
         lot_id = self.env['stock.production.lot'].search(
             [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
-        stock_move_obj = self.env['stock.move']
+        picking_type_id = self.env['stock.warehouse'].search([('company_id', '=', self.env.company.id)], limit=1).oploss_type_id
         if self.operational_loss_cost <= 0:
             raise UserError(_('Sorry, Operational Loss Cost Price cannot be less than or Equal to Zero'))
 
+        stock_picking_obj = self.env['stock.picking']
         vals = {
-            'name': self.name + ' Operational Loss',
-            'product_id': self.product_id.id,
-            'product_uom': self.product_id.uom_id.id,
-            'price_unit': self.operational_loss_cost,
-            'date': self.date_move,
+            'partner_id': self.customer_id.id,
             'location_id': self.source_location_id.id,
             'location_dest_id': self.destination_oper_loss_location_id.id,
-            'product_uom_qty': self.operational_loss_qty,
-            'origin': self.name
+            'picking_type_id': picking_type_id.id,
+            'origin': self.name + ' Operational Loss',
+            'date_done':  self.date_move,
+            'move_line_ids': [(0, 0, {
+                'location_id':  self.source_location_id.id,
+                'location_dest_id':  self.destination_oper_loss_location_id.id,
+                'product_id': self.product_id.id,
+                'qty_done': self.operational_loss_qty,
+                'product_uom_id': self.product_id.uom_id.id,
+                'lot_id': lot_id.id,
+            })]
         }
+        pick_id = stock_picking_obj.create(vals)
+        pick_id.button_validate()
+        pick_id.throughput_receipt_picking_id = self.id
+        if pick_id.state != 'done':
+            raise UserError(_('Sorry, Stock qty is not enough for the delivery order operation'))
+        return pick_id
 
-        move_id = stock_move_obj.create(vals)
-        move_id._action_assign()
-        move_id._action_confirm()
-        move_id._action_done()
-        move_id.throughput_receipt_movement_id = self.id
 
-        # self.env['stock.move.line'].create({
-        #     'location_id': self.source_location_id.id,
-        #     'location_dest_id': self.destination_oper_loss_location_id.id,
-        #     'product_id': self.product_id.id,
-        #     'qty_done': self.operational_loss_qty,
-        #     'product_uom_id': self.product_id.uom_id.id,
-        #     # 'lot_id': quant.lot_id.id,
-        #     'move_id': move_id.id,
-        # })
 
     def _stock_picking_throughput(self):
-        lot_id = self.env['stock.production.lot'].search(
-            [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
-        stock_move_obj = self.env['stock.move']
+        lot_id = self.env['stock.production.lot'].search([('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
+        picking_type_id = self.env['stock.warehouse'].search([('company_id', '=', self.env.company.id)], limit=1).thruput_type_id
+        prev_price = self.product_id.standard_price
         self.product_id.standard_price = 0
-        # create the stock picking
         stock_picking_obj = self.env['stock.picking']
         vals = {
             'partner_id': self.customer_id.id,
              'location_id': self.source_location_id.id,
             'location_dest_id': self.destination_location_id.id,
-            'picking_type_id': 5,
+            'picking_type_id':picking_type_id.id,
             'origin': self.name ,
-            'move_line_ids_without_package': [(0, 0, {
+            'move_line_ids': [(0, 0, {
                 'location_id': self.source_location_id.id,
                 'location_dest_id': self.destination_location_id.id,
                 'product_id': self.product_id.id,
                 'qty_done': self.qty,
                 'product_uom_id': self.product_id.uom_id.id,
                 'lot_id': lot_id.id,
-                'lot_name' : lot_id.name
-            })],
-            'move_ids_without_package': [(0, 0, {
-                'product_id': self.product_id.id,
-                'product_uom_qty': self.qty,
-                'quantity_done': self.qty,
-                'name' : self.name,
-                'product_uom':  self.product_id.uom_id.id,
-            })],
+            })]
         }
-
         pick_id = stock_picking_obj.create(vals)
         pick_id.button_validate()
-        if pick_id.state != 'assigned':
+        pick_id.throughput_receipt_picking_id = self.id
+        self.product_id.standard_price = prev_price
+        if pick_id.state != 'done':
             raise UserError(_('Sorry, Stock qty is not enough for the delivery order operation'))
-        # pick_id.do_prepare_partial()
-        # pick_id.pack_operation_product_ids[0].qty_done = pick_id.pack_operation_product_ids[0].product_qty
-        # pick_id.do_new_transfer()
-        # pick_id.station_product_dist_id = self.id
         return pick_id
-
-    # def _stock_move_throughput(self):
-    #     lot_id = self.env['stock.production.lot'].search(
-    #         [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
-    #     stock_move_obj = self.env['stock.picking']
-    #     self.product_id.standard_price = 0
-    #     vals = {
-    #         'name': self.name,
-    #         'product_id': self.product_id.id,
-    #         'product_uom': self.product_id.uom_id.id,
-    #         # 'price_unit': 0,
-    #         'date': self.date_move,
-    #         'location_id': self.source_location_id.id,
-    #         'location_dest_id': self.destination_location_id.id,
-    #         'product_uom_qty': self.qty,
-    #         'origin': self.name ,
-    #         'move_line_ids' : [(0, 0, {
-    #                 'location_id': self.source_location_id.id,
-    #                 'location_dest_id': self.destination_location_id.id,
-    #                 'product_id':  self.product_id.id,
-    #                 'qty_done': self.qty,
-    #                 'product_uom_id': self.product_id.uom_id.id,
-    #                 'lot_id': lot_id.id,
-    #         })],
-    #     }
-    #     move_id = stock_move_obj.create(vals)
-    #     move_id._action_assign()
-    #     move_id._action_confirm()
-    #     move_id._action_done()
-    #     move_id.throughput_receipt_movement_id = self.id
-    #
-    #     self.env['stock.move.line'].create({
-    #
-    #     })
-
 
 
     def action_validate(self):
@@ -2955,11 +2941,7 @@ class ThroughputReceipt(models.Model):
         if self.operational_loss_perc <= 0:
             raise UserError(_('Sorry, Operational Loss Percentage cannot be less than or Equal to Zero'))
 
-
-       # create the stock move for the thruput qty
         self._stock_picking_throughput()
-
-        #Create move for operational loss to stock
         self._stock_move_operational_loss()
 
         self.sale_order_thruput_id = self.create_throughput_sales_order()
@@ -3008,30 +2990,30 @@ class ThroughputReceipt(models.Model):
         self.state = 'draft'
 
 
-    def btn_view_stock_move(self):
-        action = self.env["ir.actions.actions"]._for_xml_id("stock.stock_move_action")
+    def btn_view_stock_picking(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("stock.action_picking_tree_all")
         action['views'] = [
-            (self.env.ref('stock.view_move_tree').id, 'tree'),
-            # (self.env.ref('stock.view_move_form').id, 'form')
+            (self.env.ref('stock.vpicktree').id, 'tree'),
+             (self.env.ref('stock.view_picking_form').id, 'form')
         ]
         action['context'] = self.env.context
-        stock_move_ids = self.mapped('stock_move_ids')
-        action['domain'] = [('id', 'in', stock_move_ids.ids)]
+        picking_ids = self.mapped('picking_ids')
+        action['domain'] = [('id', 'in', picking_ids.ids)]
 
-        if len(stock_move_ids) > 1:
-            action['domain'] = [('id', 'in', stock_move_ids.ids)]
-        elif len(stock_move_ids) == 1:
-            action['views'] = [(self.env.ref('stock.view_move_form').id, 'form'),]
-            action['res_id'] = stock_move_ids.ids[0]
+        if len(picking_ids) > 1:
+            action['domain'] = [('id', 'in', picking_ids.ids)]
+        elif len(picking_ids) == 1:
+            action['views'] = [(self.env.ref('stock.view_picking_form').id, 'form'),]
+            action['res_id'] = picking_ids.ids[0]
         else:
             action = {'type': 'ir.actions.act_window_close'}
         return action
 
 
-    @api.depends('stock_move_ids')
-    def _compute_stock_move_count(self):
+    @api.depends('picking_ids')
+    def _compute_stock_picking_count(self):
         for rec in self:
-            rec.stock_move_count = len(rec.stock_move_ids)
+            rec.stock_picking_count = len(rec.picking_ids)
 
 
     @api.onchange('customer_id')
@@ -3156,7 +3138,6 @@ class ThroughputReceipt(models.Model):
             'narration': self.note,
             'currency_id': self.company_id.currency_id.id,
             'partner_id': self.customer_id.id,
-           # 'account_id': self.customer_id.property_account_receivable_id.id,
             'journal_id': journal.id,  # company comes from the journal
             'invoice_origin': self.name,
             'invoice_line_ids': [],
@@ -3254,8 +3235,8 @@ class ThroughputReceipt(models.Model):
     operational_loss_qty = fields.Float('Operational Loss Qty.',compute="_compute_operational_loss_qty", digits=dp.get_precision('Operational Loss Qty.'),tracking=True)
     operational_loss_cost = fields.Float(string='Operational Loss Cost Price')
     qty = fields.Float(string='Qty.', compute=_compute_throughput_qty, digits=dp.get_precision('Product Price'), tracking=True)
-    stock_move_count = fields.Integer(compute="_compute_stock_move_count", string='# of Stock Moves', copy=False,default=0)
-    stock_move_ids = fields.One2many('stock.move', 'throughput_receipt_movement_id', string='Stock Moves Entry(s)')
+    stock_picking_count = fields.Integer(compute="_compute_stock_picking_count", string='# of Stock Pickings', copy=False,default=0)
+    picking_ids = fields.One2many('stock.picking', 'throughput_receipt_picking_id', string='Stock Picking(s)')
     sale_order_thruput_id = fields.Many2one('sale.order',string='Sales Order Throughput')
     so_count = fields.Integer(compute="_compute_so_count", string='# of Sales Order', copy=False,default=0)
     state = fields.Selection( [('draft', 'Draft'), ('confirm', 'Confirm'),('validate', 'Done'), ('cancel', 'Cancel')],  default='draft', tracking=True)
@@ -3297,27 +3278,6 @@ class InternalUse(models.Model):
             raise UserError(_('This record has been previously confirmed. Please refresh your browser'))
         return self.write({'state': 'confirm', 'user_id': self.env.user.id,'user_confirmed_date': datetime.today()})
 
-
-    def action_validate(self):
-        if self.state == 'validate':
-            raise UserError(_('This record has been previously validated. Please refresh your browser'))
-
-        if self.qty <= 0:
-            raise UserError(_('Sorry, qty is less than  or equal to zero'))
-
-        self.sale_order_internal_use_id = self.create_internal_use_sales_order()
-        self.sale_order_internal_use_id.internal_use_source_id = self
-        self.sale_order_internal_use_id.state = 'atl_approved'
-
-        # send notification
-        msg = 'The Internal Use transfer record (%s), has been validated by %s' % (
-            self.name, self.env.user.name)
-        self.send_email('kin_loading.group_internal_use_validate_notification',msg,msg)
-
-        return self.write({'state': 'validate', 'user_validate_id': self.env.user.id,
-                           'user_validated_date': datetime.today()})
-
-
     def create_internal_use_sales_order(self):
         if not self.source_location_id.is_internal_use_partner_id :
             raise UserError(_('Please contact the admin to set the internal use partner on the stock location configuration'))
@@ -3343,6 +3303,26 @@ class InternalUse(models.Model):
             'is_internal_use_order': True
         })
         return sale_order_id
+
+    def action_validate(self):
+        if self.state == 'validate':
+            raise UserError(_('This record has been previously validated. Please refresh your browser'))
+
+        if self.qty <= 0:
+            raise UserError(_('Sorry, qty is less than  or equal to zero'))
+
+        self.sale_order_internal_use_id = self.create_internal_use_sales_order()
+        self.sale_order_internal_use_id.internal_use_source_id = self
+        self.sale_order_internal_use_id.state = 'atl_approved'
+
+        # send notification
+        msg = 'The Internal Use transfer record (%s), has been validated by %s' % (
+            self.name, self.env.user.name)
+        self.send_email('kin_loading.group_internal_use_validate_notification',msg,msg)
+
+        return self.write({'state': 'validate', 'user_validate_id': self.env.user.id,
+                           'user_validated_date': datetime.today()})
+
 
 
     def action_draft(self):
@@ -3537,3 +3517,106 @@ class StockProductionLot(models.Model):
     _inherit = 'stock.production.lot'
     
     is_throughput_vessel = fields.Boolean(string='Is Throughput Vessel')
+
+class StockWarehouse(models.Model):
+    _inherit = 'stock.warehouse'
+
+    def _get_sequence_values(self):
+        sequence_values = super(StockWarehouse, self)._get_sequence_values()
+        sequence_values.update({
+            'thruput_type_id': {
+                'name': self.name + ' ' + _('Throughput Receipt Operations'),
+                'prefix': self.code + '/TPT/',
+                'padding': 5,
+                'company_id': self.company_id.id,
+            },
+            'oploss_type_id': {
+                'name': self.name + ' ' + _('Operational Loss Receipt Operations'),
+                'prefix': self.code + '/OPL/',
+                'padding': 5,
+                'company_id': self.company_id.id,
+            }
+            ,
+            'intu_type_id': {
+                'name': self.name + ' ' + _('Internal Use Operations'),
+                'prefix': self.code + '/INTU/',
+                'padding': 5,
+                'company_id': self.company_id.id,
+            }
+        })
+        return sequence_values
+
+    def _get_picking_type_update_values(self):
+        picking_type_update_values = super(StockWarehouse, self)._get_picking_type_update_values()
+        picking_type_update_values.update({
+            'thruput_type_id': {'default_location_src_id': self.lot_stock_id.id},
+            'oploss_type_id': {'default_location_src_id': self.lot_stock_id.id},
+            'intu_type_id': {'default_location_src_id': self.lot_stock_id.id}
+        })
+        return picking_type_update_values
+
+    def _get_picking_type_create_values(self, max_sequence):
+        picking_type_create_values, max_sequence = super(StockWarehouse, self)._get_picking_type_create_values(max_sequence)
+        picking_type_create_values.update({
+            'thruput_type_id': {
+                'name': _('Throughput Receipt'),
+                'code': 'internal',
+                'use_create_lots': False,
+                'use_existing_lots': True,
+                'default_location_src_id': self.lot_stock_id.id,
+                'default_location_dest_id': self.lot_stock_id.id,
+                'sequence': max_sequence + 2,
+                'sequence_code': 'TPT',
+                'company_id': self.company_id.id,
+            },
+            'oploss_type_id': {
+                'name': _('Operational Loss Receipt'),
+                'code': 'internal',
+                'use_create_lots': False,
+                'use_existing_lots': True,
+                'default_location_src_id': self.lot_stock_id.id,
+                'default_location_dest_id': self.lot_stock_id.id,
+                'sequence': max_sequence + 2,
+                'sequence_code': 'OPL',
+                'company_id': self.company_id.id,
+            }
+            ,
+            'intu_type_id': {
+                'name': _('Internal Use'),
+                'code': 'internal',
+                'use_create_lots': False,
+                'use_existing_lots': True,
+                'default_location_src_id': self.lot_stock_id.id,
+                'default_location_dest_id': self.lot_stock_id.id,
+                'sequence': max_sequence + 2,
+                'sequence_code': 'INTU',
+                'company_id': self.company_id.id,
+            }
+        })
+        return picking_type_create_values, max_sequence + 2
+
+    @api.model
+    def _create_missing_throughput_picking_types(self):
+        warehouses = self.env['stock.warehouse'].search([('thruput_type_id', '=', False)])
+        for warehouse in warehouses:
+            new_vals = warehouse._create_or_update_sequences_and_picking_types()
+            warehouse.write(new_vals)
+
+    @api.model
+    def _create_missing_oploss_picking_types(self):
+        warehouses = self.env['stock.warehouse'].search([('oploss_type_id', '=', False)])
+        for warehouse in warehouses:
+            new_vals = warehouse._create_or_update_sequences_and_picking_types()
+            warehouse.write(new_vals)
+
+    @api.model
+    def _create_missing_intu_picking_types(self):
+        warehouses = self.env['stock.warehouse'].search([('intu_type_id', '=', False)])
+        for warehouse in warehouses:
+            new_vals = warehouse._create_or_update_sequences_and_picking_types()
+            warehouse.write(new_vals)
+
+    thruput_type_id = fields.Many2one('stock.picking.type', string="Throughput Operation Type")
+    oploss_type_id = fields.Many2one('stock.picking.type', string="Operational Loss Type")
+    intu_type_id = fields.Many2one('stock.picking.type', string="Internal Use Type")
+

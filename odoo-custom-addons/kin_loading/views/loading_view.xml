@@ -2,7 +2,9 @@
 <odoo>
     <data>
 
-
+<function model="stock.warehouse" name="_create_missing_throughput_picking_types"/>
+<function model="stock.warehouse" name="_create_missing_oploss_picking_types"/>
+<function model="stock.warehouse" name="_create_missing_intu_picking_types"/>
 
         <menuitem action="sale.action_orders"
             id="menu_sale_order" parent="account.menu_finance_receivables"
@@ -586,6 +588,7 @@
                 </header>
                 <sheet>
 
+
                     <div class="oe_button_box" name="button_box">
                          <button type="object"  name="btn_view_invoices" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('invoice_count', '=', 0)]}" >
                             <field name="invoice_count" widget="statinfo" string="Invoices"/>
@@ -596,9 +599,14 @@
                          <button type="object"  name="btn_view_so" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('so_count', '=', 0)]}" >
                                 <field name="so_count" widget="statinfo" string="Sales Order"/>
                         </button>
-<!--                          <button type="object"  name="btn_view_jnr" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('jnr_count', '=', 0)]}"  groups="account.group_account_manager" >-->
-<!--                                <field name="jnr_count" widget="statinfo" string="Journal Entries"/>-->
-<!--                        </button>-->
+                        <field name="has_tracking" invisible="True"/>
+                        <button name="%(stock.action_stock_report)d" icon="fa-arrow-up" class="oe_stat_button" string="Traceability" type="action" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('has_tracking', '=', False)]}" groups="stock.group_production_lot"/>
+                        <!-- Use the following button to avoid onchange on one2many -->
+                        <button string="Valuation" type="object"
+                                name="action_view_stock_valuation_layers"
+                                class="oe_stat_button" icon="fa-dollar" groups="base.group_no_one"
+                                attrs="{'invisible': [('state', 'not in', ['done'])]}" />
+
                     </div>
                     <h1 class="hidden-xs">
                         <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
@@ -822,9 +830,14 @@
                          <button type="object"  name="btn_view_so" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('so_count', '=', 0)]}" >
                                 <field name="so_count" widget="statinfo" string="Sales Order"/>
                         </button>
-<!--                          <button type="object"  name="btn_view_jnr" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('jnr_count', '=', 0)]}"  groups="account.group_account_manager" >-->
-<!--                                <field name="jnr_count" widget="statinfo" string="Journal Entries"/>-->
-<!--                        </button>-->
+                        <field name="has_tracking" invisible="True"/>
+                        <button name="%(stock.action_stock_report)d" icon="fa-arrow-up" class="oe_stat_button" string="Traceability" type="action" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('has_tracking', '=', False)]}" groups="stock.group_production_lot"/>
+                        <!-- Use the following button to avoid onchange on one2many -->
+                        <button string="Valuation" type="object"
+                                name="action_view_stock_valuation_layers"
+                                class="oe_stat_button" icon="fa-dollar" groups="base.group_no_one"
+                                attrs="{'invisible': [('state', 'not in', ['done'])]}" />
+
                     </div>
                     <h1 class="hidden-xs">
                         <field name="name" attrs="{'invisible': [('name','=','/')]}" readonly="1"/>
@@ -1007,8 +1020,8 @@
                     </header>
                     <sheet>
                         <div class="oe_button_box" name="button_box">
-                             <button type="object"  name="btn_view_stock_move" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('stock_move_count', '=', 0)]}"  groups="stock.group_stock_manager" >
-                                <field name="stock_move_count" widget="statinfo" string="Stock Moves"/>
+                             <button type="object"  name="btn_view_stock_picking" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('stock_picking_count', '=', 0)]}"  groups="stock.group_stock_manager" >
+                                <field name="stock_picking_count" widget="statinfo" string="Transfers"/>
                             </button>
                             <button type="object"  name="btn_view_sales_order" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('so_count', '=', 0)]}"   >
                                 <field name="so_count" widget="statinfo" string="Sale Order"/>
@@ -1408,10 +1421,7 @@
 <!--            <field name="inherit_id" ref="stock.view_move_form" />-->
 <!--            <field name="arch" type="xml">-->
 <!--                    <group name="destination_grp" position="after" >-->
-<!--                        <group string="Loading" colspan="4">-->
-<!--                            <field name="throughput_receipt_movement_id" />-->
-<!--                            <field name="throughput_so_transfer_movement_id" />-->
-<!--                        </group>-->
+
 <!--                    </group>-->
 <!--            </field>-->
 <!--        </record>-->
