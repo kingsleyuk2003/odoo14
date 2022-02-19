@@ -2868,40 +2868,80 @@ class ThroughputReceipt(models.Model):
         #     'move_id': move_id.id,
         # })
 
-
-    def _stock_move_throughput(self):
+    def _stock_picking_throughput(self):
         lot_id = self.env['stock.production.lot'].search(
             [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
         stock_move_obj = self.env['stock.move']
         self.product_id.standard_price = 0
+        # create the stock picking
+        stock_picking_obj = self.env['stock.picking']
         vals = {
-            'name': self.name,
-            'product_id': self.product_id.id,
-            'product_uom': self.product_id.uom_id.id,
-            # 'price_unit': 0,
-            'date': self.date_move,
-            'location_id': self.source_location_id.id,
+            'partner_id': self.customer_id.id,
+             'location_id': self.source_location_id.id,
             'location_dest_id': self.destination_location_id.id,
-            'product_uom_qty': self.qty,
+            'picking_type_id': 5,
             'origin': self.name ,
-            'move_line_ids' : [(0, 0, {
-                    'location_id': self.source_location_id.id,
-                    'location_dest_id': self.destination_location_id.id,
-                    'product_id':  self.product_id.id,
-                    'qty_done': self.qty,
-                    'product_uom_id': self.product_id.uom_id.id,
-                    'lot_id': lot_id.id,
+            'move_line_ids_without_package': [(0, 0, {
+                'location_id': self.source_location_id.id,
+                'location_dest_id': self.destination_location_id.id,
+                'product_id': self.product_id.id,
+                'qty_done': self.qty,
+                'product_uom_id': self.product_id.uom_id.id,
+                'lot_id': lot_id.id,
+                'lot_name' : lot_id.name
+            })],
+            'move_ids_without_package': [(0, 0, {
+                'product_id': self.product_id.id,
+                'product_uom_qty': self.qty,
+                'quantity_done': self.qty,
+                'name' : self.name,
+                'product_uom':  self.product_id.uom_id.id,
             })],
         }
-        move_id = stock_move_obj.create(vals)
-        move_id._action_assign()
-        move_id._action_confirm()
-        move_id._action_done()
-        move_id.throughput_receipt_movement_id = self.id
 
-        self.env['stock.move.line'].create({
+        pick_id = stock_picking_obj.create(vals)
+        pick_id.button_validate()
+        if pick_id.state != 'assigned':
+            raise UserError(_('Sorry, Stock qty is not enough for the delivery order operation'))
+        # pick_id.do_prepare_partial()
+        # pick_id.pack_operation_product_ids[0].qty_done = pick_id.pack_operation_product_ids[0].product_qty
+        # pick_id.do_new_transfer()
+        # pick_id.station_product_dist_id = self.id
+        return pick_id
 
-        })
+    # def _stock_move_throughput(self):
+    #     lot_id = self.env['stock.production.lot'].search(
+    #         [('is_throughput_vessel', '=', True), ('product_id', '=', self.product_id.id)])
+    #     stock_move_obj = self.env['stock.picking']
+    #     self.product_id.standard_price = 0
+    #     vals = {
+    #         'name': self.name,
+    #         'product_id': self.product_id.id,
+    #         'product_uom': self.product_id.uom_id.id,
+    #         # 'price_unit': 0,
+    #         'date': self.date_move,
+    #         'location_id': self.source_location_id.id,
+    #         'location_dest_id': self.destination_location_id.id,
+    #         'product_uom_qty': self.qty,
+    #         'origin': self.name ,
+    #         'move_line_ids' : [(0, 0, {
+    #                 'location_id': self.source_location_id.id,
+    #                 'location_dest_id': self.destination_location_id.id,
+    #                 'product_id':  self.product_id.id,
+    #                 'qty_done': self.qty,
+    #                 'product_uom_id': self.product_id.uom_id.id,
+    #                 'lot_id': lot_id.id,
+    #         })],
+    #     }
+    #     move_id = stock_move_obj.create(vals)
+    #     move_id._action_assign()
+    #     move_id._action_confirm()
+    #     move_id._action_done()
+    #     move_id.throughput_receipt_movement_id = self.id
+    #
+    #     self.env['stock.move.line'].create({
+    #
+    #     })
 
 
 
@@ -2917,7 +2957,7 @@ class ThroughputReceipt(models.Model):
 
 
        # create the stock move for the thruput qty
-        self._stock_move_throughput()
+        self._stock_picking_throughput()
 
         #Create move for operational loss to stock
         self._stock_move_operational_loss()
