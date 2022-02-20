@@ -530,7 +530,7 @@ class StockPickingExtend(models.Model):
         if res is not True:
             return res
 
-        if not self.is_throughput_ticket and not self.is_internal_use_ticket:
+        if not self.is_throughput_ticket or not self.is_internal_use_ticket:
             #  this is for first stock interim move
             if self.env.context.get('picking_ids_not_to_backorder'):
                 pickings_not_to_backorder = self.browse(self.env.context['picking_ids_not_to_backorder'])
@@ -547,7 +547,7 @@ class StockPickingExtend(models.Model):
             for valuation in valuation_layers:
                 valuation.account_move_id.picking_id = self
 
-            if self.is_loading_ticket == True:
+            if self.is_loading_ticket == True and not self.is_throughput_ticket and not self.is_internal_use_ticket:
                 # this is for second stock interim move
                 self._create_final_invoice_depot()
         else:
