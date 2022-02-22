@@ -46,8 +46,8 @@ class LoadingTicketWizard(models.TransientModel):
             raise UserError(_('Please remove one of the order line. You can only generate ticket per order line'))
 
 
-        company = self.env.user.company_id
-        is_generate_loading_date = company.is_generate_loading_date
+        #company = self.env.user.company_id
+        #is_generate_loading_date = company.is_generate_loading_date
 
         ctx = {
                 'authorization_code': authorization_code,
@@ -60,12 +60,12 @@ class LoadingTicketWizard(models.TransientModel):
                'atl_depot_id': sale_order.atl_depot_id.stock_location_tmpl_id.id,
             }
 
-        if is_generate_loading_date :
-            loading_date_interval = company.loading_date_interval or False
-            if loading_date_interval :
-                today = date.today()
-                ticket_date = today + relativedelta(days=+loading_date_interval)
-                ctx.update({'loading_date':ticket_date})
+        # if is_generate_loading_date :
+        #     loading_date_interval = company.loading_date_interval or False
+        #     if loading_date_interval :
+        #         today = date.today()
+        #         ticket_date = today + relativedelta(days=+loading_date_interval)
+        #         ctx.update({'loading_date':ticket_date})
 
         #check if the qty is more than the ticketed qty
         qty_ticket = 0

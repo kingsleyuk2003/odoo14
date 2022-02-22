@@ -12,7 +12,7 @@ Sales Modifications.
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['sale','sales_team','account'],
+    'depends': ['sale','sales_team','account','sale_management'],
     'data': [
         # 'wizard/create_advance_invoice.xml',
         'security/security.xml',

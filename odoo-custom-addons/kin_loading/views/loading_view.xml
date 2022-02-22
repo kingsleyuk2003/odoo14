@@ -288,24 +288,24 @@
             </field>
         </record>
 
- <record model="ir.ui.view" id="view_company_kin_loading">
-                    <field name="name">res.company.form.kin.loading</field>
-                    <field name="inherit_id" ref="base.view_company_form"/>
-                    <field name="model">res.company</field>
-                    <field name="arch" type="xml">
-                        <notebook position="inside">
-                            <page string="Loading Info.">
-                                <group>
-                                     <field name="header_logo_loading"  />
-                                    <field name="header_data_loading"  />
-                                    <field name="loading_tc_note"  />
-                                    <field name="is_generate_loading_date"  />
-                                    <field name="loading_date_interval" attrs="{'required': [('is_generate_loading_date', '=', True)]}"  />
-                                </group>
-                            </page>
-                        </notebook>
-                    </field>
-                </record>
+<!-- <record model="ir.ui.view" id="view_company_kin_loading">-->
+<!--                    <field name="name">res.company.form.kin.loading</field>-->
+<!--                    <field name="inherit_id" ref="base.view_company_form"/>-->
+<!--                    <field name="model">res.company</field>-->
+<!--                    <field name="arch" type="xml">-->
+<!--                        <notebook position="inside">-->
+<!--                            <page string="Loading Info.">-->
+<!--                                <group>-->
+<!--                                     <field name="header_logo_loading"  />-->
+<!--                                    <field name="header_data_loading"  />-->
+<!--                                    <field name="loading_tc_note"  />-->
+<!--                                    <field name="is_generate_loading_date"  />-->
+<!--                                    <field name="loading_date_interval" attrs="{'required': [('is_generate_loading_date', '=', True)]}"  />-->
+<!--                                </group>-->
+<!--                            </page>-->
+<!--                        </notebook>-->
+<!--                    </field>-->
+<!--                </record>-->
 
 
 

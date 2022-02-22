@@ -3386,15 +3386,15 @@ class InternalUse(models.Model):
     user_validated_date = fields.Datetime('Validated Date')
 
 
-class ResCompanyTicket(models.Model):
-    _inherit = "res.company"
-
-    header_logo_loading = fields.Binary(string='Header Logo')
-    header_data_loading = fields.Html(string='Header Data', help="e.g. Addresses of head Office and Tel No should be added here ")
-    loading_tc_note = fields.Text(string='Loading Terms and Conditions', help="e.g. Terms and Conditions")
-    is_generate_loading_date = fields.Boolean('Auto-Generate Loading Ticket Date')
-    loading_date_interval = fields.Integer('Loading Ticket Date Interval', default=1)
-
+# class ResCompanyTicket(models.Model):
+#     _inherit = "res.company"
+#
+#     header_logo_loading = fields.Binary(string='Header Logo')
+#     header_data_loading = fields.Html(string='Header Data', help="e.g. Addresses of head Office and Tel No should be added here ")
+#     loading_tc_note = fields.Text(string='Loading Terms and Conditions', help="e.g. Terms and Conditions")
+#     is_generate_loading_date = fields.Boolean('Auto-Generate Loading Ticket Date')
+#     loading_date_interval = fields.Integer('Loading Ticket Date Interval', default=1)
+#
 
 
 class ProductProductLoading(models.Model):
