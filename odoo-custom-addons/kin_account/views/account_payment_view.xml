@@ -9,9 +9,13 @@
                 <button name="action_post" position="after" >
                     <button name="action_receipt_sent" type="object" string="Send by Email"  states="posted" groups="kin_account.group_show_send_by_email_button_receipt"/>
                 </button>
-
+                 <field name="is_internal_transfer" position="attributes" >
+                     <attribute name="invisible">True</attribute>
+                 </field>
             </field>
         </record>
+
+
 
 
     </data>

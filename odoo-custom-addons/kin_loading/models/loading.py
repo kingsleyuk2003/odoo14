@@ -3488,6 +3488,8 @@ class PurchaseOrderLineExtend(models.Model):
     def _create_stock_moves(self, picking):
         values = []
         for line in self.filtered(lambda l: not l.display_type):
+            if not line.conv_rate :
+                raise UserError('Please set the conversation rate')
             old_rate = line.product_uom.factor_inv
             line.product_uom.factor_inv = line.conv_rate
             for val in line._prepare_stock_moves(picking):
