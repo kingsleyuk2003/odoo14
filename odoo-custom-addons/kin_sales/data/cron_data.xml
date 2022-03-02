@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<openerp>
-    <data>        
-
-
-<!--        <record forcecreate="True" id="ir_cron_check_expiration_date_sales_order" model="ir.cron">-->
-<!--            <field name="name">Run Check on Expiration Date on Sales Order</field>-->
-<!--            <field name="model_id" ref="model_sale_order"/>-->
-<!--             <field name="state">code</field>-->
-<!--             <field name="code">model.run_check_expiration_date_sale_order()</field>-->
-<!--            <field name="interval_number">1</field>-->
-<!--            <field name="interval_type">days</field>-->
-<!--            <field name="numbercall">-1</field>-->
-<!--            <field eval="False" name="doall" />-->
-<!--        </record>-->
-
-
+<odoo>
+    <data>
+        <record forcecreate="True" id="ir_sales_order_expiration_check" model="ir.cron">
+            <field name="name">Sales Order Expiration Check</field>
+            <field name="model_id" ref="model_sale_order"/>
+            <field name="state">code</field>
+            <field name="code">model.run_sales_order_expiration_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
     </data>
-</openerp>
+</odoo>

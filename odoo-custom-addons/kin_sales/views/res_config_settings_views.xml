@@ -154,6 +154,31 @@
                                     <field name="validity_date_interval"/>
                                 </div>
                             </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box"  >
+                                <div class="o_setting_left_pane">
+                                    <field name="is_error_quote_after_expiration_date"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="is_error_quote_after_expiration_date"/>
+                                    <div class="text-muted">
+                                       Show UserError Alert after Expiration Date
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-6 o_setting_box"  >
+                                <div class="o_setting_left_pane">
+                                    <field name="is_send_expiry_reminder_email_quote_notification"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="is_send_expiry_reminder_email_quote_notification"/>
+                                    <div class="text-muted">
+                                       Send Expiry Reminder Days Email Notification
+                                    </div>
+                                </div>
+                            </div>
+
                     </div>
                 </div>
             </field>

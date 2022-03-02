@@ -65,6 +65,22 @@
 			<field name="category_id" ref="module_category_sales"/>
 		</record>
 
+	<record id="group_receive_sale_order_expiration_email" model="res.groups">
+			<field name="name">Receive Sales Order Expiry Email Notification from Sales Order</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+	<record id="group_receive_expiry_reminder_sale_order_email" model="res.groups">
+			<field name="name">Receive Expiry Reminder Days Email Notification for Sales Order</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+		<record id="group_receive_cancel_sale_order_email" model="res.groups">
+			<field name="name">Receive Sales Order Cancelled Email Notification</field>
+			<field name="category_id" ref="module_category_sales"/>
+		</record>
+
+
 
 	<record id="group_receive_delivery_stock_transfer_email" model="res.groups">
 			<field name="name">Receive Delivery Order Transfer Notification from Sales</field>

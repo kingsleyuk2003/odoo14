@@ -1,6 +1,48 @@
 
 class snippet():
 
+# ../odoo-custom-addons/kin_account/wizard/activity_statement_wizard_extend.py:13
+    def send_mass_email_activity_statement(self, partners):
+        company_email = self.env.user.company_id.email.strip()
+        for partner in partners:
+            partner_email = partner.email or False
+            if company_email and partner_email:
+                mail_template = partner.env.ref('kin_account.mail_template_partner_activity_statement_email')
+                mail_template.send_mail(partner.id, force_send=False)
+        return
+
+    def action_statement_send(self):
+        partner_id = self.env.context.get('active_ids', [])
+
+        if len(partner_id) > 1:
+            partners = self.env['res.partner'].browse(partner_id)
+            self.send_mass_email_activity_statement(partners)
+
+        else:
+            template_id = self.env['ir.model.data'].xmlid_to_res_id(
+                'kin_account.mail_template_partner_activity_statement_email', raise_if_not_found=False)
+
+            ctx = {
+                'default_model': 'res.partner',
+                'default_res_id': partner_id[0],
+                'default_use_template': bool(template_id),
+                'default_template_id': template_id,
+                'default_composition_mode': 'comment',
+                # 'mark_so_as_sent': True,
+                # 'custom_layout': "mail.mail_notification_paynow",
+                # 'proforma': self.env.context.get('proforma', False),
+                'force_email': True
+            }
+            return {
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'res_model': 'mail.compose.message',
+                'views': [(False, 'form')],
+                'view_id': False,
+                'target': 'new',
+                'context': ctx,
+            }
+
     #Access rights on fields with error notification
     allow_group_obj_users = self.env.ref('aminata_modifications.group_price_unit_allow').users
     if not self.env.user in allow_group_obj_users and self.type == 'product' and vals.get('list_price',False) or vals.get('sales_price_transport_charge', False):

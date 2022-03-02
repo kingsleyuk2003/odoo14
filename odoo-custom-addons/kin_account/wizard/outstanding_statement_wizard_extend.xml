@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <record id="view_outstanding_statement_wizard_view_extend" model="ir.ui.view">
+            <field name="name">Outstanding Statement Wizard Extend</field>
+            <field name="model">outstanding.statement.wizard</field>
+            <field name="inherit_id" ref="partner_statement.outstanding_statement_wizard_view" />
+            <field name="arch" type="xml">
+                    <button name="button_export_xlsx" position="after" >
+                        or
+                        <button string="Send Email(s)" name="action_statement_send" type="object" />
+                    </button>
+            </field>
+        </record>
+    </data>
+</odoo>

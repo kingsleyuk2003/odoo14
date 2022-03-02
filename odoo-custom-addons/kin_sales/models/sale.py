@@ -4,6 +4,8 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from datetime import *
+from dateutil.relativedelta import relativedelta
 
 class CrmTeamExtend(models.Model):
     _inherit = 'crm.team'
@@ -42,6 +44,61 @@ class SaleOrderExtend(models.Model):
             self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+    def reminder_validity_date(self):
+        today = date.today()
+        validity_date_interval = self.env['ir.config_parameter'].sudo().get_param('validity_date_interval', default=False)
+        orders = self.search([('validity_date', '>=', today),('state', 'in', ('draft', 'sent', 'quote_submitted', 'so_to_approve'))])
+
+        for order in orders:
+            remaining_days = (order.validity_date - date.today()).days
+            if remaining_days <= int(validity_date_interval):
+                #send reminder email to sales person
+                partn_ids = []
+                user = order.user_id
+                partn_ids.append(user.partner_id.id)
+
+                if partn_ids:
+                    order.message_follower_ids.unlink()
+                    msg = "Sales Quotation (%s) Expiration Reminder in %s days" % (order.name,remaining_days)
+                    subject = 'This is to notify you of the Sales Order (%s) that is about to expire in %s days time for %s' % (order.name, remaining_days, order.partner_id.name),
+                    order.message_post(
+                        body=msg,
+                        subject=subject, partner_ids=partn_ids,
+                        subtype_xmlid='mail.mt_comment', force_send=False)
+
+                # send email to group
+                group_name = 'kin_sales.group_receive_expiry_reminder_sale_order_email'
+                order.send_email(group_name, subject, msg)
+        return
+
+    @api.model
+    def run_sales_order_expiration_check(self):
+        is_send_expiry_reminder_email_quote_notification = self.env['ir.config_parameter'].sudo().get_param('is_send_expiry_reminder_email_quote_notification',False)
+        if is_send_expiry_reminder_email_quote_notification:
+            self.reminder_validity_date()
+
+        #for expired sales quotations
+        today = date.today()
+        orders = self.search(
+            [('validity_date', '<', today), ('state', 'in', ('draft', 'sent'))])
+
+        for order in orders:
+            # send email
+            order.send_email(grp_name='kin_sales.group_receive_sale_order_expiration_email',
+                             subject='Expiration Notification for Sales Order (%s)' % order.name,
+                             msg='The Sales Order/Quotation (%s) with expiration date (%s) has expired.' % (
+                                 order.name, order.validity_date.strftime('%d-%m-%Y')))
+
+            is_delete_quote_after_expiration_date = self.env['ir.config_parameter'].sudo().get_param(
+                'is_delete_quote_after_expiration_date', False)
+            if is_delete_quote_after_expiration_date:
+                order.action_cancel()
+                order.action_draft()
+                order.unlink()
+
+        return True
+
+
 
     def get_low_stock_msg(self):
         sale_order = self
@@ -70,7 +127,6 @@ class SaleOrderExtend(models.Model):
         return msg, stock_locations
 
 
-
     def create_advance_invoice(self):
         is_post_invoice_before_delivery = self.env['ir.config_parameter'].sudo().get_param(
             'is_post_invoice_before_delivery', default=False)
@@ -89,8 +145,8 @@ class SaleOrderExtend(models.Model):
         return
 
 
+
     def action_confirm(self):
-        list_data = []
         is_contraint_sales_order_stock = self.env['ir.config_parameter'].sudo().get_param(
             'is_contraint_sales_order_stock', default=False)
         is_sales_order_stock_notification = self.env['ir.config_parameter'].sudo().get_param(
@@ -100,8 +156,13 @@ class SaleOrderExtend(models.Model):
         is_sales_order_stock_purchase_request = self.env['ir.config_parameter'].sudo().get_param(
             'is_sales_order_stock_purchase_request', default=False)
         is_po_check = self.env['ir.config_parameter'].sudo().get_param('is_po_check', default=False)
+        is_error_quote_after_expiration_date = self.env['ir.config_parameter'].sudo().get_param(
+            'is_error_quote_after_expiration_date', default=False)
 
-        customer = self.partner_id
+        if is_error_quote_after_expiration_date:
+            # check if the order has expired
+            if self.validity_date < date.today():
+                raise UserError('This Sales Order has Expired')
 
         # is PO Check
         if is_po_check:

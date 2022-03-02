@@ -134,10 +134,20 @@ class AccountMove(models.Model):
             else:
                 rec.amount_in_words = False
 
-
+    @api.depends('amount_total')
+    def _compute_description_report(self):
+        desc = ''
+        count = 0
+        for line in self.invoice_line_ids:
+            if not line.exclude_from_invoice_tab :
+                count += 1
+                sym = line.currency_id.symbol
+                desc += "<br>%s.) Product:%s   Qty:%s %s   Price:%s%s   Subtotal:%s%s" % (count,line.name, line.quantity,line.product_uom_id.name,sym,line.price_unit,sym,line.price_subtotal)
+            self.description_report = desc
 
 
     amount_in_words = fields.Char(string="Amount in Words", store=True, compute='_compute_amount_in_words')
+    description_report = fields.Text(string='Move Description', store=True, compute='_compute_description_report')
     journal_id = fields.Many2one(tracking=True)
     ref = fields.Char(tracking=True)
     date = fields.Date(tracking=True)

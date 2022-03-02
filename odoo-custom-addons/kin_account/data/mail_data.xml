@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Activity statement email -->
+        <record id="mail_template_partner_activity_statement_email" model="mail.template">
+            <field name="name">Partner Activity Statement Email</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">${object.name or 'n/a' } Account Activity Statement</field>
+            <field name="email_from">${(object.email_formatted  | safe}</field>
+            <field name="partner_to">${object.id}</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p style="margin: 0px; padding: 0px; font-size: 12px;">
+                        Hello, ${object.name}
+                        <br/><br/>
+                        Kindly see attached, for your account statement.
+                        <br/><br/>
+                        Do not hesitate to contact us if you have any questions.
+                        <br/><br/>
+                        Thanks and Regards
+                        <br/><br/>
+                    </p>
+                </div>
+            </field>
+            <field name="report_template" ref="partner_statement.action_print_activity_statement"/>
+            <field name="report_name">${(object.name or '').replace('/','_')}</field>
+            <field name="lang">${object.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+
+        <!-- Outstanding template Email -->
+        <record id="mail_template_partner_outstanding_statement_email" model="mail.template">
+            <field name="name">Partner Outstanding Statement Email</field>
+            <field name="model_id" ref="base.model_res_partner"/>
+            <field name="subject">${object.name or 'n/a' } Account Outstanding Statement</field>
+            <field name="email_from">${(object.email_formatted  | safe}</field>
+            <field name="partner_to">${object.id}</field>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p style="margin: 0px; padding: 0px; font-size: 12px;">
+                        Hello, ${object.name}
+                        <br/><br/>
+                        Kindly see attached, for your outstanding account statement.
+                        <br/><br/>
+                        Do not hesitate to contact us if you have any questions.
+                        <br/><br/>
+                        Thanks and Regards
+                        <br/><br/>
+                    </p>
+                </div>
+            </field>
+            <field name="report_template" ref="partner_statement.action_print_outstanding_statement"/>
+            <field name="report_name">${(object.name or '').replace('/','_')}</field>
+            <field name="lang">${object.lang}</field>
+            <field name="auto_delete" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

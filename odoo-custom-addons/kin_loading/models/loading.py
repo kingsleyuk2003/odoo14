@@ -1212,6 +1212,33 @@ class AccountMoveLineExtend(models.Model):
 class SaleOrderLoading(models.Model):
     _inherit = "sale.order"
 
+    @api.model
+    def run_sales_order_expiration_check(self):
+        is_send_expiry_reminder_email_quote_notification = self.env['ir.config_parameter'].sudo().get_param('is_send_expiry_reminder_email_quote_notification',False)
+        if is_send_expiry_reminder_email_quote_notification:
+            self.reminder_validity_date()
+
+        #for expired sales quotations
+        today = date.today()
+        orders = self.search(
+            [('validity_date', '<', today), ('state', 'in', ('draft', 'sent', 'quote_submitted', 'so_to_approve'))])
+
+        for order in orders:
+            # send email
+            order.send_email(grp_name='kin_sales.group_receive_sale_order_expiration_email',
+                             subject='Expiration Notification for Sales Order (%s)' % order.name,
+                             msg='The Sales Order/Quotation (%s) with expiration date (%s) has expired.' % (
+                                 order.name, order.validity_date.strftime('%d-%m-%Y')))
+
+            is_delete_quote_after_expiration_date = self.env['ir.config_parameter'].sudo().get_param(
+                'is_delete_quote_after_expiration_date', False)
+            if is_delete_quote_after_expiration_date:
+                order.action_cancel()
+                order.action_draft()
+                order.unlink()
+
+        return True
+
     def send_email(self, grp_name, subject, msg):
         partn_ids = []
         user_names = ''
@@ -2386,12 +2413,21 @@ class SaleOrderLoading(models.Model):
         return inv
 
 
+    def action_submit_quote(self):
+        self.state = 'quote_submitted'
+        grp_name = 'kin_loading.group_show_confirm_sale_order'
+        subject = 'A New Sales Quote has been Submitted'
+        msg = _('A New Sales Quote has been submitted by %s for the customer (%s). You are required to confirm it') % (
+            self.env.user.name, self.partner_id.name)
+        self.send_email(grp_name, subject, msg)
+
+
     def action_submit_to_manager(self):
         self.state = 'so_to_approve'
         # Send Email to sales manager
         grp_name = 'kin_loading.group_show_confirm_main_sale'
-        subject = 'A New Sales Quote has been Submitted'
-        msg = _('A New Sales Quote has been submitted by %s for the customer (%s)') % (
+        subject = 'A New Sales Order is Awaiting Approval'
+        msg = _('A New Sales Order is Awaiting Approval from %s for the customer (%s)') % (
                                      self.env.user.name, self.partner_id.name)
         self.send_email(grp_name,subject, msg)
 
@@ -2424,6 +2460,7 @@ class SaleOrderLoading(models.Model):
                         subject='The ATL document (ATL_ID_HERE_PLEASE) has been approved by %s, you may now create loading tickets' % (user_name),
                         msg='The ATL document (ATL_ID_HERE_PLEASE) for the sales order (%s) has been approved by %s, you may now create loading tickets' % (self.name,user_name))
 
+
     def action_confirm_main_sale(self):
         list_data = []
         is_contraint_sales_order_stock = self.env['ir.config_parameter'].sudo().get_param('is_contraint_sales_order_stock', default=False)
@@ -2437,6 +2474,10 @@ class SaleOrderLoading(models.Model):
         #check the number of lines
         if len(self.order_line) > 1 :
             raise UserError(_('Only one product can be ordered at a time'))
+
+        #check if the order has expired
+        if self.validity_date < date.today() :
+            raise UserError('This Sales Order has Expired')
 
         # is PO Check
         if is_po_check:
@@ -2510,7 +2551,7 @@ class SaleOrderLoading(models.Model):
         return super(SaleOrderLoading, self).unlink()
 
 
-    
+
     def action_cancel(self):
         res = super(SaleOrderLoading,self).action_cancel()
         self.advance_invoice_id.unlink()
@@ -2521,24 +2562,24 @@ class SaleOrderLoading(models.Model):
         if self.is_throughput_order :
             raise UserError(_('Sorry, Transfer is not allowed for Throughput Order'))
 
-        #Send Email
-        company_email = self.env.user.company_id.email.strip()
-        sales_person_email = self.user_id.partner_id.email.strip()
-        confirm_person_email = self.env.user.partner_id.email.strip()
+        # Send email to sales person
+        partn_ids = []
+        user = self.user_id
+        user_name = user.name
+        partn_ids.append(user.partner_id.id)
 
-        if company_email and sales_person_email and confirm_person_email and  (sales_person_email != confirm_person_email ):
-            # Custom Email Template
-            mail_template = self.env.ref('kin_loading.mail_templ_sale_canceled')
-            ctx = {}
-            ctx.update({'sale_id':self.id})
-            the_url = self._get_sale_order_url('sale','menu_sale_order','action_orders',ctx)
+        if partn_ids:
+            self.message_follower_ids.unlink()
+            msg = _("Sales Order (%s) has been Cancelled" % (self.name))
+            subject = 'Sales Order (%s) has been Cancelled for %s' % (self.name, self.partner_id.name),
+            self.message_post(
+                body=msg,
+                subject=subject, partner_ids=partn_ids,
+                subtype_xmlid='mail.mt_comment', force_send=False)
 
-            ctx = {'system_email': company_email,
-                    'confirm_person_name': self.env.user.name ,
-                    'confirm_person_email' :confirm_person_email,
-                    'url':the_url
-                    }
-            mail_template.with_context(ctx).send_mail(self.id,force_send=False)
+        # send email to group
+        group_name = 'kin_sales.group_receive_cancel_sale_order_email'
+        self.send_email(group_name, subject, msg)
         return res
 
 
@@ -2571,7 +2612,6 @@ class SaleOrderLoading(models.Model):
     def action_reset(self):
         self.action_cancel()
         self.state = 'draft'
-
 
     def btn_view_stock_moves(self):
         context = dict(self.env.context or {})
@@ -2625,6 +2665,7 @@ class SaleOrderLoading(models.Model):
     state = fields.Selection([
         ('draft', 'Quotation'),
         ('sent', 'Quotation Sent'),
+        ('quote_submitted', 'Submitted'),
         ('so_to_approve', 'Sale Order To Approve'),
         ('sale', 'Sale Order Approved'),
         ('no_sale', 'Sale Order Disapproved'),

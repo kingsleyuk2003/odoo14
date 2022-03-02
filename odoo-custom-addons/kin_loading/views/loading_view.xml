@@ -208,14 +208,22 @@
 
                  <button name="action_cancel"  position="before" >
                      <button name="action_atl_approval" states="atl_awaiting_approval" context="{'show_sale': True}"  string="Approve ATL" class="btn-primary" type="object" groups="kin_loading.group_show_approve_atl"   />
-                     <button name="action_submit_to_manager" states="draft,sent" context="{'show_sale': True}"  string="Submit" class="btn-primary" type="object" groups="kin_loading.group_show_submit_sale_to_manager"   />
+                     <button name="action_submit_quote" states="draft,sent" context="{'show_sale': True}"  string="Submit" class="btn-primary" type="object" groups="kin_loading.group_show_submit_sale_to_manager"   />
+                     <button name="action_submit_to_manager" states="quote_submitted" context="{'show_sale': True}"  string="Confirm Sales Order" class="btn-primary" type="object" groups="kin_loading.group_show_confirm_sale_order"   />
                       <button name="action_confirm_main_sale" states="so_to_approve" context="{'show_sale': True}"  string="Approve Sales Order" class="btn-primary" type="object" groups="kin_loading.group_show_confirm_main_sale"   />
-                       <button name="%(action_disapprove_sale_orders)d"   string="Disapprove Sales Order" class="btn-primary" type="action"  attrs="{'invisible':[('state', '!=', 'so_to_approve')]}" context="{'show_sale': True}" groups="kin_loading.group_show_disapprove_btn"/>
+                     <button name="%(action_disapprove_sale_orders)d"   string="Disapprove Sales Order"  type="action"  attrs="{'invisible':[('state', 'not in', ['quote_submitted','so_to_approve'])]}" context="{'show_sale': True}" groups="kin_loading.group_show_disapprove_btn"/>
                         <button name="action_ticket_wizard" states="atl_approved" context="{'is_load_ticket_btn':True}"  string="Create Loading Ticket" class="btn-primary" type="object" groups="kin_loading.group_show_create_loading_ticket"  />
                       <button  name="%(action_cancel_qty)d" states="atl_approved"  string="Cancel Remaining Product Qty."  type="action" groups="kin_loading.group_show_cancel_remaining_order"    />
                       <button name="action_transfer_wizard" states="atl_approved" context="{'is_order_transfer_btn':True}"  string="Transfer Product Qty."  type="object" groups="kin_loading.group_show_transfer_order"  />
                           <button name="action_reset" states="no_sale,atl_awaiting_approval"   string="Reset to Draft" type="object" groups="kin_loading.group_show_sale_reset"   />
                  </button>
+
+                <button name="action_quotation_send" type="object"  groups="sale.group_proforma_sales" class="btn-primary"  attrs="{'invisible': ['|', ('state', '!=', 'draft'), ('invoice_count','&gt;=',1)]}" context="{'proforma': True}" position="attributes">
+                        <attribute name="attrs" >{'invisible': ['|', ('state', '!=', 'so_submitted'), ('invoice_count','&gt;=',1)]}</attribute>
+                </button>
+
+                <button name="action_quotation_send" type="object"  groups="sale.group_proforma_sales" attrs="{'invisible': ['|', ('state', '=', 'draft'), ('invoice_count','&gt;=',1)]}" context="{'proforma': True}" position="replace" />
+
                 <xpath expr="//button[@name='action_confirm'][1]" position="attributes" >
                     <attribute name="string" >Confirm Other Sale</attribute>
                     <attribute name="groups" >kin_loading.group_show_confirm_other_sale</attribute>
