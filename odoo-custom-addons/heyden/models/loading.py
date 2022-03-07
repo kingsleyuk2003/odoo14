@@ -15,6 +15,12 @@ import odoo
 from datetime import *
 from odoo import SUPERUSER_ID
 
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
+
+    #is_procurement = fields.Boolean('Is Procurement')
+    is_purchase = fields.Boolean('Is Purchase')
+
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
