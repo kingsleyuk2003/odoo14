@@ -3511,7 +3511,7 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
     def button_confirm(self):
-        if not self.depot_id :
+        if self.is_purchase and not self.depot_id :
             raise UserError('Kindly set the depot for the product receipt')
         ctx = {
             'depot_id': self.depot_id.stock_location_tmpl_id.id
@@ -3520,6 +3520,7 @@ class PurchaseOrder(models.Model):
         return res
 
     depot_id = fields.Many2one('depot', string='Depot')
+    is_purchase = fields.Boolean('Is Purchase')
 
 
 
@@ -3529,14 +3530,16 @@ class PurchaseOrderLineExtend(models.Model):
     def _create_stock_moves(self, picking):
         values = []
         for line in self.filtered(lambda l: not l.display_type):
-            if not line.conv_rate :
-                raise UserError('Please set the conversation rate')
-            old_rate = line.product_uom.factor_inv
-            line.product_uom.factor_inv = line.conv_rate
-            for val in line._prepare_stock_moves(picking):
-                values.append(val)
-            line.move_dest_ids.created_purchase_line_id = False
-            line.product_uom.factor_inv = old_rate
+            if line.order_id.is_purchase:
+                if not line.conv_rate :
+                    raise UserError('Please set the conversation rate')
+                old_rate = line.product_uom.factor_inv
+                line.product_uom.factor_inv = line.conv_rate
+                for val in line._prepare_stock_moves(picking):
+                    values.append(val)
+                line.move_dest_ids.created_purchase_line_id = False
+                line.product_uom.factor_inv = old_rate
+
         return self.env['stock.move'].create(values)
 
     conv_rate = fields.Float(string='Conv. Rate')

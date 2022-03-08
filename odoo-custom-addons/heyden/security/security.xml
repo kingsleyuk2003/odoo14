@@ -6,26 +6,6 @@
             <field name="name">Heyden Modifications</field>
 	</record>
 
-	<record id="group_show_procurement_menu" model="res.groups">
-        <field name="name">Show "Procurement" Menu</field>
-        <field name="category_id" ref="module_category_heyden_modifications"/>
-    </record>
-
-    <record id="group_show_purchase_menu" model="res.groups">
-        <field name="name">Show "Purchase" Menu</field>
-        <field name="category_id" ref="module_category_heyden_modifications"/>
-    </record>
-
-     <record id="group_show_default_purchase_menu" model="res.groups">
-        <field name="name">Show Default "Purchase" Menu</field>
-        <field name="category_id" ref="module_category_heyden_modifications"/>
-    </record>
-
-    <record id="group_show_default_rfq_menu" model="res.groups">
-        <field name="name">Show Default "Request for Quotation" Menu</field>
-        <field name="category_id" ref="module_category_heyden_modifications"/>
-    </record>
-
 
 
 

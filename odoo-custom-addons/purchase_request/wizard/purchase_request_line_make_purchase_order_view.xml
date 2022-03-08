@@ -8,20 +8,20 @@
         <field name="type">form</field>
         <field name="arch" type="xml">
             <form string="Create RFQ">
-                <separator string="Existing RFQ to update:" />
-                <newline />
+<!--                <separator string="Existing RFQ to update:" />-->
+<!--                <newline />-->
+<!--                <group>-->
+<!--                    <field-->
+<!--                        name="purchase_order_id"-->
+<!--                        domain="[('partner_id', '=', supplier_id)]"-->
+<!--                    />-->
+<!--                    <field name="sync_data_planned" />-->
+<!--                </group>-->
+<!--                <newline />-->
+<!--                <separator string="New PO details:" />-->
+<!--                <newline />-->
                 <group>
-                    <field
-                        name="purchase_order_id"
-                        domain="[('partner_id', '=', supplier_id)]"
-                    />
-                    <field name="sync_data_planned" />
-                </group>
-                <newline />
-                <separator string="New PO details:" />
-                <newline />
-                <group>
-                    <field name="supplier_id" />
+                    <field name="supplier_id" options ="{'no_open':True,'no_create':True}" />
                 </group>
                 <newline />
                 <group>
