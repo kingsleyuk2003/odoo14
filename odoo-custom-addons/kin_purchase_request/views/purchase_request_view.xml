@@ -12,6 +12,10 @@
                      <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
                 </field>
 
+                <field name="requested_by" position="attributes" >
+                     <attribute name="options">{'no_create': True, 'no_open': True}</attribute>
+                </field>
+
                 <field name="sale_order_id" position="attributes">
                     <attribute name="invisible" >1</attribute>
                 </field>
