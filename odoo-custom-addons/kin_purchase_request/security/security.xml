@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+
+	<record id="group_receive_approved_purchase_request_email" model="res.groups">
+			<field name="name">Receive Approved Purchase Request Email</field>
+			<field name="category_id" ref="kin_purchase.module_category_purchases"/>
+		</record>
+
+
+</data>
+</odoo>
