@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <menuitem
+        name="Leave Management"
+        id="hr_holidays.menu_hr_holidays_root"
+        sequence="95"
+        web_icon="hr_holidays,static/description/icon.png"
+        groups="base.group_user"/>
+
+        <menuitem
+        id="hr_holidays.menu_hr_holidays_my_leaves"
+        name="My Leave"
+        parent="hr_holidays.menu_hr_holidays_root"
+        sequence="1"/>
+
+         <menuitem
+        id="hr_holidays.menu_open_department_leave_approve"
+        name="Leaves"
+        parent="hr_holidays.menu_hr_holidays_approvals"
+        action="hr_holidays.hr_leave_action_action_approve_department"
+        sequence="1"/>
+
+        <menuitem
+        id="hr_holidays.hr_holidays_status_menu_configuration"
+        action="hr_holidays.open_view_holiday_status"
+        name="Leave Types"
+        parent="hr_holidays.menu_hr_holidays_configuration"
+        groups="hr_holidays.group_hr_holidays_user"
+        sequence="1"/>
+
+        <menuitem
+        id="hr_holidays.hr_leave_menu_my"
+        parent="hr_holidays.menu_hr_holidays_my_leaves"
+        name ="My Leave Requests"
+        action="hr_holidays.hr_leave_action_my"
+        sequence="2"/>
+
+      <record id="view_employee_form" model="ir.ui.view">
+                <field name="name">hr.employee.form</field>
+                <field name="model">hr.employee</field>
+                <field name="inherit_id" ref="hr.view_employee_form" />
+                <field name="arch" type="xml">
+                     <xpath expr="//group[@name='active_group']" position="before" >
+                        <group string="Employment Details" name="emp_grp" >
+                            <field name="employment_date" />
+                            <field name="length_of_service_days" />
+                            <field name="business_unit" options="{'no_open': True, 'no_create': True}"  />
+                            <field name="is_offer_letter" />
+                            <field name="offer_letter" attrs="{'invisible':[('is_offer_letter', '=', False)], 'required':[('is_offer_letter', '=', True)]}" />
+                            <field name="is_confirmation_letter" />
+                            <field name="confirmation_letter" attrs="{'invisible':[('is_confirmation_letter', '=', False)], 'required':[('is_confirmation_letter', '=', True)]}" />
+                            <field name="is_employee_file" />
+                            <field name="employee_file" attrs="{'invisible':[('is_employee_file', '=', False)], 'required':[('is_employee_file', '=', True)]}" />
+                            <field name="is_resume" />
+                            <field name="resume" attrs="{'invisible':[('is_resume', '=', False)], 'required':[('is_resume', '=', True)]}" />
+                            <field name="is_edu_qualifications" />
+                            <field name="edu_qualifications" attrs="{'invisible':[('is_edu_qualifications', '=', False)], 'required':[('is_edu_qualifications', '=', True)]}" />
+                            <field name="is_prof_qualifications" />
+                            <field name="prof_qualifications" attrs="{'invisible':[('is_prof_qualifications', '=', False)], 'required':[('is_prof_qualifications', '=', True)]}" />
+                            <field name="is_valid_id" />
+                            <field name="valid_id" attrs="{'invisible':[('is_valid_id', '=', False)], 'required':[('is_valid_id', '=', True)]}" />
+                            <field name="is_bio_data_form" />
+                            <field name="bio_data_form" attrs="{'invisible':[('is_bio_data_form', '=', False)], 'required':[('is_bio_data_form', '=', True)]}" />
+
+                        </group>
+                    </xpath>
+                    <field name="user_id" position="attributes" >
+                             <attribute name="options"  >{'no_open': True, 'no_create': True}</attribute>
+                         </field>
+                         <field name="job_id" position="attributes" >
+                             <attribute name="options"  >{'no_open': True, 'no_create': True}</attribute>
+                         </field>
+                     <field name="coach_id" position="attributes" >
+                             <attribute name="invisible"  >1</attribute>
+                         </field>
+                    <group  name="identification_group" position="attributes" >
+                         <attribute name="invisible"  >1</attribute>
+                    </group>
+                </field>
+      </record>
+
+
+        <!-- Hr contract -->
+
+        <record id="hr_contract_view_form" model="ir.ui.view">
+            <field name="name">hr.contract.form</field>
+            <field name="model">hr.contract</field>
+            <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
+            <field name="arch" type="xml">
+                 <group name="salary_and_advantages" position="attributes" >
+                     <attribute name="string" >Salary Details</attribute>
+                 </group>
+
+
+                <label for="wage"   position="attributes" >
+                    <attribute name="string" >Basic Salary</attribute>
+                </label>
+
+                 <label for="hra"   position="attributes" >
+                    <attribute name="string" >Housing Allowance</attribute>
+                </label>
+
+                 <label for="travel_allowance"   position="attributes" >
+                    <attribute name="string" >Transport Allowance</attribute>
+                </label>
+
+                 <label for="da"   position="attributes" >
+                    <attribute name="string" >Logistics / Call Allowance</attribute>
+                </label>
+
+                    <div class="o_row" name="wage" position="after" >
+                        <label for="paye"/>
+                         <div class="o_row" name="paye">
+                              <field name="paye" nolabel="1"/>
+                              <span>/ month</span>
+                          </div>
+                        <field name="bank_id" options="{'no_open': True, 'no_create': True}" />
+                        <field name="bank_account_no" />
+                    </div>
+            </field>
+        </record>
+
+
+        <!-- bank -->
+        <record id="hr_bank_form" model="ir.ui.view">
+            <field name="name">hr.bank.form</field>
+            <field name="model">hr.bank</field>
+            <field name="arch" type="xml">
+                <form>
+                     <sheet>
+                        <group>
+                             <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+
+            </field>
+        </record>
+
+         <record id="view_hr_bank_tree" model="ir.ui.view" >
+            <field name="name" >hr.bank.tree</field>
+            <field name="model">hr.bank</field>
+            <field name="arch" type="xml" >
+                <tree>
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_hr_bank_form" model="ir.actions.act_window" >
+            <field name="name" >Bank</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">hr.bank</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <menuitem id="menu_hr_bank" name="Bank" parent="hr.menu_human_resources_configuration" sequence="28" action="action_hr_bank_form"/>
+
+<!-- Business Unit -->
+        <record id="hr_business_unit_form" model="ir.ui.view">
+            <field name="name">hr.business.unit.form</field>
+            <field name="model">hr.business.unit</field>
+            <field name="arch" type="xml">
+                <form>
+                     <sheet>
+                        <group>
+                             <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+
+            </field>
+        </record>
+
+         <record id="view_hr_business_unit_tree" model="ir.ui.view" >
+            <field name="name" >hr.business.unit.tree</field>
+            <field name="model">hr.business.unit</field>
+            <field name="arch" type="xml" >
+                <tree>
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_hr_business_unit_form" model="ir.actions.act_window" >
+            <field name="name" >Business unit</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">hr.business.unit</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <menuitem id="menu_hr_business_unit" name="Business Unit" parent="hr.menu_human_resources_configuration" sequence="29" action="action_hr_business_unit_form"/>
+
+
+    </data>
+</odoo>
