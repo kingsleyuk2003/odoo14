@@ -32,13 +32,11 @@ class hrExtend(models.Model):
                 rec.length_of_service_days = 0
 
 
-
+    staff_no = fields.Char(string="Staff No.")
     employment_date = fields.Date('Employment Date')
     grade_level = fields.Selection([('mgt', 'Management'), ('non-mgt', 'Non Management'), ('director', 'Director')],
                                          string='Grade Level')
-    grade_level = fields.Selection([('mgt', 'Management'), ('non-mgt', 'Non Management'), ('director', 'Director')],
-                                   string='Grade Level')
-    category = fields.Selection([('permanent', 'Permanent'), ('contract', 'Contract')], string='Category')
+    category = fields.Selection([('permanent', 'PERMANENT'), ('contract', 'CONTRACT')], string='Category')
     is_offer_letter = fields.Boolean(string='Has Offer Letter')
     offer_letter = fields.Binary(string='Offer Letter', attachment=True)
     is_confirmation_letter = fields.Boolean(string='Has Confirmation Letter')

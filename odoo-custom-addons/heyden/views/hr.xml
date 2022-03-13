@@ -37,6 +37,18 @@
         action="hr_holidays.hr_leave_action_my"
         sequence="2"/>
 
+         <record id="view_employee_filter" model="ir.ui.view">
+            <field name="name">hr.employee.search</field>
+            <field name="model">hr.employee</field>
+              <field name="inherit_id" ref="hr.view_employee_filter" />
+            <field name="arch" type="xml">
+                  <field name="name" position="attributes" >
+                      <attribute name="filter_domain" >['|', '|', ('work_email', 'ilike', self), ('name', 'ilike', self), ('staff_no', 'ilike', self)]</attribute>
+                  </field>
+
+            </field>
+         </record>
+
       <record id="view_employee_form" model="ir.ui.view">
                 <field name="name">hr.employee.form</field>
                 <field name="model">hr.employee</field>
@@ -46,6 +58,8 @@
                         <group string="Employment Details" name="emp_grp" >
                             <field name="employment_date" />
                             <field name="length_of_service_days" />
+                            <field name="grade_level" />
+                            <field name="category" />
                             <field name="business_unit" options="{'no_open': True, 'no_create': True}"  />
                             <field name="is_offer_letter" />
                             <field name="offer_letter" attrs="{'invisible':[('is_offer_letter', '=', False)], 'required':[('is_offer_letter', '=', True)]}" />
@@ -78,6 +92,11 @@
                     <group  name="identification_group" position="attributes" >
                          <attribute name="invisible"  >1</attribute>
                     </group>
+
+                    <field name="firstname" position="before" >
+                        <field name="staff_no"  />
+                    </field>
+
                 </field>
       </record>
 
