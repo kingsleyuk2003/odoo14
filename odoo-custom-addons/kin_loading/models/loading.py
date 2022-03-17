@@ -2476,7 +2476,7 @@ class SaleOrderLoading(models.Model):
             raise UserError(_('Only one product can be ordered at a time'))
 
         #check if the order has expired
-        if self.validity_date < date.today() :
+        if self.validity_date and self.validity_date < date.today() :
             raise UserError('This Sales Order has Expired')
 
         # is PO Check
