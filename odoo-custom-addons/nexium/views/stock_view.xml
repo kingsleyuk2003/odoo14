@@ -18,12 +18,12 @@
                     <field name="is_release_order"  groups="nexium.group_show_is_release_order_chk" />
                     <field name="release_order_no"  attrs="{'invisible':[('is_release_order', '=', False)], 'required':[('is_release_order', '=', True)], 'readonly': [('state', '=', 'done')]}" />
                     <field name="attn" attrs="{'invisible':[('is_release_order', '=', False)], 'required':[('is_release_order', '=', True)], 'readonly': [('state', '=', 'done')]}" />
-                    <field name="role" attrs="{'invisible':[('is_release_order', '=', False)],  'readonly': [('state', '=', 'done')]}" />
+                    <field name="role" attrs="{'invisible':[('is_release_order', '=', False)], 'required':[('is_release_order', '=', True)], 'readonly': [('state', '=', 'done')]}" />
                     <field name="to_address" attrs="{'invisible':[('is_release_order', '=', False)], 'required':[('is_release_order', '=', True)], 'readonly': [('state', '=', 'done')]}" />
                     <field name="release_order_upload" attrs="{'invisible':[('is_release_order', '=', False)], 'readonly': [('state', '=', 'done')]}" />
                     <field name="is_tank_to_tank" groups="nexium.group_show_is_tank_to_tank_chk" />
                     <field name="attn_tank" attrs="{'invisible':[('is_tank_to_tank', '=', False)], 'required':[('is_tank_to_tank', '=', True)], 'readonly': [('state', '=', 'done')]}"  />
-                    <field name="role_tank" attrs="{'invisible':[('is_tank_to_tank', '=', False)], 'required':[('is_tank_to_tank', '=', True)], 'readonly': [('state', '=', 'done')]}" />
+                    <field name="role_tank" attrs="{'invisible':[('is_tank_to_tank', '=', False)],  'readonly': [('state', '=', 'done')]}" />
                     <field name="to_address_tank" attrs="{'invisible':[('is_tank_to_tank', '=', False)], 'required':[('is_tank_to_tank', '=', True)], 'readonly': [('state', '=', 'done')]}" />
                     <field name="tank_to_tank_upload"  attrs="{'invisible':[('is_tank_to_tank', '=', False)], 'readonly': [('state', '=', 'done')]}"  />
                 </field>
