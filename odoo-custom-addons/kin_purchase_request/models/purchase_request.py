@@ -64,7 +64,7 @@ class PurchaseRequest(models.Model):
         user_name = user.name
         partn_ids.append(user.partner_id.id)
 
-        if partn_ids:
+        if user:
             self.message_follower_ids.unlink()
             msg = "Purchase Request (%s) from %s requires approval from you" % (self.name,self.env.user.name)
             subject = '%s created a Purchase Request (%s) which requires approval from you (%s)' % (self.env.user.name,self.name,user_name)
