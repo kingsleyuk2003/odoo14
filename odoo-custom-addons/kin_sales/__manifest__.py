@@ -12,7 +12,7 @@ Sales Modifications.
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['sale','sales_team','account','sale_management'],
+    'depends': ['sale','sales_team','account','sale_management','base_tier_validation'],
     'data': [
         # 'wizard/create_advance_invoice.xml',
         'security/security.xml',
@@ -22,8 +22,10 @@ Sales Modifications.
         'views/partner_view.xml',
         'views/sale_view.xml',
         'views/res_config_settings_views.xml',
+        'views/sale_order_tier_view.xml',
         'data/sequence.xml',
         'data/cron_data.xml',
+
     ],
     'test':[],
     'installable': True,

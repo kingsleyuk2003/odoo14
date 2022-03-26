@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+        <record id="view_alert" model="ir.ui.view">
+            <field name="name">Alert</field>
+            <field name="model">alert.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Alert">
+                     <p>Posted</p>
+                    <footer>
+                        <button name="action_alert"  string="OK" type="object"  />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_alert" model="ir.actions.act_window">
+            <field name="name">Action Alert</field>
+            <field name="res_model">alert.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_alert" />
+            <field name="target">new</field>
+            <field name="context">{}</field>
+        </record>
+
+    </data>
+</odoo>

@@ -7,10 +7,11 @@
     'category': 'Inventory/Purchase',
     'sequence': 35,
     'description': "",
-    'depends': ['purchase','purchase_stock'],
+    'depends': ['purchase','purchase_stock','base_tier_validation'],
     'data': [
         'security/security.xml',
         'views/purchase_views.xml',
+        'views/purchase_order_tier_view.xml',
 
     ],
 

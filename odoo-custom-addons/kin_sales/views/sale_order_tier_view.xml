@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_sales_order_filter_tier" model="ir.ui.view">
+            <field name="name">sale.order.list.select.tier</field>
+            <field name="model">sale.order</field>
+            <field name="priority" eval="15"/>
+            <field name="inherit_id" ref="sale.view_sales_order_filter" />
+            <field name="arch" type="xml">
+                    <search position="inside">
+                        <group string="Approval Status">
+                            <filter string="Awaiting my Approval" name="awaiting_approval" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
+                             <filter string="Validated" name="validated" domain="[('validated', '=', True)]" />
+                        </group>
+                    </search>
+
+            </field>
+        </record>
+
+
+
+    </data>
+</odoo>
