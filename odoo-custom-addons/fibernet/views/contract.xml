@@ -14,6 +14,13 @@
                 <button name="action_preview" position="attributes" >
                         <attribute name="invisible" >1</attribute>
                 </button>
+                <field name="recurring_next_date" position="attributes" >
+                        <attribute name="string" >Due Date</attribute>
+                </field>
+                <field name="recurring_next_date" position="after" >
+                        <field name="next_reminder_date" />
+                </field>
+
                 <field name="contract_template_id" position="attributes" >
                         <attribute name="invisible" >1</attribute>
                 </field>

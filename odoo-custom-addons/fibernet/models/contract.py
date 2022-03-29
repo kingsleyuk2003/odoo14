@@ -20,33 +20,6 @@ _logger = logging.getLogger(__name__)
 class ContractRecurrencyMixin(models.AbstractModel):
     _inherit = "contract.recurrency.mixin"
 
-
-    @api.model
-    def get_next_invoice_date(
-            self,
-            next_period_date_start,
-            recurring_invoicing_type,
-            recurring_invoicing_offset,
-            recurring_rule_type,
-            recurring_interval,
-            max_date_end,
-    ):
-        the_date = super(ContractRecurrencyMixin, self).get_next_invoice_date(
-            next_period_date_start,
-            recurring_invoicing_type,
-            recurring_invoicing_offset,
-            recurring_rule_type,
-            recurring_interval,
-            max_date_end)
-        if the_date:
-            date_start = self.date_start
-            next_invoice_date = the_date - relativedelta(days=7)
-            if next_invoice_date <= date_start:
-                return date_start
-            else:
-                return next_invoice_date
-        return the_date
-
     recurring_rule_type = fields.Selection(
         [
             ("daily", "Day(s)"),
@@ -67,6 +40,10 @@ class ContractRecurrencyMixin(models.AbstractModel):
         string="Invoice Every",
         help="Invoice every (Days/Week/Month/Year)",
     )
+
+    next_reminder_date = fields.Date(string="Next Reminder Date")
+
+
 
 
 
@@ -94,7 +71,8 @@ class ContractContract(models.Model):
             invoice_vals, move_form = contract._prepare_invoice(date_ref)
             invoice_vals["invoice_line_ids"] = []
             for line in contract_lines:
-                end_date = line.next_period_date_start + relativedelta(days=30)
+                end_date = line.next_period_date_end
+                self.next_reminder_date = end_date - relativedelta(days=7)
                 name = '%s starting from %s to %s' % (line.display_name,line.next_period_date_start.strftime('%d-%m-%Y'),end_date.strftime('%d-%m-%Y'))
                 invoice_line_vals = line._prepare_invoice_line(move_form=move_form)
                 invoice_line_vals['name'] = name
@@ -109,3 +87,7 @@ class ContractContract(models.Model):
             del invoice_vals["line_ids"]
             contract_lines._update_recurring_next_date()
         return invoices_values
+
+
+
+
