@@ -20,6 +20,12 @@ _logger = logging.getLogger(__name__)
 class ContractRecurrencyMixin(models.AbstractModel):
     _inherit = "contract.recurrency.mixin"
 
+
+    @api.onchange('date_start')
+    def onchange_date_start(self):
+        self.recurring_next_date = self.date_start + relativedelta(days=30) - relativedelta(days=7) - relativedelta(days=1)
+        self.next_due_date = self.recurring_next_date + relativedelta(days=7)
+
     recurring_rule_type = fields.Selection(
         [
             ("daily", "Day(s)"),
@@ -41,7 +47,9 @@ class ContractRecurrencyMixin(models.AbstractModel):
         help="Invoice every (Days/Week/Month/Year)",
     )
 
-    next_reminder_date = fields.Date(string="Next Reminder Date")
+    next_due_date = fields.Date(string="Next Due Date")
+
+
 
 
 
@@ -49,6 +57,8 @@ class ContractRecurrencyMixin(models.AbstractModel):
 
 class ContractContract(models.Model):
     _inherit = "contract.contract"
+
+
 
     def _prepare_recurring_invoices_values(self, date_ref=False):
         """
@@ -71,9 +81,11 @@ class ContractContract(models.Model):
             invoice_vals, move_form = contract._prepare_invoice(date_ref)
             invoice_vals["invoice_line_ids"] = []
             for line in contract_lines:
-                end_date = line.next_period_date_end
-                self.next_reminder_date = end_date - relativedelta(days=7)
-                name = '%s starting from %s to %s' % (line.display_name,line.next_period_date_start.strftime('%d-%m-%Y'),end_date.strftime('%d-%m-%Y'))
+                nps = self.next_due_date + relativedelta(days=1)
+                npe = nps + relativedelta(days=30) - relativedelta(days=1)
+                self.next_due_date = npe
+                self.recurring_next_date = self.next_due_date - relativedelta(days=7)
+                name = '%s starting from %s to %s' % (line.name,nps.strftime('%d-%m-%Y'),npe.strftime('%d-%m-%Y'))
                 invoice_line_vals = line._prepare_invoice_line(move_form=move_form)
                 invoice_line_vals['name'] = name
                 if invoice_line_vals:
