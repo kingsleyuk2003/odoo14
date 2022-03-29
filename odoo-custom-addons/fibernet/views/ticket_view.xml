@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+         <menuitem name="Report" id="menu_ticket_report" action="action_ticket_report_wizard"
+          parent="kin_helpdesk.kin_help_desk" sequence="5"    />
+
+
+        <!-- Ticket  -->
+            <record id="ticket_form" model="ir.ui.view">
+            <field name="name">kin.ticket.form</field>
+            <field name="model">kin.ticket</field>
+             <field name="inherit_id" ref="kin_helpdesk.ticket_form" />
+            <field name="arch" type="xml">
+
+                <xpath expr="//header"  position="after">
+                    <div  class="alert alert-danger text-center" role="alert" style="margin-bottom:0px;" attrs="{'invisible': [('show_alert_box', '!=', True)]}" groups="fibernet.group_helpdesk_show_error_box_ticket" >
+                           <field name="alert_msg"  />
+                            <field name="show_alert_box" invisible="1"/>
+                    </div>
+                </xpath>
+                <button name="btn_ticket_done" position="after" >
+                    <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="fibernet.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('done') )]}"   />
+                    <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="fibernet.group_helpdesk_finalized_ticket"  />
+                </button>
+                <button name="btn_ticket_progress" position="before" >
+                     <button name="btn_ticket_maint_approve" type="object"  string="Maintenance Approved"  class="oe_highlight" groups="fibernet.group_helpdesk_maint_ticket" attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"    />
+                     <button type="action"  string="Maintenance Declined"  name="%(action_disapprove_maint)d"   class="oe_highlight" groups="fibernet.group_helpdesk_maint_ticket"   attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"  />
+                </button>
+                 <button name="btn_ticket_progress" position="attributes" >
+                      <attribute  name="states" >maint_approve,new</attribute>
+                 </button>
+                 <button name="btn_ticket_close" position="attributes" >
+                     <attribute  name="states" >finalized</attribute>
+                 </button>
+                <button name="btn_ticket_cancel" position="attributes" >
+                     <attribute  name="states" >new,maint_approve,progress,done,finalized,archived</attribute>
+                 </button>
+                 <button name="btn_ticket_reset" position="attributes" >
+                         <attribute name="states" >new,progress,done,finalized,closed,cancel,archived</attribute>
+                        <attribute name="confirm" >Are you sure you want to reset this ticket back to draft state?</attribute>
+                 </button>
+                <field name="state" widget="statusbar"  position="attributes">
+                    <attribute name="statusbar_visible" >draft,new,progress,done,finalized,closed</attribute>
+                </field>
+
+                <field name="partner_id" position="after" >
+                     <field name="assigned_eng_user_ids" invisible="1" />
+                </field>
+                 <field name="user_id" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+
+                 <page  name="description" position="attributes" >
+                     <attribute name="string" >Incident Details</attribute>
+                 </page>
+
+                <field name="category_id" position="attributes" >
+                     <attribute name="required" >1</attribute>
+                    <attribute name="attrs" >{'readonly': [('state', '!=', 'draft' )]}</attribute>
+                 </field>
+
+                <field name="partner_id" position="after" >
+                    <field name="ref"   attrs="{'required': [('category_code', '=', 'installation' ),('state', 'in', ('done') )]}" />
+                    <field name="street" />
+                    <field name="product_id"   />
+                </field>
+
+                <field name="category_id" position="after" >
+                    <field name="category_code" invisible="True" />
+                   <field name="area_customer_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'not in', ('draft'))],'required': [('category_code', '=', 'installation' ),('state', '=', 'draft' )]}" />
+                </field>
+
+                <field name="partner_id" position="attributes" >
+                    <attribute name="attrs" >{'readonly': [('state', '!=', 'draft' )],'required': [('category_code', '=', 'support'),('state', '=', 'draft' )]}</attribute>
+                 </field>
+
+                <field name="expected_finish_date" position="attributes" >
+                     <attribute name="required" >1</attribute>
+                 </field>
+
+
+<!--                 <field name="engineer_ids"  position="after" >-->
+<!--&lt;!&ndash;                     <field name="qa_ids" readonly="1"  widget="many2many_tags" />&ndash;&gt;-->
+<!--&lt;!&ndash;                     <field name="intg_ids" readonly="1"  widget="many2many_tags" />&ndash;&gt;-->
+<!--                 </field>-->
+
+                 <field name="user_ticket_group_id"  position="after" >
+                      <field name="user_intg_ticket_group_id" options="{'no_open': True, 'no_create': True}" readonly="1" />
+                     <field name="initiator_ticket_group_id" options="{'no_open': True, 'no_create': True}" required="1" readonly="1" />
+                 </field>
+
+
+                 <field name="user_ticket_group_id" position="attributes" >
+                    <attribute name="required" >1</attribute>
+                     <attribute name="readonly" >1</attribute>
+                     <attribute name="force_save" >1</attribute>
+                </field>
+
+                <field name="name" position="before" >
+                    <div class="oe_button_box" name="button_box" >
+                         <button name="action_view_order"
+                                type="object"
+                                class="oe_stat_but ton"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('order_count', '=', 0)]}" >
+                                <field  name="order_count" widget="statinfo" string="Order" />
+                         </button>
+
+                        <button name="action_view_invoice"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('invoice_count', '=', 0)]}" >
+                                <field  name="invoice_count" widget="statinfo" string="Invoice" />
+                         </button>
+                    </div>
+                </field>
+                <field name="time_spent" position="after" >
+<!--                    <field name="survey_ticket_id"  domain = "[('id','!=',id),('category_id','=',2)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />-->
+                    <field name="duration_close" />
+                    <field name="order_id" readonly="1" />
+                </field>
+
+                <page name="description" position="before" >
+
+                    <page string="Maintenance Form"  attrs="{'invisible': [('category_code', '!=', 'maintenance' )]}" >
+                         <group col="4"  >
+                                 <field name="user_maint_ticket_group_id"  readonly="1" />
+                                <field name="base_station_maint_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' )]}" />
+                                <field name="rfs_in_charge" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                                <field name="rf_contact_maint"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                                <field name="purpose_maint"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                                <field name="date_maint"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                              <field name="duration_maint"  />
+                           <field name="start_time_maint"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                              <field name="end_time_maint"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                             <field name="pop"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                             <field name="service_impact"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                             <field name="services"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                             <field name="pop_affected"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
+                         </group>
+                        <group string="TYPE" col="4" >
+                             <field name="backend_devices_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                             <field name="power_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                             <field name="backhaul_fibre_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                             <field name="backhaul_microwave_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                             <field name="access_fibre_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                             <field name="access_radio_type"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                         </group>
+
+                         <group string="Maintenance Declined Information" >
+                                <field name="maint_disapprove_msg" readonly="1" />
+                                 <field name="maint_disapprove_by" readonly="1"  />
+                                <field name="maint_disapprove_date" readonly="1"  />
+                            </group>
+                    </page>
+                    <page string="Activation Form" attrs="{'invisible': [('category_code', '!=', 'installation' )]}" >
+                        <group col="4" >
+                              <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                              <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                            <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                            <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                           <field name="gpon_level" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
+                         <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
+                          <field name="wifi_ssid"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="expiration_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+                            <field name="splitter_box_code"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="region_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                           <field name="installation_approver_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="wireless_technology"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="rssi_id" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="radio_ip_addr"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="indoor_ip_address"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="ap_ip_address"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="radio_model"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="comment_activation"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                              <field name="activation_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+
+                        </group>
+                        <group string="Activation Declined Information">
+                             <field name="rejection_evidence" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                        </group>
+                    </page>
+
+                    <page  string="Support Form" attrs="{'invisible': [('category_code', '!=', 'support' )]}" >
+
+                            <group col="4" >
+                                 <field name="source_support" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"   />
+                                 <field name="complaint_type_support_id" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"    />
+                                  <field name="call_type_support" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
+                            </group>
+                            <group col="4" >
+                                  <field name="root_cause" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'support'),('state', '=', 'progress' )]}"   />
+                                 <field name="resolution" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'support'),('state', '=', 'progress' )]}"   />
+                            </group>
+                    </page>
+                    <page  string="Change Request Form" attrs="{'invisible': [('category_code', '!=', 'change_request' )]}" >
+                            <group col="4" >
+                                <field name="is_service_relocation" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
+                                 <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('is_service_relocation', '=', 'yes' )], 'invisible': [('is_service_relocation', '=', 'no')]}"   />
+                                <field name="updown_grade_type" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
+                                 <field name="product_curr_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))],'required': [('category_code', '=', 'change_request' )]}"    options="{'no_open': True, 'no_create': True}"  />
+                                 <field name="product_new_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   options="{'no_open': True, 'no_create': True}"   />
+                                <field name="bandwidth_current" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' ),('state', '=', 'finalized' )]}"    />
+                                 <field name="bandwidth_new" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"    />
+                                 <field name="address_old" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"    />
+                                 <field name="address_new" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"    />
+                                 <field name="address_ip_current" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
+                                 <field name="adddress_ip_new" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
+                            </group>
+                        <group col="4" string="First Escalation Elapsed Hours" >
+                            <field nolabel="1" name="elapsed_hours_first" readonly="1"  >
+                                <tree editable="bottom" >
+                                    <field name="day_no" />
+                                    <field name="elapsed_hours" />
+                                </tree>
+                            </field>
+                        </group>
+                          <group class="oe_subtotal_footer oe_right" colspan="2" >
+                                        <field name="total_elapsed_hours_first" />
+                          </group>
+
+                        <group col="4" string="Second Escalation Elapsed Hours" >
+                            <field nolabel="1" name="elapsed_hours_second" readonly="1"  >
+                                <tree editable="bottom" >
+                                    <field name="day_no" />
+                                    <field name="elapsed_hours" />
+                                </tree>
+                            </field>
+                        </group>
+                          <group class="oe_subtotal_footer oe_right" colspan="2" >
+                                       <field name="total_elapsed_hours_second" />
+                          </group>
+
+
+                        <group string="Third Escalation Elapsed Hours"  col="4" >
+                            <field name="elapsed_hours_third" nolabel="1" readonly="1"  >
+                                <tree editable="bottom" >
+                                    <field name="day_no" />
+                                    <field name="elapsed_hours" />
+                                </tree>
+                            </field>
+                        </group>
+                          <group class="oe_subtotal_footer oe_right" colspan="2" >
+                                       <field name="total_elapsed_hours_third" />
+                          </group>
+
+
+                    </page>
+                    <page  string="Site Survey and SRF Form"  attrs="{'invisible': [('category_code', '!=', 'survey' )]}" >
+                             <group col="4" >
+                                 <field name="site_survey_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="srf_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                 <field name="dist_fpop" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="fpop_box_jb" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="equipment_required" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                   <field name="access_confirmation" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                   <field name="comment_survey" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="installation_constraint" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="survey_attachment" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                             </group>
+                    </page>
+                    <page  string="Call Log" attrs="{'invisible': [('category_code', '!=', 'call_log' )]}" >
+                         <group col="4" string="Potential Customer" >
+                            <field name="prospect_name"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_area_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
+                             <field name="prospect_address"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
+
+                             <field name="prospect_phone"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_email"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
+                            <field name="prospect_id" readonly="1" />
+                         </group>
+                    </page>
+                    <field name="is_others" invisible="1" />
+                    <page  string="Request" attrs="{'invisible': [('category_code', '!=', 'request' )]}" >
+                         <group col="4" string="Potential Customer" >
+
+                            <field name="prospect_name"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
+                            <field name="prospect_area_id"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
+                            <field name="prospect_address"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
+
+                             <field name="others_sales_person_id"    attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('is_others', '=', True)], 'invisible': [('is_others', '=', False)]}"    />
+                             <field name="prospect_phone"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
+
+                            <field name="prospect_email"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
+                            <field name="prospect_id" readonly="1" />
+                         </group>
+                    </page>
+
+                    <page name="cust_details"  string="Customer Details"  groups="fibernet.group_helpdesk_show_customer_other_tabs" >
+                            <group col="4" >
+
+                                  <field name="cust_name" />
+                                 <field name="title" />
+                                 <field name="gender" />
+                                 <field name="estate_id" />
+                                 <field name="city_cust" />
+                                <field name="website" />
+                                <field name="company_id" />
+                                <field name="location_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="region_cust_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+
+                                <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="bandwidth" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                  <field name="reg_date" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                  <field name="activation_date"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                   <field name="last_logoff" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                    <field name="gpon" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                     <field name="interface" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                      <field name="serial_no" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="contact_person" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="cpe" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="radio_ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="base_station_ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="subnet" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="gateway" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="indoor_wan" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="comment" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                 <field name="status" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+
+                            </group>
+
+                  </page>
+
+
+                    <page  string="Other Information" groups="fibernet.group_helpdesk_show_customer_other_tabs" >
+                        <group  >
+                             <group string="Ticket Opener" >
+                                <field name="opener_disapprove_msg" readonly="1"  />
+                                <field name="opener_disapprove_by" readonly="1"  />
+                                <field name="opener_disapprove_date" readonly="1"  />
+                            </group>
+                            <group string="Finalized" >
+                                <field name="finalized_reject_msg" readonly="1"  />
+                                <field name="finalized_reject_by" readonly="1"  />
+                                <field name="finalized_rejection_date" readonly="1"  />
+                            </group>
+                            <group string="Service Relocation" >
+                                <field name="done_date" readonly="1" />
+                                <field name="finalized_date" readonly="1" />
+                            </group>
+                            <group string="Last log Info.">
+                                <field name="last_log_datetime"  readonly="1" />
+                                 <field name="last_log_user_id" readonly="1"  />
+                                <field name="last_log_message" readonly="1" />
+                            </group>
+                        </group>
+                    </page>
+                </page>
+
+
+
+            </field>
+            </record>
+
+
+        <record model="ir.ui.view" id="ticket_tree_view">
+            <field name="name">Ticket Tree</field>
+            <field name="model">kin.ticket</field>
+            <field name="inherit_id" ref="kin_helpdesk.ticket_tree_view" />
+            <field name="arch" type="xml">
+                    <field name="user_ticket_group_id" position="before" >
+                         <field name="duration_close" />
+                    </field>
+            </field>
+        </record>
+
+        <!-- OLT -->
+          <record id="olt_form" model="ir.ui.view">
+            <field name="name">olt.form</field>
+            <field name="model">olt</field>
+            <field name="arch" type="xml">
+                <form string="OLT">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="olt_tree_view">
+            <field name="name">OLT Tree</field>
+            <field name="model">olt</field>
+              <field name="arch" type="xml">
+                  <tree string="OLT" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_olt" model="ir.actions.act_window">
+            <field name="res_model">olt</field>
+
+            <field name="name">OLT</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_olt" name="OLT" parent="kin_helpdesk.menu_help_desk_config" action="action_olt" sequence="10"/>
+
+
+        <!-- Power Level -->
+          <record id="pl_form" model="ir.ui.view">
+            <field name="name">pl.form</field>
+            <field name="model">pl</field>
+            <field name="arch" type="xml">
+                <form string="Power Level">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="pl_tree_view">
+            <field name="name">Power Level Tree</field>
+            <field name="model">pl</field>
+              <field name="arch" type="xml">
+                  <tree string="Power Level" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_pl" model="ir.actions.act_window">
+            <field name="res_model">pl</field>
+
+            <field name="name">Power Level</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_pl" name="Power Level" parent="kin_helpdesk.menu_help_desk_config" action="action_pl" sequence="11"/>
+
+
+        <!-- -Region -->
+        <record id="region_form" model="ir.ui.view">
+            <field name="name">region.form</field>
+            <field name="model">region</field>
+            <field name="arch" type="xml">
+                <form string="Region">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="region_tree_view">
+            <field name="name">Region Tree</field>
+            <field name="model">region</field>
+              <field name="arch" type="xml">
+                  <tree string="Region" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_region" model="ir.actions.act_window">
+            <field name="res_model">region</field>
+
+            <field name="name">Region</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_region" name="Region" parent="kin_helpdesk.menu_help_desk_config" action="action_region" sequence="12"/>
+
+
+    <!-- Area-->
+        <record id="area_form" model="ir.ui.view">
+            <field name="name">area.form</field>
+            <field name="model">area</field>
+            <field name="arch" type="xml">
+                <form string="Area">
+                    <sheet>
+                        <group col="4">
+                              <field name="name" required="True" />
+                            <field name="area_manager_id" required="True" options="{'no_open': True, 'no_create': True}" />
+                           <field name="sales_person_id" required="True" options="{'no_open': True, 'no_create': True}" />
+                            <field name="user_ticket_group_id" required="True" options="{'no_open': True, 'no_create': True}" />
+                            <field name="prefix"  />
+                            <field name="sequence_id" readonly="1" />
+                            <field name="is_others" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+        </record>
+
+
+        <record model="ir.ui.view" id="area_tree_view">
+            <field name="name">Area Tree</field>
+            <field name="model">area</field>
+              <field name="arch" type="xml">
+                  <tree string="Area" >
+                        <field name="name" />
+                         <field name="area_manager_id" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_area" model="ir.actions.act_window">
+            <field name="res_model">area</field>
+
+            <field name="name">Area</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+         <menuitem id="menu_area" name="Area" parent="kin_helpdesk.menu_help_desk_config" action="action_area" sequence="13"/>
+
+        <!-- RSSI -->
+         <record id="rssi_form" model="ir.ui.view">
+            <field name="name">rssi.form</field>
+            <field name="model">rssi</field>
+            <field name="arch" type="xml">
+                <form string="RSSI">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="rssi_tree_view">
+            <field name="name">RSSI Tree</field>
+            <field name="model">rssi</field>
+              <field name="arch" type="xml">
+                  <tree string="RSSI" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_rssi" model="ir.actions.act_window">
+            <field name="res_model">rssi</field>
+
+            <field name="name">RSSI</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+<!--         <menuitem id="menu_rssi" name="RSSI" parent="kin_helpdesk.menu_help_desk_config" action="action_rssi" sequence="13"/>-->
+
+
+        <!-- Estate -->
+  <record id="estate_form" model="ir.ui.view">
+            <field name="name">estate.form</field>
+            <field name="model">estate</field>
+            <field name="arch" type="xml">
+                <form string="Estate">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="estate_tree_view">
+            <field name="name">Estate Tree</field>
+            <field name="model">estate</field>
+              <field name="arch" type="xml">
+                  <tree string="Estate" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_estate" model="ir.actions.act_window">
+            <field name="res_model">estate</field>
+            <field name="name">Estate</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_estate" name="Estate" parent="kin_helpdesk.menu_help_desk_config" action="action_estate" sequence="14"/>
+
+         <!-- -Complaint Type -->
+        <record id="complaint_type_form" model="ir.ui.view">
+            <field name="name">complaint.type.form</field>
+            <field name="model">complaint.type</field>
+            <field name="arch" type="xml">
+                <form string="Complaint Type">
+                    <sheet>
+                        <group>
+                              <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+          </record>
+
+        <record model="ir.ui.view" id="complaint_type_tree_view">
+            <field name="name">Complaint type Tree</field>
+            <field name="model">complaint.type</field>
+              <field name="arch" type="xml">
+                  <tree string="Compliant Type" >
+                        <field name="name" />
+                  </tree>
+              </field>
+        </record>
+
+         <record id="action_complaint_type" model="ir.actions.act_window">
+            <field name="res_model">complaint.type</field>
+
+            <field name="name">Complaint Type</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+        </record>
+
+         <menuitem id="menu_complaint_type" name="Complaint Type" parent="kin_helpdesk.menu_help_desk_config" action="action_complaint_type" sequence="13"/>
+
+
+  <record id="invoice_form_extend_ticket_installation" model="ir.ui.view">
+            <field name="name">account.move.form.ticket.installation</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form" />
+            <field name="arch" type="xml">
+                <field name="sale_order_id" position="after" >
+                    <field name="is_installation_invoice" readonly="1" />
+                    <field name="installation_ticket_id" readonly="1" />
+                </field>
+            </field>
+        </record>
+
+        <record id="user_ticket_group_form" model="ir.ui.view">
+            <field name="name">user.ticket.group.form</field>
+            <field name="model">user.ticket.group</field>
+            <field name="inherit_id" ref="kin_helpdesk.user_ticket_group_form" />
+            <field name="arch" type="xml">
+                 <field name="user_ids"  widget="many2many_tags"  position="after">
+                     <field name="is_eng_default" />
+                     <field name="is_intg_default" />
+                     <field name="is_survey_group_default_csc" />
+                     <field name="is_installation_group_default_csc" />
+                     <field name="is_maint_default" />
+                     <field name="is_csc_group" />
+                     <field name="is_bpsq_cto_manager" />
+                     <field name="is_bpsq_md_manager" />
+                     <field name="is_regional_manager_hcx" />
+                     <field name="is_cto_rm_hcx" />
+                     <field name="is_hcx" />
+                     <field name="is_hcx_team_lead" />
+                     <field name="is_cx" />
+                     <field name="is_team_lead" />
+                     <field name="is_bpsq_hcx" />
+                     <field name="is_request_ticket_group" />
+                 </field>
+            </field>
+          </record>
+
+    </data>
+</odoo>
