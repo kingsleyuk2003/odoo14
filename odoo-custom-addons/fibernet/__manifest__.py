@@ -29,6 +29,7 @@ Fibernet Modifications
         'views/sequence.xml',
         'views/sale_view.xml',
         'views/ticket_view.xml',
+        'views/contract.xml',
         'views/cron_data.xml',
 
     ],

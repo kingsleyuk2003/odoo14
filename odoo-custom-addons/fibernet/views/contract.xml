@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+<record id="contract_contract_form_view_fibernet" model="ir.ui.view">
+        <field name="name">contract.contract form view (in contract)</field>
+        <field name="model">contract.contract</field>
+        <field name="inherit_id" ref="contract.contract_contract_form_view" />
+        <field name="arch" type="xml">
+                <button name="action_contract_send" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+<!--                <button name="recurring_create_invoice" position="attributes" >-->
+<!--                        <attribute name="invisible" >1</attribute>-->
+<!--                </button>-->
+                <button name="action_preview" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+                <field name="contract_template_id" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="pricelist_id" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="fiscal_position_id" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="tag_ids" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="line_recurrence" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="recurring_invoicing_type" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="generation_type" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+                <field name="payment_term_id" position="attributes" >
+                        <attribute name="required" >1</attribute>
+                </field>
+
+                 <field  name="automatic_price" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+
+                <field  name="last_date_invoiced" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </field>
+
+                 <button  name="action_plan_successor" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+
+                <button  name="action_stop" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+
+                <button  name="cancel" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+
+                <button  name="action_uncancel" position="attributes" >
+                        <attribute name="invisible" >1</attribute>
+                </button>
+
+
+
+        </field>
+</record>
+
+</odoo>

@@ -789,6 +789,7 @@ class Prospect(models.Model):
     _name = "prospect"
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = 'Prospect'
+    _order = 'open_date desc'
 
     @api.model
     def run_prospect_contacted_check(self):
