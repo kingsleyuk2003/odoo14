@@ -772,6 +772,7 @@ class Ticket(models.Model):
         inv.action_post()
         inv.is_installation_invoice = True
         inv.installation_ticket_id = self.id
+        inv.no_overdue_reminder = True
         self.invoice_id = inv
 
         #Send Email to accountants.

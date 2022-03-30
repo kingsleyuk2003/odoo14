@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>        
+        <record forcecreate="True" id="ir_cron_run_overdue_reminder_check" model="ir.cron">
+            <field name="name">Run Overdue Reminder Check</field>
+            <field name="model_id" ref="model_overdue_reminder_start"/>
+            <field name="state">code</field>
+            <field name="code">model.run_overdue_reminder_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
+    </data>
+</odoo>
+
+
