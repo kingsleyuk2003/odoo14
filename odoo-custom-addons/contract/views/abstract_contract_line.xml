@@ -37,7 +37,8 @@
                             name="price_unit"
                             attrs="{'readonly': [('automatic_price', '=', True)]}"
                         />
-                        <field colspan="2" name="discount" groups="base.group_no_one" />
+                        <field colspan="2" name="discount" />
+                         <field name="tax_ids" widget="many2many_tags" width="0.5" optional="show" />
                     </group>
                     <label
                         for="name"

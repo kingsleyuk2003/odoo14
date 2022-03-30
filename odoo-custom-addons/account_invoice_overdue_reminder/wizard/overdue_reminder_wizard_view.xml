@@ -16,7 +16,7 @@
                 <field name="user_ids" widget="many2many_tags" />
             </group>
             <group name="options" string="Options">
-                <field name="partner_policy" />
+                <field name="partner_policy" invisible="1" />
                 <field name="interface" />
                 <label for="start_days" />
                 <div name="start_days">

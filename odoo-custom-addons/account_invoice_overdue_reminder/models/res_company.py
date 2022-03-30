@@ -27,6 +27,8 @@ class ResCompany(models.Model):
         default="last_reminder",
         string="Contact to Remind",
     )
+    is_up_to_date = fields.Boolean('Are Payments Up To Date?',default=True)
+
 
     @api.model
     def _overdue_reminder_interface_selection(self):

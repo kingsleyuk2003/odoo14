@@ -26,6 +26,7 @@
         "wizard/res_config_settings_view.xml",
         "data/overdue_reminder_result.xml",
         "data/mail_template.xml",
+        "data/cron_data.xml",
     ],
     "installable": True,
     "application": True,

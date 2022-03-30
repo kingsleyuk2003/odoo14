@@ -566,6 +566,7 @@ class ContractLine(models.Model):
                 "quantity": self._get_quantity_to_invoice(*dates),
                 "product_uom_id": self.uom_id.id,
                 "discount": self.discount,
+                "tax_ids": self.tax_ids,
                 "contract_line_id": self.id,
                 "sequence": self.sequence,
                 "name": name,

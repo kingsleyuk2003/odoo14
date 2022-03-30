@@ -17,6 +17,7 @@ Fibernet Modifications
      'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others'],
     'data': [
         'data/data.xml',
+        'report/report_invoice.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
         'views/report.xml',

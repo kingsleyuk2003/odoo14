@@ -66,6 +66,7 @@ class OverdueReminderStart(models.TransientModel):
     def _partner_policy_selection(self):
         return self.env["res.company"]._overdue_reminder_partner_policy_selection()
 
+
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
@@ -92,6 +93,8 @@ class OverdueReminderStart(models.TransientModel):
                 "start_days": company.overdue_reminder_start_days,
                 "min_interval_days": company.overdue_reminder_min_interval_days,
                 "partner_policy": company.overdue_reminder_partner_policy,
+                "interface": company.overdue_reminder_interface,
+                "up_to_date": company.is_up_to_date,
             }
         )
         return res
@@ -117,6 +120,91 @@ class OverdueReminderStart(models.TransientModel):
         if self.user_ids:
             domain.append(("user_id", "in", self.user_ids.ids))
         return domain
+
+    @api.model
+    def run_overdue_reminder_check(self):
+        fields_list = ['partner_ids', 'user_ids', 'payment_ids', 'start_days', 'min_interval_days', 'up_to_date', 'interface', 'partner_policy']
+        vals = self.default_get(fields_list=fields_list)
+        res = self.create(vals)
+        action_ids = res.run_reminder()
+        if action_ids:
+            actions = self.env["overdue.reminder.step"].browse(
+                action_ids
+            )
+            actions.validate()
+        return
+
+
+    def run_reminder(self):
+        self.ensure_one()
+        if not self.up_to_date:
+            raise UserError(
+                _(
+                    "In order to start overdue reminders, you must make sure that "
+                    "customer payments are up-to-date."
+                )
+            )
+        if self.start_days < 0:
+            raise UserError(_("The trigger delay cannot be negative."))
+        if self.min_interval_days < 1:
+            raise UserError(
+                _("The minimum delay since last reminder must be strictly positive.")
+            )
+        amo = self.env["account.move"]
+        ajo = self.env["account.journal"]
+        rpo = self.env["res.partner"]
+        orso = self.env["overdue.reminder.step"]
+        user_id = self.env.user.id
+        existing_actions = orso.search([("user_id", "=", user_id)])
+        existing_actions.unlink()
+        payment_journals = ajo.search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("type", "in", ("bank", "cash")),
+            ]
+        )
+        sale_journals = ajo.search(
+            [
+                ("company_id", "=", self.company_id.id),
+                ("type", "=", "sale"),
+            ]
+        )
+        today = fields.Date.context_today(self)
+        min_interval_date = today - relativedelta(days=self.min_interval_days)
+        # It is important to understand this: there are 2 search on invoice :
+        # 1. a first search to know if a partner must be reminded or not
+        # 2. a second search to get the invoices to remind for that partner
+        # There are some slight differences between these 2 searches;
+        # for example: search 1 compares due_date to (today + start_days)
+        # whereas search 2 compares due_date to today
+        base_domain = self._prepare_base_domain()
+        domain = self._prepare_remind_trigger_domain(base_domain)
+        rg_res = amo.read_group(
+            domain,
+            ["commercial_partner_id", "amount_residual_signed"],
+            ["commercial_partner_id"],
+        )
+        # Sort by residual amount desc
+        rg_res_sorted = sorted(
+            rg_res, key=lambda to_sort: to_sort["amount_residual_signed"], reverse=True
+        )
+        action_ids = []
+        for rg_re in rg_res_sorted:
+            commercial_partner_id = rg_re["commercial_partner_id"][0]
+            commercial_partner = rpo.browse(commercial_partner_id)
+            vals = self._prepare_reminder_step(
+                commercial_partner,
+                base_domain,
+                min_interval_date,
+                payment_journals,
+                sale_journals,
+            )
+            if vals:
+                action = orso.create(vals)
+                action_ids.append(action.id)
+
+        return action_ids
+
 
     def run(self):
         self.ensure_one()
@@ -504,8 +592,8 @@ class OverdueReminderStep(models.TransientModel):
     def validate(self):
         orao = self.env["overdue.reminder.action"]
         mao = self.env["mail.activity"]
-        self.check_warnings()
         for rec in self:
+            rec.check_warnings()
             vals = {}
             if rec.reminder_type == "mail":
                 vals = rec.validate_mail()

@@ -878,3 +878,9 @@ class Prospect(models.Model):
     is_non_compliance_email_sent = fields.Boolean(string='Is Non-Compliance Email Sent', default=False,tracking=True)
     is_non_compliance_email_sent_date = fields.Datetime(string='Non-Compliance Email Sent Date')
     request_ticket_id = fields.Many2one('kin.ticket', string='Request Ticket',tracking=True)
+
+
+class ResCompany(models.Model):
+    _inherit = 'res.company'
+
+    img_signature = fields.Binary(string='Signature Image')

@@ -44,6 +44,13 @@ class ContractAbstractContractLine(models.AbstractModel):
         help="Discount that is applied in generated invoices."
         " It should be less or equal to 100",
     )
+    ###### reference: .../odoo/addons/account/models/account_move.py:3010
+    tax_ids = fields.Many2many(
+        comodel_name='account.tax',
+        string="Taxes",
+        help="Taxes that apply on the base amount")
+    ###########
+
     sequence = fields.Integer(
         string="Sequence",
         default=10,
@@ -212,17 +219,29 @@ class ContractAbstractContractLine(models.AbstractModel):
         for line in self.filtered(lambda x: not x.automatic_price):
             line.specific_price = line.price_unit
 
-    @api.depends("quantity", "price_unit", "discount")
+
+
+    @api.depends("quantity", "price_unit", "discount","tax_ids")
     def _compute_price_subtotal(self):
         for line in self:
             subtotal = line.quantity * line.price_unit
             discount = line.discount / 100
             subtotal *= 1 - discount
-            if line.contract_id.pricelist_id:
-                cur = line.contract_id.pricelist_id.currency_id
-                line.price_subtotal = cur.round(subtotal)
+
+           ######## reference ..odoo/addons/account/models/account_move.py:3359
+            taxes = line.tax_ids
+            if taxes:
+                taxes_res = taxes._origin.with_context(force_sign=1).compute_all(subtotal, quantity=line.quantity, currency=line.company_id.currency_id, product=line.product_id, partner=line.contract_id.partner_id, is_refund=False)
+                line.price_subtotal = taxes_res['total_included']
+           ########
             else:
-                line.price_subtotal = subtotal
+                if line.contract_id.pricelist_id:
+                    cur = line.contract_id.pricelist_id.currency_id
+                    line.price_subtotal = cur.round(subtotal)
+                else:
+                    line.price_subtotal = subtotal
+
+
 
     @api.constrains("discount")
     def _check_discount(self):
@@ -256,5 +275,6 @@ class ContractAbstractContractLine(models.AbstractModel):
         )
         vals["name"] = self.product_id.get_product_multiline_description_sale()
         vals["price_unit"] = product.price
+        vals["tax_ids"] = product.taxes_id
         self.update(vals)
         return {"domain": domain}

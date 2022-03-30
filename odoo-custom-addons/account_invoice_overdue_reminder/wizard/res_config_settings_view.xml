@@ -77,6 +77,17 @@
                                     class="col-md-1"
                                 /> days
                         </div>
+                         <div class="row" name="is_up_to_date">
+                            <label
+                                    for="is_up_to_date"
+                                    class="col-md-5"
+                                    string="Are Payments Up To date?"
+                                />
+                            <field
+                                    name="is_up_to_date"
+                                    class="col-md-1"
+                                /> days
+                        </div>
                     </div>
                 </div>
             </div>

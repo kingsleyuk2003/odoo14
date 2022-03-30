@@ -227,8 +227,9 @@
                                         attrs="{'readonly': [('automatic_price', '=', True)]}"
                                     />
                                     <field name="specific_price" invisible="1" />
-                                    <field name="discount" groups="base.group_no_one" />
-                                    <field name="price_subtotal" />
+                                    <field name="discount" />
+                                     <field name="tax_ids" widget="many2many_tags" width="0.5" optional="show" options="{'no_open': True, 'no_create': True}" />
+                                    <field name="price_subtotal" sum="Total" />
                                     <field name="recurring_interval" invisible="1" />
                                     <field name="recurring_rule_type" invisible="1" />
                                     <field
@@ -330,7 +331,7 @@
                                         attrs="{'readonly': [('automatic_price', '=', True)]}"
                                     />
                                     <field name="specific_price" invisible="1" />
-                                    <field name="discount" groups="base.group_no_one" />
+                                    <field name="discount" />
                                     <field name="price_subtotal" />
                                     <field name="recurring_interval" invisible="1" />
                                     <field name="recurring_rule_type" invisible="1" />
