@@ -16,7 +16,7 @@
                 </button>
 
                 <field name="recurring_next_date" position="after" >
-                        <field name="next_due_date" />
+                        <field name="next_due_date" readonly="1" force_save="1" />
                 </field>
 
                 <field name="contract_template_id" position="attributes" >
