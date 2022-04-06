@@ -19,6 +19,7 @@ Heyden Modifications
         'security/ir.model.access.csv',
         'security/security.xml',
        'report/report_deliveryslip.xml',
+        'report/report_atl.xml',
        'report/report_loading_ticket.xml',
        'wizard/sales_atl_wizard_view.xml',
         'views/report.xml',

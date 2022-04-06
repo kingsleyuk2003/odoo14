@@ -2103,6 +2103,9 @@
                 <field name="depot_id" position="attributes" >
                     <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
                 </field>
+                  <field name="user_id" position="after" >
+                    <field name="is_purchase" readonly="1"  />
+                </field>
             </field>
         </record>
 
