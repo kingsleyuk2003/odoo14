@@ -1239,6 +1239,35 @@ class SaleOrderLoading(models.Model):
 
         return True
 
+    def btn_print_atl(self):
+        return self.env.ref('kin_loading.action_report_atl').report_action(self)
+
+    def action_atl_sent(self):
+        self.ensure_one()
+        template = self.env.ref('kin_loading.email_template_atl', False)
+        lang = self.env.context.get('lang')
+        if template.lang:
+            lang = template._render_lang(self.ids)[self.id]
+
+        ctx = {
+            'default_model': 'sale.order',
+            'default_res_id': self.id,
+            'default_use_template': bool(template.id),
+            'default_template_id': template.id,
+            'default_composition_mode': 'comment',
+            'force_email': True,
+            'model_description': self.with_context(lang=lang).type_name,
+        }
+        return {
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'mail.compose.message',
+            'views': [(False, 'form')],
+            'view_id': False,
+            'target': 'new',
+            'context': ctx,
+        }
+
     def send_email(self, grp_name, subject, msg):
         partn_ids = []
         user_names = ''

@@ -215,7 +215,9 @@
                         <button name="action_ticket_wizard" states="atl_approved" context="{'is_load_ticket_btn':True}"  string="Create Loading Ticket" class="btn-primary" type="object" groups="kin_loading.group_show_create_loading_ticket"  />
                       <button  name="%(action_cancel_qty)d" states="atl_approved"  string="Cancel Remaining Product Qty."  type="action" groups="kin_loading.group_show_cancel_remaining_order"    />
                       <button name="action_transfer_wizard" states="atl_approved" context="{'is_order_transfer_btn':True}"  string="Transfer Product Qty."  type="object" groups="kin_loading.group_show_transfer_order"  />
-                          <button name="action_reset" states="no_sale,atl_awaiting_approval"   string="Reset to Draft" type="object" groups="kin_loading.group_show_sale_reset"   />
+                         <button name="btn_print_atl" string="Print ATL"   states="atl_approved"  type="object"   />
+                          <button name="action_atl_sent" type="object" string="Send ATL by Email"  states="atl_approved" />
+                     <button name="action_reset" states="no_sale,atl_awaiting_approval"   string="Reset to Draft" type="object" groups="kin_loading.group_show_sale_reset"   />
                  </button>
 
                 <button name="action_quotation_send" type="object"  groups="sale.group_proforma_sales" class="btn-primary"  attrs="{'invisible': ['|', ('state', '!=', 'draft'), ('invoice_count','&gt;=',1)]}" context="{'proforma': True}" position="attributes">
@@ -286,7 +288,7 @@
                             <field name="atl_partner_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_product_id" options = "{'no_open':True,'no_create':True}" />
                             <field name="atl_qty" />
-                            <field name="atl_payment_mode_id"  options = "{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}" />
+<!--                            <field name="atl_payment_mode_id"  options = "{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}" />-->
                             <field name="atl_depot_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
                             <field name="atl_jetty_id" options = "{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', 'in', ['atl_approved','cancel'])]}"  />
                              <field name="atl_approved_user_id" readonly="1" />

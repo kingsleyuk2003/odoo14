@@ -37,6 +37,7 @@ Loading Process for the Oil and Gas Industry
         'wizard/mass_email_sot_view.xml',
         'report/loading_programme.xml',
         'report/summary_of_transactions.xml',
+        'report/report_atl.xml',
         'views/mail_template.xml',
         'views/loading_view.xml',
     ],

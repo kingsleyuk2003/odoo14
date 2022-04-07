@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <data>
+
+		<record id="action_report_atl" model="ir.actions.report">
+            <field name="name">ATL</field>
+            <field name="model">sale.order</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">kin_loading.report_atl</field>
+            <field name="report_file">kin_loading.report_atl</field>
+            <field name="print_report_name">'ATL - %s - %s' % (object.partner_id.name or '', object.name)</field>
+<!--            <field name="binding_model_id" ref="model_stock_picking"/>-->
+<!--            <field name="binding_type">report</field>-->
+        </record>
+
+
+ <template id="external_layout_atl"   >
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <div class="row">
+                <div class="col-6 mb4">
+                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                </div>
+                <div class="col-6 text-left" style="margin-top:22px;" t-field="company.report_header" name="moto">
+                    <strong><span t-field="company.name"/></strong><br />
+                    <span t-field="company.street" /><br />
+                    <strong>TEL:</strong><span t-field="company.phone" /><br />
+                    <strong>EMAIL:</strong><span t-field="company.email" /><br />
+                    <strong>Website:</strong><span t-field="company.website" />
+                </div>
+            </div>
+            <div t-if="company.logo or company.report_header" class="row zero_min_height">
+                <div class="col-12">
+                    <div style="border-bottom: 1px solid black;"/>
+                </div>
+            </div>
+
+        </div>
+
+        <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <div class="pt-5">
+                <!-- This div ensures that the address is not cropped by the header. -->
+                <t t-call="web.address_layout"/>
+            </div>
+            <t t-raw="0"/>
+        </div>
+
+        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
+
+        </div>
+    </template>
+
+
+
+   <template id="cust_atl_layout">
+        <t t-if="not o" t-set="o" t-value="doc"/>
+        <t t-if="not company">
+            <!-- Multicompany -->
+            <t t-if="company_id">
+                <t t-set="company" t-value="company_id"/>
+            </t>
+            <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                <t t-set="company" t-value="o.company_id.sudo()"/>
+            </t>
+            <t t-else="else">
+                <t t-set="company" t-value="res_company"/>
+            </t>
+        </t>
+        <t  t-call="kin_loading.external_layout_atl"><t t-raw="0"/></t>
+    </template>
+
+
+    <template id="report_atl">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="web.html_container">
+            <t t-call="kin_loading.cust_atl_layout">
+                <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)" />
+
+                <div class="page">
+                    <div  class="row"  >
+                        <div class="col-auto" >
+                            To: <strong>Depot Manager </strong>
+                        </div>
+                        <div class="col-auto" >
+                           <p>Date: <strong><span t-field="o.atl_date"  /></strong></p>
+                           <p>Serial No: <strong><span t-field="o.atl_id"  /></strong></p>
+                        </div>
+                    </div>
+                    <br/>
+                     <br/>
+                    <div  class="row" >
+                        <div class="col-auto">
+                            <h4 style="text-align:center" >
+                                <strong  >AUTHORITY TO LOAD</strong><br />
+                            </h4>
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-auto" >
+                            <p >
+                                <b>This is to authorise you to load as stated hereunder:</b>
+                            </p>
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-auto" >
+                           <p> Customer's Name: <strong><span t-field="o.atl_partner_id.name"  /></strong></p>
+                            <p>Product:  <strong><span t-field="o.atl_product_id.name"   /></strong></p>
+                             <p>Quantity: <strong><span t-field="o.atl_qty"   /> LTRS</strong></p>
+                        </div>
+                    </div>
+
+                    <br />
+                    <br />
+
+                    <div  class="row"  >
+                        <div class="col-auto">
+                            <p>Issued by: <strong>__________________</strong></p>
+                        </div>
+                        <div class="col-auto">
+                            <p>Approved by: <strong><span t-field="o.atl_approved_user_id.name"   /></strong></p>
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-auto">
+                            <p>JETTY: <strong><span t-field="o.atl_jetty_id.name"   /></strong></p>
+                        </div>
+                        <div class="col-auto">
+                            <p>Released by: <strong>________________________</strong></p>
+                        </div>
+                    </div>
+                    <br />
+                     <p>
+                        <strong>NOTE:</strong> Please note that failure to load your product within <strong style="border-bottom: 1px solid black;" >TWO (2) WEEKS AFTER PURCHASE</strong> will henceforth <strong style="border-bottom: 1px solid black;" >ATTRACT DEMURRAGE CHARGES</strong>
+                    </p>
+
+                </div>
+
+            </t>
+         </t>
+        </t>
+    </template>
+    </data>
+
+</odoo>
+
+
+
+
+
+
+
+
+
+

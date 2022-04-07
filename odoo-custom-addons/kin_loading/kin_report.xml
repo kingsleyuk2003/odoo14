@@ -24,30 +24,6 @@
 		<!-- Or by referencing the parent report id e.g. kin_report.receipt_custom -->
         <!-- e.g. if the old menu has the name string="Purchase Order", then new menu can still maintain thesame string name-->
 
-        <report
-		    id="tarmac_excel_report"
-		    model="tarmac.report.parser"
-		    string="Tarmac Loading Record Report"
-		    report_type="xlsx"
-		    name="kin_loading.report_tarmac_report"
-		    file="kin_loading.report_tarmac_report"
-		    attachment_use="False"
-        />
-		<record id="tarmac_excel_report" model="ir.actions.report.xml" >
-            <field name="groups_id" eval="[(6, 0, [ref('group_security_officer')])]"  />
-        </record>
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     </data>
