@@ -22,6 +22,33 @@
         <field name="implied_ids" eval="[(4, ref('stock.group_stock_manager'))]"/>
     </record>
 
+    <record id="group_show_in_depot_operations_menu" model="res.groups">
+			<field name="name">Show In-depot Operations Menu</field>
+			<field name="category_id" ref="module_depot"/>
+    </record>
+
+    <record id="group_show_throughput_operations_menu" model="res.groups">
+			<field name="name">Show Throughput Operations Menu</field>
+			<field name="category_id" ref="module_depot"/>
+    </record>
+
+    <record id="group_show_internal_use_operations_menu" model="res.groups">
+			<field name="name">Show Internal Use Operations Menu</field>
+			<field name="category_id" ref="module_depot"/>
+    </record>
+
+    <record id="group_show_depot_report_menu" model="res.groups">
+			<field name="name">Show Reports Menu in Depot Operations</field>
+			<field name="category_id" ref="module_depot"/>
+    </record>
+
+    <record id="group_show_depot_config_menu" model="res.groups">
+			<field name="name">Show Configuration menu in Depot Operations</field>
+			<field name="category_id" ref="module_depot"/>
+    </record>
+
+
+
 
 
     <record id="group_show_create_loading_ticket" model="res.groups">
@@ -148,7 +175,7 @@
 
 
    <record id="group_throughput_receipt" model="res.groups">
-			<field name="name">Show Throughput Receipt Menu</field>
+			<field name="name">Throughput Receipt</field>
 			<field name="category_id" ref="module_depot"/>
 		</record>
 
@@ -163,7 +190,7 @@
 		</record>
     
     <record id="group_internal_use" model="res.groups">
-			<field name="name">Show Internal Use Transfer Menu</field>
+			<field name="name">Internal Use</field>
 			<field name="category_id" ref="module_depot"/>
 		</record>
 

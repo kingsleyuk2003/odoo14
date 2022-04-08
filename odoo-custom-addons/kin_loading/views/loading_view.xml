@@ -11,8 +11,8 @@
             sequence="0" groups="account.group_account_invoice"/>
 
         <menuitem id="menu_root_dispatch_operation" name="Depot Operations" parent="stock.menu_stock_root" sequence="1" groups="group_depot_officer,group_depot_manager" />
-        <menuitem id="menu_dispatch_operation" name="Reports" parent="menu_root_dispatch_operation" sequence="1000"  />
-        <menuitem id="menu_depot_configuration" name="Configuration" parent="menu_root_dispatch_operation" sequence="1001"  />
+        <menuitem id="menu_dispatch_operation" name="Reports" parent="menu_root_dispatch_operation" sequence="1000"  groups="group_show_depot_report_menu" />
+        <menuitem id="menu_depot_configuration" name="Configuration" parent="menu_root_dispatch_operation" sequence="1001" groups="group_show_depot_config_menu"  />
 
         <menuitem id="menu_sale_loading_report" name="Depot Sales Report" parent="sale.menu_sale_report" sequence="4" action="action_sales_loading_report_wizard"  />
 
@@ -25,9 +25,9 @@
 
         <menuitem id="menu_loading_operation" name="Loading Operations" parent="stock.menu_stock_root" sequence="2" groups="group_depot_officer,group_depot_manager" />
         <menuitem id="menu_root_loading_programme_operation" name="Loading Programme" parent="menu_root_dispatch_operation" sequence="1" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
-        <menuitem id="menu_root_in_depot_operation" name="In-Depot Operations" parent="menu_root_dispatch_operation" sequence="2" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
-        <menuitem id="menu_root_throughput_operation" name="Throughput Operations" parent="menu_root_dispatch_operation" sequence="4" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
-        <menuitem id="menu_root_internal_use_operation" name="Internal Use Transfer Operations" parent="menu_root_dispatch_operation" sequence="5" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
+        <menuitem id="menu_root_in_depot_operation" name="In-Depot Operations" parent="menu_root_dispatch_operation" sequence="2" groups="group_show_in_depot_operations_menu" />
+        <menuitem id="menu_root_throughput_operation" name="Throughput Operations" parent="menu_root_dispatch_operation" sequence="4" groups="group_show_throughput_operations_menu" />
+        <menuitem id="menu_root_internal_use_operation" name="Internal Use Transfer Operations" parent="menu_root_dispatch_operation" sequence="5" groups="group_show_internal_use_operations_menu" />
 
          <menuitem id="menu_root_atl" name="Authority to Load" parent="menu_depot_configuration" sequence="5" groups="group_depot_officer,group_depot_manager" />
          <menuitem name="Vessels" action="stock.action_production_lot_form" id="stock.menu_action_production_lot_form" parent="menu_root_atl" groups="stock.group_production_lot" sequence="0" />

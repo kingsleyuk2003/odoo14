@@ -60,6 +60,7 @@ class hrExtend(models.Model):
 class HRContract(models.Model):
     _inherit = 'hr.contract'
 
-    paye = fields.Float(string="P.A.Y.E")
+    paye = fields.Monetary(string="P.A.Y.E")
+    lc = fields.Monetary(string="Logistics / Call Allowances")
     bank_account_no = fields.Char(string='Bank Account No.')
     bank_id = fields.Many2one('hr.bank', string='Bank')

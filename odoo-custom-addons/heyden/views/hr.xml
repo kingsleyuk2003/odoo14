@@ -62,21 +62,21 @@
                             <field name="category" />
                             <field name="business_unit" options="{'no_open': True, 'no_create': True}"  />
                             <field name="is_offer_letter" />
-                            <field name="offer_letter" attrs="{'invisible':[('is_offer_letter', '=', False)], 'required':[('is_offer_letter', '=', True)]}" />
+                            <field name="offer_letter" attrs="{'invisible':[('is_offer_letter', '=', False)]}" />
                             <field name="is_confirmation_letter" />
-                            <field name="confirmation_letter" attrs="{'invisible':[('is_confirmation_letter', '=', False)], 'required':[('is_confirmation_letter', '=', True)]}" />
+                            <field name="confirmation_letter" attrs="{'invisible':[('is_confirmation_letter', '=', False)]}" />
                             <field name="is_employee_file" />
-                            <field name="employee_file" attrs="{'invisible':[('is_employee_file', '=', False)], 'required':[('is_employee_file', '=', True)]}" />
+                            <field name="employee_file" attrs="{'invisible':[('is_employee_file', '=', False)]}" />
                             <field name="is_resume" />
-                            <field name="resume" attrs="{'invisible':[('is_resume', '=', False)], 'required':[('is_resume', '=', True)]}" />
+                            <field name="resume" attrs="{'invisible':[('is_resume', '=', False)]}" />
                             <field name="is_edu_qualifications" />
-                            <field name="edu_qualifications" attrs="{'invisible':[('is_edu_qualifications', '=', False)], 'required':[('is_edu_qualifications', '=', True)]}" />
+                            <field name="edu_qualifications" attrs="{'invisible':[('is_edu_qualifications', '=', False)]}" />
                             <field name="is_prof_qualifications" />
-                            <field name="prof_qualifications" attrs="{'invisible':[('is_prof_qualifications', '=', False)], 'required':[('is_prof_qualifications', '=', True)]}" />
+                            <field name="prof_qualifications" attrs="{'invisible':[('is_prof_qualifications', '=', False)]}" />
                             <field name="is_valid_id" />
-                            <field name="valid_id" attrs="{'invisible':[('is_valid_id', '=', False)], 'required':[('is_valid_id', '=', True)]}" />
+                            <field name="valid_id" attrs="{'invisible':[('is_valid_id', '=', False)]}" />
                             <field name="is_bio_data_form" />
-                            <field name="bio_data_form" attrs="{'invisible':[('is_bio_data_form', '=', False)], 'required':[('is_bio_data_form', '=', True)]}" />
+                            <field name="bio_data_form" attrs="{'invisible':[('is_bio_data_form', '=', False)]}" />
 
                         </group>
                     </xpath>
@@ -125,9 +125,9 @@
                     <attribute name="string" >Transport Allowance</attribute>
                 </label>
 
-                 <label for="da"   position="attributes" >
-                    <attribute name="string" >Logistics / Call Allowance</attribute>
-                </label>
+<!--                 <label for="da"   position="attributes" >-->
+<!--                    <attribute name="string" >Logistics / Call Allowance</attribute>-->
+<!--                </label>-->
 
                     <div class="o_row" name="wage" position="after" >
                         <label for="paye"/>
@@ -135,9 +135,22 @@
                               <field name="paye" nolabel="1"/>
                               <span>/ month</span>
                           </div>
+                        <label for="lc"/>
+                         <div class="o_row" name="lc">
+                              <field name="lc" nolabel="1"/>
+                              <span>/ month</span>
+                          </div>
                         <field name="bank_id" options="{'no_open': True, 'no_create': True}" />
                         <field name="bank_account_no" />
                     </div>
+
+                <group name="allowances" position="attributes">
+                    <attribute name="invisible" >1</attribute>
+                </group>
+
+                <group name="yearly_advantages"  position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                </group>
             </field>
         </record>
 
