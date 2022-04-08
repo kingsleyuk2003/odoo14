@@ -29,7 +29,6 @@ Account Modifications
         'views/account_payment_view.xml',
         'views/stock_view.xml',
         'views/account_move_tier_view.xml',
-0
     ],
     'test':[],
     'installable': True,

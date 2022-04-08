@@ -685,16 +685,6 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="ON RECEIPT" >
-                                <field name="comp1_receipt" />
-                                <field name="comp2_receipt" />
-                                <field name="comp3_receipt" />
-                                <field name="comp4_receipt" />
-                                <field name="comp5_receipt" />
-                                <field name="comp6_receipt" />
-                                 <field name="comp7_receipt" />
-                                 <field name="comp8_receipt" />
-                            </group>
                         </group>
                         <group>
                             <field name="remark" />
@@ -908,16 +898,7 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="ON RECEIPT" >
-                                <field name="comp1_receipt" />
-                                <field name="comp2_receipt" />
-                                <field name="comp3_receipt" />
-                                <field name="comp4_receipt" />
-                                <field name="comp5_receipt" />
-                                <field name="comp6_receipt" />
-                                 <field name="comp7_receipt" />
-                                 <field name="comp8_receipt" />
-                            </group>
+
                         </group>
                         <group>
                             <field name="amount_in_words" />
@@ -1226,16 +1207,7 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
-                            <group  col="2" string="ON RECEIPT" >
-                                <field name="comp1_receipt" />
-                                <field name="comp2_receipt" />
-                                <field name="comp3_receipt" />
-                                <field name="comp4_receipt" />
-                                <field name="comp5_receipt" />
-                                <field name="comp6_receipt" />
-                                <field name="comp7_receipt" />
-                                <field name="comp8_receipt" />
-                            </group>
+
                         </group>
                         <group>
                             <field name="amount_in_words" />
@@ -1527,6 +1499,7 @@
                              <field name="name" required="1" />
                             <field name="location_id" />
                             <field name="usage" required="1" />
+                             <field name="is_default_atl" />
 <!--                            <field name="product_id" required="1" domain="[('white_product','in',['pms','ago','kero','atk','lpfo'])]"  />-->
 <!--                            <field name="product_uom" required="1" />-->
                         </group>
@@ -1601,6 +1574,7 @@
                         <group col="4">
                              <field name="name" required="1" />
                             <field name="description" />
+                            <field name="is_default_atl" />
                         </group>
                     </sheet>
                      <div class="oe_chatter">

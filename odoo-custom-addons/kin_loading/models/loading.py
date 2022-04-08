@@ -799,14 +799,6 @@ class StockPickingExtend(models.Model):
                                              ondelete='restrict', string='Loading Programme')
     waybill_no = fields.Char('Waybill No.',readonly=True)
     # ref_no = fields.Char('Ref. No.')
-    comp1_receipt = fields.Float('1')
-    comp2_receipt = fields.Float('2')
-    comp3_receipt = fields.Float('3')
-    comp4_receipt = fields.Float('4')
-    comp5_receipt = fields.Float('5')
-    comp6_receipt = fields.Float('6')
-    comp7_receipt = fields.Float('7')
-    comp8_receipt = fields.Float('8')
     comp1_vol = fields.Float('1')
     comp2_vol = fields.Float('2')
     comp3_vol = fields.Float('3')
@@ -2671,6 +2663,12 @@ class SaleOrderLoading(models.Model):
             rec.atl_product_id = line.product_id or False
             rec.atl_qty = line.product_uom_qty or False
 
+    def _is_default_atl_depot(self):
+        return self.env['depot'].search([('is_default_atl', '=', True)], limit=1)
+
+    def _is_default_atl_jetty(self):
+        return self.env['jetty'].search([('is_default_atl', '=', True)], limit=1)
+
 
     authorization_code = fields.Char(string='Authorization Code',readonly=True)
     is_has_advance_invoice = fields.Boolean(string="Has Advance invoice")
@@ -2727,11 +2725,12 @@ class SaleOrderLoading(models.Model):
     atl_product_id = fields.Many2one('product.product', compute="_compute_atl_fields", string='Product')
     atl_qty = fields.Float(compute="_compute_atl_fields", string='ATL Quantity')
     atl_payment_mode_id = fields.Many2one('payment.mode',  string='Mode of Payment')
-    atl_depot_id = fields.Many2one('depot', string='Depot')
-    atl_jetty_id = fields.Many2one('jetty', string='Jetty')
+    atl_depot_id = fields.Many2one('depot', string='Depot',default=_is_default_atl_depot)
+    atl_jetty_id = fields.Many2one('jetty', string='Jetty', default=_is_default_atl_jetty)
     atl_id = fields.Char(string='ATL ID')
     atl_approved_user_id = fields.Many2one('res.users',string='ATL Approved By')
     atl_date = fields.Date(string='ATL Date')
+
 
 
 
@@ -3519,7 +3518,7 @@ class Depot(models.Model):
     stock_location_tmpl_id = fields.Many2one('stock.location', 'Stock Location Template', required=True,ondelete="cascade", select=True, auto_join=True)
     sale_order_ids = fields.One2many('sale.order','atl_depot_id', string='Sales Orders')
     purchase_order_ids = fields.One2many('purchase.order', 'depot_id', string='Purchase Orders')
-
+    is_default_atl = fields.Boolean(string='Is Default ATL Depot')
 
 
 class Jetty(models.Model):
@@ -3528,6 +3527,7 @@ class Jetty(models.Model):
 
     name = fields.Char(string='Jetty')
     description = fields.Text(string='Description')
+    is_default_atl = fields.Boolean(string='Is Default ATL Jetty')
 
 
 class PaymentMode(models.Model):
