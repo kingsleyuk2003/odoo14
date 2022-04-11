@@ -2027,7 +2027,7 @@
             <field name="view_id" ref="purchase.purchase_order_view_tree"/>
             <field name="domain">[('is_purchase','=',False)]</field>
             <field name="search_view_id" ref="purchase.purchase_order_view_search"/>
-            <field name="context">{'default_is_procurement': True}</field>
+            <field name="context">{'default_is_purchase': False}</field>
             <field name="help" type="html">
               <p class="o_view_nocontent_smiling_face">
                 No procurement found. Let's create one!
@@ -2067,21 +2067,19 @@
                 <xpath expr="//form" position="attributes" >
                     <attribute name="duplicate">0</attribute>
                 </xpath>
+
                 <field name="partner_ref" position="after" >
-                     <field name="depot_id" options ="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_depot_on_po" />
+                     <field  name="depot_id"  options ="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_purchase', '=', False)]}" groups="kin_loading.group_show_purchase_menu"  />
                 </field>
                 <field name="product_uom" position="after" >
-                    <field name="conv_rate" />
+                    <field name="conv_rate" attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu" />
                 </field>
-                <field name="conv_rate" position="attributes" >
-                    <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
-                </field>
-                <field name="depot_id" position="attributes" >
-                    <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
-                </field>
+
                   <field name="user_id" position="after" >
                     <field name="is_purchase" readonly="1"  />
                 </field>
+
+
             </field>
         </record>
 

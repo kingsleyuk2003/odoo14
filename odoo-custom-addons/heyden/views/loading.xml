@@ -23,11 +23,9 @@
             <field name="inherit_id" ref="kin_loading.purchase_order_form_loading" />
             <field name="arch" type="xml">
 
-
-
                 <field name="conv_rate" position="after" >
-                    <field name="product_qty_ltr" force_save="1" readonly="1" groups="kin_loading.group_show_purchase_menu" />
-                    <field name="unit_price_ltr"  groups="kin_loading.group_show_purchase_menu" />
+                    <field name="product_qty_ltr" force_save="1" readonly="1" attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu"  />
+                    <field name="unit_price_ltr"  attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu" />
                 </field>
 
                 <field name="price_unit" position="attributes" >
@@ -35,6 +33,18 @@
                 </field>
 
 
+            </field>
+        </record>
+
+
+        <record id="view_picking_form_stock_heyden" model="ir.ui.view">
+            <field name="name">stock.picking.form.kin.stock.account</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+            <field name="arch" type="xml">
+                 <field name="origin" position="after">
+                     <field name="aftershore_receipt_documents" />
+                 </field>
             </field>
         </record>
 

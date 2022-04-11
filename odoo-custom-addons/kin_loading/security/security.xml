@@ -224,11 +224,6 @@
 			<field name="category_id" ref="module_depot"/>
 		</record>
 
-     <record id="group_show_depot_on_po" model="res.groups">
-			<field name="name">Show "Depot" field on Purchase Order</field>
-			<field name="category_id" ref="module_depot"/>
-		</record>
-
 
     <record id="group_throughput_receipt_confirm_notification" model="res.groups">
 			<field name="name">Receive Email Notification for Throughput Receipt Confirmation</field>

@@ -43,7 +43,17 @@ class StockPicking(models.Model):
             self.depot_officer_id = self.env.user
         return self.env.ref('heyden.action_report_delivery_heyden').report_action(self)
 
+    def button_validate(self):
+        res = super(StockPicking, self).button_validate()
+        picking_type_code = self.picking_type_code
+        purchase_order = self.purchase_id
+        if picking_type_code == "incoming" and purchase_order:
+            if not self.aftershore_receipt_documents :
+                raise UserError('Kindly upload the aftershore receipt documents')
 
+        return res
+
+    aftershore_receipt_documents = fields.Binary(string='After Shore Receipt Documents')
 
 class PurchaseOrderLineExtend(models.Model):
     _inherit = 'purchase.order.line'
@@ -70,11 +80,27 @@ class PurchaseOrderLineExtend(models.Model):
                 vals['product'],
                 vals['partner'])
             line.update({
-                'price_unit':  (line.product_qty * line.conv_rate) * line.unit_price_ltr,
                 'price_tax': sum(t.get('amount', 0.0) for t in taxes.get('taxes', [])),
                 'price_total': taxes['total_included'],
                 'price_subtotal': taxes['total_excluded'],
             })
+            if line.order_id.is_purchase :
+                line.update({
+                    'price_unit':  (line.product_qty * line.conv_rate) * line.unit_price_ltr
+                })
+
+
 
     unit_price_ltr = fields.Float(string='Ltr. Price')
     product_qty_ltr = fields.Float(string='Ltr. Qty')
+
+
+class PurchaseOrder(models.Model):
+    _inherit = "purchase.order"
+
+    @api.model
+    def create(self, vals):
+        return super(PurchaseOrder, self).create(vals)
+
+    def write(self,vals):
+        return super(PurchaseOrder, self).write(vals)

@@ -3573,7 +3573,6 @@ class PurchaseOrderLineExtend(models.Model):
 
     conv_rate = fields.Float(string='Conv. Rate')
 
-
 class DRPInfo(models.Model):
     _name = 'dpr.info'
     _rec_name = 'address'
@@ -3713,3 +3712,9 @@ class StockWarehouse(models.Model):
     oploss_type_id = fields.Many2one('stock.picking.type', string="Operational Loss Type")
     intu_type_id = fields.Many2one('stock.picking.type', string="Internal Use Type")
 
+
+class StockRequest(models.Model):
+    _inherit = 'stock.request'
+
+    def action_confirm(self):
+        return super(StockRequest, self.with_context(default_is_purchase=True)).action_confirm()

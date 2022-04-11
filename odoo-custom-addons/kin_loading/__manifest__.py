@@ -14,7 +14,7 @@ Loading Process for the Oil and Gas Industry
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-    'depends': ['base','mail','report_xlsx','account','sale', 'stock','kin_sales','kin_product','kin_stock','sale_stock','kin_purchase_request'],
+    'depends': ['base','mail','report_xlsx','account','sale', 'stock','kin_sales','kin_product','kin_stock','sale_stock','kin_purchase_request','stock_request'],
     'data': [
         'data/data.xml',
         'data/sequence.xml',
