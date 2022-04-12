@@ -6,11 +6,15 @@
 <function model="stock.warehouse" name="_create_missing_oploss_picking_types"/>
 <function model="stock.warehouse" name="_create_missing_intu_picking_types"/>
 
+        <record model="ir.ui.menu" id="stock_request.menu_stock_request_root">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_stock_request_app')])]"/>
+        </record>
+
         <menuitem action="sale.action_orders"
             id="menu_sale_order" parent="account.menu_finance_receivables"
             sequence="0" groups="account.group_account_invoice"/>
 
-        <menuitem id="menu_root_dispatch_operation" name="Depot Operations" parent="stock.menu_stock_root" sequence="1" groups="group_depot_officer,group_depot_manager" />
+        <menuitem id="menu_root_dispatch_operation" name="Depot Operations" parent="stock.menu_stock_root" sequence="1" groups="group_show_depot_operations_menu" />
         <menuitem id="menu_dispatch_operation" name="Reports" parent="menu_root_dispatch_operation" sequence="1000"  groups="group_show_depot_report_menu" />
         <menuitem id="menu_depot_configuration" name="Configuration" parent="menu_root_dispatch_operation" sequence="1001" groups="group_show_depot_config_menu"  />
 
@@ -24,7 +28,7 @@
 
 
         <menuitem id="menu_loading_operation" name="Loading Operations" parent="stock.menu_stock_root" sequence="2" groups="group_depot_officer,group_depot_manager" />
-        <menuitem id="menu_root_loading_programme_operation" name="Loading Programme" parent="menu_root_dispatch_operation" sequence="1" groups="group_throughput_receipt,group_depot_officer,group_depot_manager" />
+        <menuitem id="menu_root_loading_programme_operation" name="Loading Programme" parent="menu_root_dispatch_operation" sequence="1" groups="group_show_loading_programme_menu" />
         <menuitem id="menu_root_in_depot_operation" name="In-Depot Operations" parent="menu_root_dispatch_operation" sequence="2" groups="group_show_in_depot_operations_menu" />
         <menuitem id="menu_root_throughput_operation" name="Throughput Operations" parent="menu_root_dispatch_operation" sequence="4" groups="group_show_throughput_operations_menu" />
         <menuitem id="menu_root_internal_use_operation" name="Internal Use Transfer Operations" parent="menu_root_dispatch_operation" sequence="5" groups="group_show_internal_use_operations_menu" />
@@ -215,8 +219,8 @@
                         <button name="action_ticket_wizard" states="atl_approved" context="{'is_load_ticket_btn':True}"  string="Create Loading Ticket" class="btn-primary" type="object" groups="kin_loading.group_show_create_loading_ticket"  />
                       <button  name="%(action_cancel_qty)d" states="atl_approved"  string="Cancel Remaining Product Qty."  type="action" groups="kin_loading.group_show_cancel_remaining_order"    />
                       <button name="action_transfer_wizard" states="atl_approved" context="{'is_order_transfer_btn':True}"  string="Transfer Product Qty."  type="object" groups="kin_loading.group_show_transfer_order"  />
-                         <button name="btn_print_atl" string="Print ATL"   states="atl_approved"  type="object"   />
-                          <button name="action_atl_sent" type="object" string="Send ATL by Email"  states="atl_approved" />
+                         <button name="btn_print_atl" string="Print ATL"   states="atl_approved"  type="object" groups="kin_loading.group_show_print_atl"   />
+                          <button name="action_atl_sent" type="object" string="Send ATL by Email"  states="atl_approved" groups="kin_loading.group_show_send_atl_email"  />
                      <button name="action_reset" states="no_sale,atl_awaiting_approval"   string="Reset to Draft" type="object" groups="kin_loading.group_show_sale_reset"   />
                  </button>
 

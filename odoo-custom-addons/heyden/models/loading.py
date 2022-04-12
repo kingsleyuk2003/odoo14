@@ -58,6 +58,17 @@ class StockPicking(models.Model):
 class PurchaseOrderLineExtend(models.Model):
     _inherit = 'purchase.order.line'
 
+    @api.model
+    def create(self, vals):
+        product_id = vals.get('product_id', False)
+        stock_request_ids = vals.get('stock_request_ids',False)
+        product_qty = vals.get('product_qty',False)
+        if product_id and stock_request_ids and product_qty:
+            vals['conv_rate'] = self.env['product.product'].browse(product_id).conv_rate
+            vals['product_qty_ltr'] = vals['conv_rate'] * product_qty
+        res = super(PurchaseOrderLineExtend, self).create(vals)
+        return res
+
     @api.onchange('product_id')
     def _onchange_product_id(self):
         for line in self:
@@ -95,12 +106,3 @@ class PurchaseOrderLineExtend(models.Model):
     product_qty_ltr = fields.Float(string='Ltr. Qty')
 
 
-class PurchaseOrder(models.Model):
-    _inherit = "purchase.order"
-
-    @api.model
-    def create(self, vals):
-        return super(PurchaseOrder, self).create(vals)
-
-    def write(self,vals):
-        return super(PurchaseOrder, self).write(vals)

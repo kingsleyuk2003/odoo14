@@ -246,25 +246,18 @@
                                     <span/>
                                 </td>
                                 <td class="border border-dark">
-                                   <span  t-if="o.comp1_receipt != 0" t-field="o.comp1_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp2_receipt != 0" t-field="o.comp2_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp3_receipt != 0" t-field="o.comp3_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp4_receipt != 0" t-field="o.comp4_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp5_receipt != 0" t-field="o.comp5_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp6_receipt != 0" t-field="o.comp6_receipt"/>
                                 </td>
                                 <td class="border border-dark">
-                                    <span t-if="o.comp7_receipt != 0" t-field="o.comp7_receipt"/>
                                 </td>
                             </tr>
                             <tr>

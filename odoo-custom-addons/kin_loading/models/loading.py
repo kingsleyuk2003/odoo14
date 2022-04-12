@@ -35,6 +35,7 @@ class StockLocation(models.Model):
 class StockMoveLoading(models.Model):
     _inherit = 'stock.move'
 
+
     def _prepare_move_line_vals(self, quantity=None, reserved_quant=None):
         self.ensure_one()
         # apply putaway
@@ -56,10 +57,19 @@ class StockMoveLoading(models.Model):
             uom_quantity = float_round(uom_quantity, precision_digits=rounding)
             uom_quantity_back_to_product_uom = self.product_uom._compute_quantity(uom_quantity, self.product_id.uom_id,
                                                                                   rounding_method='HALF-UP')
+
+            picking_type_code = self.picking_id.picking_type_code
             if float_compare(quantity, uom_quantity_back_to_product_uom, precision_digits=rounding) == 0:
-                vals = dict(vals, product_uom_qty=uom_quantity,qty_done=uom_quantity)
+                if picking_type_code == 'incoming':
+                    vals = dict(vals, product_uom_qty=uom_quantity)
+                else:
+                    vals = dict(vals, product_uom_qty=uom_quantity,qty_done=uom_quantity)
             else:
-                vals = dict(vals, product_uom_qty=quantity,qty_done=uom_quantity, product_uom_id=self.product_id.uom_id.id)
+                if picking_type_code == 'incoming':
+                    vals = dict(vals, product_uom_qty=quantity, product_uom_id=self.product_id.uom_id.id)
+                else:
+                    vals = dict(vals, product_uom_qty=quantity, qty_done=uom_quantity, product_uom_id=self.product_id.uom_id.id)
+
         if reserved_quant:
             vals = dict(
                 vals,
