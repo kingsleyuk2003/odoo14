@@ -12,7 +12,14 @@
                  <field name="is_internal_transfer" position="attributes" >
                      <attribute name="invisible">True</attribute>
                  </field>
+                <button name="action_post" position="attributes" >
+                     <attribute name="groups">kin_account.group_show_confirm_button_receipt</attribute>
+                 </button>
+                 <button name="action_cancel" position="attributes" >
+                     <attribute name="groups">kin_account.group_show_cancel_button_receipt</attribute>
+                 </button>
             </field>
+
         </record>
 
 

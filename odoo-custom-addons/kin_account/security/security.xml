@@ -118,6 +118,16 @@
 			<field name="category_id" ref="module_category_accounting"/>
 	</record>
 
+	<record id="group_show_confirm_button_receipt" model="res.groups">
+			<field name="name">Show "Confirm" Button in Receipt</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
+	<record id="group_show_cancel_button_receipt" model="res.groups">
+			<field name="name">Show "Cancel" Button in Receipt</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
 
 </data>
 </odoo>

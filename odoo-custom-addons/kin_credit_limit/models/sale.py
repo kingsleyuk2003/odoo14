@@ -108,6 +108,9 @@ class SaleOrderExtend(models.Model):
 
             # Credit limit Check
             if customer.is_enforce_credit_limit_so and not self.is_credit_limit_bypass:
+                if not customer.is_credit_limit_approved:
+                    raise UserError('%s credit limit is yet to be approved' % (customer.name))
+
                 if self.amount_total > customer.allowed_credit:
                         # Show the wizard to by-pass or display message
                         model_data_obj = self.env['ir.model.data']

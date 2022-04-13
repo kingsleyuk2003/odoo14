@@ -2524,7 +2524,9 @@ class SaleOrderLoading(models.Model):
                     'Please Ensure that the Quote is confirmed from the customer and that the PO reference is set. e.g. you may put the po number, email, contact name, number of the customer that confirmed the Quote')
 
         #Credit limit Check
-        if customer.is_enforce_credit_limit_so:
+        if customer.is_enforce_credit_limit_so :
+            if not customer.is_credit_limit_approved:
+                raise UserError('%s credit limit is yet to be approved' % (customer.name))
             if self.amount_total > customer.allowed_credit :
                 raise UserError('Total Amount %s%s has exceeded the remaining credit %s%s for %s' % (
                 self.currency_id.symbol, self.amount_total, self.currency_id.symbol, customer.allowed_credit,

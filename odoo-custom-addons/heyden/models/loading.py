@@ -61,9 +61,8 @@ class PurchaseOrderLineExtend(models.Model):
     @api.model
     def create(self, vals):
         product_id = vals.get('product_id', False)
-        stock_request_ids = vals.get('stock_request_ids',False)
         product_qty = vals.get('product_qty',False)
-        if product_id and stock_request_ids and product_qty:
+        if product_id and product_qty:
             vals['conv_rate'] = self.env['product.product'].browse(product_id).conv_rate
             vals['product_qty_ltr'] = vals['conv_rate'] * product_qty
         res = super(PurchaseOrderLineExtend, self).create(vals)
@@ -106,3 +105,12 @@ class PurchaseOrderLineExtend(models.Model):
     product_qty_ltr = fields.Float(string='Ltr. Qty')
 
 
+
+class PurchaseRequest(models.Model):
+    _inherit = "purchase.request"
+
+    @api.onchange('department_id')
+    def _onchange_conv_rate(self):
+        self.assigned_to = self.sudo().department_id.manager_id.user_id
+
+    department_id = fields.Many2one('hr.department', string='Department')
