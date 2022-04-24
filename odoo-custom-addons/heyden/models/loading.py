@@ -15,10 +15,7 @@ import odoo
 from datetime import *
 from odoo import SUPERUSER_ID
 
-class ProductProductLoading(models.Model):
-    _inherit = 'product.template'
 
-    conv_rate = fields.Float(string='Conv. Rate')
 
 
 
@@ -55,54 +52,6 @@ class StockPicking(models.Model):
 
     aftershore_receipt_documents = fields.Binary(string='After Shore Receipt Documents')
 
-class PurchaseOrderLineExtend(models.Model):
-    _inherit = 'purchase.order.line'
-
-    @api.model
-    def create(self, vals):
-        product_id = vals.get('product_id', False)
-        product_qty = vals.get('product_qty',False)
-        if product_id and product_qty:
-            vals['conv_rate'] = self.env['product.product'].browse(product_id).conv_rate
-            vals['product_qty_ltr'] = vals['conv_rate'] * product_qty
-        res = super(PurchaseOrderLineExtend, self).create(vals)
-        return res
-
-    @api.onchange('product_id')
-    def _onchange_product_id(self):
-        for line in self:
-            line.conv_rate = line.product_id.conv_rate
-            line.unit_price_ltr = line.product_id.standard_price
-
-    @api.onchange('conv_rate','product_qty')
-    def _onchange_conv_rate(self):
-        for line in self:
-            line.product_qty_ltr = line.product_qty * line.conv_rate
-
-    @api.depends('product_qty', 'price_unit', 'taxes_id')
-    def _compute_amount(self):
-        for line in self:
-            vals = line._prepare_compute_all_values()
-            taxes = line.taxes_id.compute_all(
-                vals['price_unit'],
-                vals['currency_id'],
-                vals['product_qty'],
-                vals['product'],
-                vals['partner'])
-            line.update({
-                'price_tax': sum(t.get('amount', 0.0) for t in taxes.get('taxes', [])),
-                'price_total': taxes['total_included'],
-                'price_subtotal': taxes['total_excluded'],
-            })
-            if line.order_id.is_purchase :
-                line.update({
-                    'price_unit':  (line.product_qty * line.conv_rate) * line.unit_price_ltr
-                })
-
-
-
-    unit_price_ltr = fields.Float(string='Ltr. Price')
-    product_qty_ltr = fields.Float(string='Ltr. Qty')
 
 
 

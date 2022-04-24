@@ -31,7 +31,7 @@ class TierValidation(models.AbstractModel):
     def _get_under_validation_exceptions(self):
         """Extend for more field exceptions."""
         res = super(TierValidation, self)._get_under_validation_exceptions()
-        res.append('order_line')
+        #res.append('order_line')
         res.append('depot_id')
         return res
 

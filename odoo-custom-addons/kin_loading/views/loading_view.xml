@@ -2075,9 +2075,9 @@
                 <field name="partner_ref" position="after" >
                      <field  name="depot_id"  options ="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_purchase', '=', False)]}" groups="kin_loading.group_show_purchase_menu"  />
                 </field>
-                <field name="product_uom" position="after" >
-                    <field name="conv_rate" attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu" />
-                </field>
+<!--                <field name="product_uom" position="after" >-->
+<!--                    <field name="conv_rate" attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu" />-->
+<!--                </field>-->
 
                   <field name="user_id" position="after" >
                     <field name="is_purchase" readonly="1"  />

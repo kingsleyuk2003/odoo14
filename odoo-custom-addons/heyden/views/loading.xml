@@ -5,33 +5,25 @@
         <menuitem id="menu_sales_atl" name="Sales/ATL Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
         <menuitem id="menu_sales_atl_report" name="Sales/ATL Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
 
-         <record id="product_template_form_extend_loading_heyden" model="ir.ui.view">
-            <field name="name">product.template.form.extend.loading.heyden</field>
-            <field name="model">product.template</field>
-            <field name="inherit_id" ref="kin_loading.product_template_form_extend_loading"/>
-            <field name="arch" type="xml">
-                <field name="white_product" position="after" >
-                    <field name="conv_rate" />
-                </field>
-            </field>
-        </record>
 
 
         <record id="purchase_order_form_loading_heyden" model="ir.ui.view">
-            <field name="name">purchase.order.form.loading</field>
+            <field name="name">purchase.order.form.heyden</field>
             <field name="model">purchase.order</field>
-            <field name="inherit_id" ref="kin_loading.purchase_order_form_loading" />
+            <field name="inherit_id" ref="purchase_order_secondary_unit.purchase_order_form" />
             <field name="arch" type="xml">
 
-                <field name="conv_rate" position="after" >
-                    <field name="product_qty_ltr" force_save="1" readonly="1" attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu"  />
-                    <field name="unit_price_ltr"  attrs="{'invisible': [('parent.is_purchase', '=', False)]}"  groups="kin_loading.group_show_purchase_menu" />
+                <field name="secondary_uom_qty" position="attributes" >
+                      <attribute name="string">MT Qty.</attribute>
+                      <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>
+                      <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
                 </field>
 
-                <field name="price_unit" position="attributes" >
-                    <attribute name="attrs">{'readonly': [('parent.is_purchase', '=', True)]}</attribute>
+                <field name="secondary_uom_id" position="attributes" >
+                      <attribute name="string">MT.</attribute>
+                      <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>
+                      <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
                 </field>
-
 
             </field>
         </record>
@@ -56,7 +48,6 @@
             <field name="arch" type="xml">
                 <field name="assigned_to" position="attributes" >
                      <attribute name="required">1</attribute>
-
                 </field>
                 <field name="requested_by" position="after" >
                     <field name="department_id" options="{'no_create': True, 'no_open': True}" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}" />

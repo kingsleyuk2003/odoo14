@@ -14,7 +14,7 @@ Heyden Modifications
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-     'depends': ['base','kin_loading','hr','hr_holidays','hr_contract','hr_employee_firstname','hr_employee_lastnames','stock_request','purchase_request'],
+     'depends': ['base','kin_loading','hr','hr_holidays','hr_contract','hr_employee_firstname','hr_employee_lastnames','stock_request','purchase_request','purchase_order_secondary_unit'],
     'data': [
         'security/ir.model.access.csv',
         'security/security.xml',

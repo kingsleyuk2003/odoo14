@@ -354,7 +354,7 @@ class PurchaseRequestLineMakePurchaseOrderItem(models.TransientModel):
         string="Copy descriptions to new PO",
         help="Set true if you want to keep the "
         "descriptions provided in the "
-        "wizard in the new PO.",
+        "wizard in the new PO.", default=True
     )
 
     @api.onchange("product_id")
