@@ -104,7 +104,7 @@
 	</record>
 
 		<record id="group_show_product_field_invoice" model="res.groups">
-			<field name="name">Show "Product field on Invoice" button </field>
+			<field name="name">Show "Product field" in Invoice</field>
 		 <field name="category_id" ref="module_category_accounting"/>
 	 </record>
 
