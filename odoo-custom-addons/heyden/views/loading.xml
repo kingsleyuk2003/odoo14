@@ -102,6 +102,14 @@
                 <field name="invoice_date" position="attributes" >
                      <attribute name="required" >True</attribute>
                 </field>
+                <div groups="account.group_account_invoice,account.group_account_readonly" class="alert alert-info" role="alert" style="margin-bottom:0px;" attrs="{'invisible': ['|', '|', ('move_type', 'not in', ('out_invoice', 'out_refund')), ('invoice_has_outstanding', '=', False), ('payment_state', 'not in', ('not_paid', 'partial'))]}"  position="replace"  >
+                       <div groups="account.group_account_invoice,account.group_account_readonly"
+                         class="alert alert-info" role="alert" style="margin-bottom:0px;"
+                         attrs="{'invisible': ['|', '|', ('move_type', 'not in', ('out_invoice', 'out_refund')), ('invoice_has_outstanding', '=', False), ('payment_state', 'not in', ('not_paid', 'partial'))]}">
+                        You have <bold><a class="alert-link" href="#outstanding" role="button">outstanding credits</a></bold> for this customer. You can allocate them to mark this invoice as paid.
+                    </div>
+                </div>
+
             </field>
         </record>
 
