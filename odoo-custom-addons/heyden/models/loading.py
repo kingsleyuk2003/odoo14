@@ -63,3 +63,42 @@ class PurchaseRequest(models.Model):
         self.assigned_to = self.sudo().department_id.manager_id.user_id
 
     department_id = fields.Many2one('hr.department', string='Department')
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    attachment = fields.Binary(string='Document Attachment')
+
+
+class PurchaseOrder(models.Model):
+    _inherit = 'purchase.order'
+
+    @api.model
+    def create(self,vals):
+        res = super(PurchaseOrder, self).create(vals)
+        return res
+
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+
+# Copyright 2018-2019 ForgeFlow, S.L.
+# ../odoo-custom-addons/purchase_request/wizard/purchase_request_line_make_purchase_order.py
+class PurchaseRequestLineMakePurchaseOrder(models.TransientModel):
+    _inherit = "purchase.request.line.make.purchase.order"
+
+    @api.model
+    def _prepare_purchase_order(self, picking_type, group_id, company, origin):
+        res = super(PurchaseRequestLineMakePurchaseOrder, self)._prepare_purchase_order(picking_type, group_id, company, origin)
+        pr_id = self.env.context.get('active_id',False)
+        pr_obj = self.env['purchase.request'].browse(pr_id)
+        res.update({'employee_id': pr_obj.employee_id.id})
+        return res
+
+
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
+
+    @api.model
+    def create(self,vals):
+        name = vals.get('name', False)
+        dup = self.search([('name','=',name)])
+        if dup :
+            raise UserError('Sorry, %s already exist' % (name))
+        res = super(ResPartner, self).create(vals)
+        return res

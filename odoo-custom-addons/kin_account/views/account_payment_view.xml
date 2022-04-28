@@ -18,6 +18,14 @@
                  <button name="action_cancel" position="attributes" >
                      <attribute name="groups">kin_account.group_show_cancel_button_receipt</attribute>
                  </button>
+
+                <field name="payment_type" position="attributes" >
+                     <attribute name="groups">kin_account.group_show_payment_type</attribute>
+                 </field>
+                <field name="partner_type" position="attributes" >
+                     <attribute name="groups">kin_account.group_show_partner_type</attribute>
+                 </field>
+
             </field>
 
         </record>

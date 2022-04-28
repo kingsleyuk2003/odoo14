@@ -13,6 +13,10 @@
             <field name="inherit_id" ref="purchase_order_secondary_unit.purchase_order_form" />
             <field name="arch" type="xml">
 
+                <field name="partner_ref" position="after" >
+                    <field name="employee_id" required="1" />
+                </field>
+
                 <field name="secondary_uom_qty" position="attributes" >
                       <attribute name="string">MT Qty.</attribute>
                       <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>
@@ -52,8 +56,43 @@
                 <field name="requested_by" position="after" >
                     <field name="department_id" options="{'no_create': True, 'no_open': True}" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                 </field>
+                <field name="description" position="after" >
+                    <field name="employee_id" required="1" />
+                    <field name="attachment" />
+                </field>
             </field>
          </record>
+
+
+        <!-- Partner Extend -->
+         <record id="view_res_partner_extend" model="ir.ui.view">
+            <field name="name" >res.partner.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+
+                <field name="mobile"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="phone"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                 <field name="email"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+            </field>
+         </record>
+
+         <record id="account.menu_action_account_payments_receivable" model="ir.ui.menu" >
+            <field name="name" >Customer's Receipts</field>
+        </record>
+         <record id="account.action_account_payments" model="ir.actions.act_window">
+            <field name="name" >Customer's Receipts</field>
+         </record>
+
+
 
     </data>
 </odoo>
