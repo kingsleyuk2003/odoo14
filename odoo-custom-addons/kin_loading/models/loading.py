@@ -126,11 +126,11 @@ class StockMoveLoading(models.Model):
     @api.model
     def create(self, vals):
         location_id = self.env.context.get('atl_depot_id', False)
-        location_dest_id = self.env.context.get('depot_id', False)
+        #location_dest_id = self.env.context.get('depot_id', False)
         if location_id :
             vals['location_id'] = location_id
-        if location_dest_id :
-            vals['location_dest_id'] = location_dest_id
+        # if location_dest_id :
+        #     vals['location_dest_id'] = location_dest_id
 
         res = super(StockMoveLoading,self).create(vals)
         return res
@@ -659,13 +659,13 @@ class StockPickingExtend(models.Model):
         authorization_code = self.env.context.get('authorization_code', False)
         loading_date = self.env.context.get('loading_date', False)
         location_id = self.env.context.get('atl_depot_id', False)
-        destination_id = self.env.context.get('depot_id',False)
+        #destination_id = self.env.context.get('depot_id',False)
 
         if location_id :
             vals['location_id'] = location_id
 
-        if destination_id :
-            vals['location_dest_id'] = destination_id
+        # if destination_id :
+        #     vals['location_dest_id'] = destination_id
 
         if authorization_code:
             vals['authorization_form_no'] = authorization_code
@@ -2299,7 +2299,36 @@ class SaleOrderLoading(models.Model):
             'res_model': action.res_model,
         }
 
-    def _get_invoiceable_lines(self, final=False):
+
+    def _default_get_invoiceable_lines(self, final=False):
+        """Return the invoiceable lines for order `self`."""
+        down_payment_line_ids = []
+        invoiceable_line_ids = []
+        pending_section = None
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+
+        for line in self.order_line:
+            if line.display_type == 'line_section':
+                # Only invoice the section if one of its lines is invoiceable
+                pending_section = line
+                continue
+            if line.display_type != 'line_note' and float_is_zero(line.qty_to_invoice, precision_digits=precision):
+                continue
+            if line.qty_to_invoice > 0 or (line.qty_to_invoice < 0 and final) or line.display_type == 'line_note':
+                if line.is_downpayment:
+                    # Keep down payment lines separately, to put them together
+                    # at the end of the invoice, in a specific dedicated section.
+                    down_payment_line_ids.append(line.id)
+                    continue
+                if pending_section:
+                    invoiceable_line_ids.append(pending_section.id)
+                    pending_section = None
+                invoiceable_line_ids.append(line.id)
+
+        return self.env['sale.order.line'].browse(invoiceable_line_ids + down_payment_line_ids)
+
+
+    def _get_invoicerrrrable_lines(self, final=False):
         invoiceable_line_ids = []
         pending_section = None
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
@@ -2749,7 +2778,49 @@ class SaleOrderLoading(models.Model):
 class SaleOrderLineLoading(models.Model):
     _inherit = "sale.order.line"
 
+    def _default_action_lauch_stock_rule(self,previous_product_uom_qty=False):
+        precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')
+        procurements = []
+        for line in self:
+            line = line.with_company(line.company_id)
+            if line.state != 'sale' or not line.product_id.type in ('consu', 'product'):
+                continue
+            qty = line._get_qty_procurement(previous_product_uom_qty)
+            if float_compare(qty, line.product_uom_qty, precision_digits=precision) >= 0:
+                continue
+
+            group_id = line._get_procurement_group()
+            if not group_id:
+                group_id = self.env['procurement.group'].create(line._prepare_procurement_group_vals())
+                line.order_id.procurement_group_id = group_id
+            else:
+                # In case the procurement group is already created and the order was
+                # cancelled, we need to update certain values of the group.
+                updated_vals = {}
+                if group_id.partner_id != line.order_id.partner_shipping_id:
+                    updated_vals.update({'partner_id': line.order_id.partner_shipping_id.id})
+                if group_id.move_type != line.order_id.picking_policy:
+                    updated_vals.update({'move_type': line.order_id.picking_policy})
+                if updated_vals:
+                    group_id.write(updated_vals)
+
+            values = line._prepare_procurement_values(group_id=group_id)
+            product_qty = line.product_uom_qty - qty
+
+            line_uom = line.product_uom
+            quant_uom = line.product_id.uom_id
+            product_qty, procurement_uom = line_uom._adjust_uom_quantities(product_qty, quant_uom)
+            procurements.append(self.env['procurement.group'].Procurement(
+                line.product_id, product_qty, procurement_uom,
+                line.order_id.partner_shipping_id.property_stock_customer,
+                line.name, line.order_id.name, line.order_id.company_id, values))
+        if procurements:
+            self.env['procurement.group'].run(procurements)
+        return True
+
     def _action_launch_stock_rule(self, previous_product_uom_qty=False):
+        if self.env.company.id != 1 :
+            return self._default_action_lauch_stock_rule(previous_product_uom_qty)
         """
         Launch procurement group run method with required/custom fields genrated by a
         sale order line. procurement group will launch '_run_pull', '_run_buy' or '_run_manufacture'
@@ -2792,11 +2863,6 @@ class SaleOrderLineLoading(models.Model):
             self.env['procurement.group'].run(procurements)
         return True
 
-    @api.model
-    def create(self, vals_list):
-        lines = super(SaleOrderLineLoading, self).create(vals_list)
-        lines.filtered(lambda line: line.state == 'atl_aaproved')._action_launch_stock_rule()
-        return lines
 
     def write(self, values):
         lines = self.env['sale.order.line']
@@ -2811,6 +2877,34 @@ class SaleOrderLineLoading(models.Model):
         if 'customer_lead' in values and self.state in ['sale','atl_approved'] and not self.order_id.commitment_date:
             # Propagate deadline on related stock move
             self.move_ids.date_deadline = self.order_id.date_order + timedelta(days=self.customer_lead or 0.0)
+        return res
+
+    def _prepare_invoice_line(self, **optional_values):
+        """
+        Prepare the dict of values to create the new invoice line for a sales order line.
+
+        :param qty: float quantity to invoice
+        :param optional_values: any parameter that should be added to the returned invoice line
+        """
+        self.ensure_one()
+        res = {
+            'display_type': self.display_type,
+            'sequence': self.sequence,
+            'name': self.name,
+            'product_id': self.product_id.id,
+            'product_uom_id': self.product_uom.id,
+            'quantity': self.qty_to_invoice,
+            'discount': self.discount,
+            'price_unit': self.price_unit,
+            'tax_ids': [(6, 0, self.tax_id.ids)],
+            'analytic_account_id': self.order_id.analytic_account_id.id,
+            'analytic_tag_ids': [(6, 0, self.analytic_tag_ids.ids)],
+            'sale_line_ids': [(4, self.id)],
+        }
+        if optional_values:
+            res.update(optional_values)
+        if self.display_type:
+            res['account_id'] = False
         return res
 
     def _prepare_invoice_line(self, **optional_values):
@@ -2839,9 +2933,6 @@ class SaleOrderLineLoading(models.Model):
         if self.display_type:
             res['account_id'] = False
         return res
-
-
-
 
 
     def action_view_order(self):
@@ -3529,7 +3620,7 @@ class Depot(models.Model):
                                           copy=False, default=0)
     stock_location_tmpl_id = fields.Many2one('stock.location', 'Stock Location Template', required=True,ondelete="cascade", select=True, auto_join=True)
     sale_order_ids = fields.One2many('sale.order','atl_depot_id', string='Sales Orders')
-    purchase_order_ids = fields.One2many('purchase.order', 'depot_id', string='Purchase Orders')
+    #purchase_order_ids = fields.One2many('purchase.order', 'depot_id', string='Purchase Orders')
     is_default_atl = fields.Boolean(string='Is Default ATL Depot')
 
 
@@ -3551,16 +3642,16 @@ class PaymentMode(models.Model):
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
-    def button_confirm(self):
-        if self.is_purchase and not self.depot_id :
-            raise UserError('Kindly set the depot for the product receipt')
-        ctx = {
-            'depot_id': self.depot_id.stock_location_tmpl_id.id
-        }
-        res = super(PurchaseOrder, self.with_context(ctx)).button_confirm()
-        return res
+    # def button_confirm(self):
+    #     if self.is_purchase and not self.depot_id :
+    #         raise UserError('Kindly set the depot for the product receipt')
+    #     ctx = {
+    #         'depot_id': self.depot_id.stock_location_tmpl_id.id
+    #     }
+    #     res = super(PurchaseOrder, self.with_context(ctx)).button_confirm()
+    #     return res
 
-    depot_id = fields.Many2one('depot', string='Depot')
+    #depot_id = fields.Many2one('depot', string='Depot')
     is_purchase = fields.Boolean('Is Purchase')
 
 

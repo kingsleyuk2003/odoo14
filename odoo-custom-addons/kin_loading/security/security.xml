@@ -78,8 +78,13 @@
         <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
     </record>
 
+     <record id="group_show_other_sales_menu" model="res.groups">
+        <field name="name">Show "Sales Orders" menu for Other Sales</field>
+        <field name="category_id" ref="module_depot"/>
+    </record>
+
      <record id="group_show_confirm_other_sale" model="res.groups">
-        <field name="name">Show "Confirm Other Sale" Button</field>
+        <field name="name">Show "Confirm Sale" Button for Other Sales</field>
         <field name="category_id" ref="module_depot"/>
     </record>
 
@@ -205,6 +210,7 @@
     </record>
 
 
+
    <record id="group_throughput_receipt" model="res.groups">
 			<field name="name">Throughput Receipt</field>
 			<field name="category_id" ref="module_depot"/>
@@ -219,7 +225,23 @@
 			<field name="name">Show "Validate" Button on Throughput Receipt</field>
 			<field name="category_id" ref="module_depot"/>
 		</record>
-    
+
+    <record id="group_show_in_depot_sales_order_menu" model="res.groups">
+			<field name="name">Show In Depot Sales Orders menu</field>
+			<field name="category_id" ref="module_depot"/>
+		</record>
+
+    <record id="group_show_throughput_sales_order_menu" model="res.groups">
+			<field name="name">Show Throughput Sales Orders menu</field>
+			<field name="category_id" ref="module_depot"/>
+		</record>
+
+    <record id="group_show_internal_use_order_menu" model="res.groups">
+			<field name="name">Show Internal User Orders menu</field>
+			<field name="category_id" ref="module_depot"/>
+		</record>
+
+
     <record id="group_internal_use" model="res.groups">
 			<field name="name">Internal Use</field>
 			<field name="category_id" ref="module_depot"/>

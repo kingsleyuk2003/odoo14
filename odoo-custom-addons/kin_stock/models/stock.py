@@ -47,20 +47,13 @@ class StockPicking(models.Model):
         if res != True and res.get('name') == 'Create Backorder?':
             return res
 
-        #create sales invoice
-        sale_order = self.sale_id
-        create_customer_invoice = self.env['ir.config_parameter'].sudo().get_param('create_customer_invoice', default=False)
-        post_customer_invoice = self.env['ir.config_parameter'].sudo().get_param('post_customer_invoice', default=False)
-        if sale_order and create_customer_invoice  :
-            inv = sale_order._create_invoices(final=True)
-            inv.sale_ids = sale_order
-            if post_customer_invoice :
-                inv.action_post()
-            inv.is_from_inventory = True
-            self.invoice_id = inv
+        self.create_sales_invoice()
+        self.create_purchase_bill()
 
+        return res
 
-        #create purchase bill
+    def create_purchase_bill(self):
+        # create purchase bill
         purchase_order = self.purchase_id
         create_vendor_bill = self.env['ir.config_parameter'].sudo().get_param('create_vendor_bill', default=False)
         post_vendor_bill = self.env['ir.config_parameter'].sudo().get_param('post_vendor_bill', default=False)
@@ -69,12 +62,24 @@ class StockPicking(models.Model):
             bill_id = dict['res_id']
             bill_move = self.env['account.move'].browse(bill_id)
             bill_move.invoice_date = fields.Datetime.now()
-            if post_vendor_bill :
+            if post_vendor_bill:
                 bill_move.action_post()
             bill_move.is_from_inventory = True
             self.invoice_id = bill_move
 
-        return res
+    def create_sales_invoice(self):
+        # create sales invoice
+        sale_order = self.sale_id
+        create_customer_invoice = self.env['ir.config_parameter'].sudo().get_param('create_customer_invoice',
+                                                                                   default=False)
+        post_customer_invoice = self.env['ir.config_parameter'].sudo().get_param('post_customer_invoice', default=False)
+        if sale_order and create_customer_invoice:
+            inv = sale_order._create_invoices(final=True)
+            inv.sale_ids = sale_order
+            if post_customer_invoice:
+                inv.action_post()
+            inv.is_from_inventory = True
+            self.invoice_id = inv
 
     @api.depends('purchase_id')
     def _compute_po_count(self):

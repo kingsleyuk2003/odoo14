@@ -4,7 +4,11 @@
 
         <menuitem id="menu_sales_atl" name="Sales/ATL Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
         <menuitem id="menu_sales_atl_report" name="Sales/ATL Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
-
+        <menuitem id="kin_loading.menu_sale_order_other"
+            name="Retail Sales Orders"
+            action="kin_loading.action_orders_other"
+            parent="sale.sale_order_menu"
+            sequence="2" groups="kin_loading.group_show_other_sales_menu"/>
 
 
         <record id="purchase_order_form_loading_heyden" model="ir.ui.view">
@@ -14,7 +18,7 @@
             <field name="arch" type="xml">
 
                 <field name="partner_ref" position="after" >
-                    <field name="employee_id" required="1" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
                 </field>
 
                 <field name="secondary_uom_qty" position="attributes" >
@@ -57,7 +61,7 @@
                     <field name="department_id" options="{'no_create': True, 'no_open': True}" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                 </field>
                 <field name="description" position="after" >
-                    <field name="employee_id" required="1" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
                     <field name="attachment" />
                 </field>
             </field>
