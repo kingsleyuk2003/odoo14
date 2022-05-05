@@ -717,6 +717,7 @@ class StockPickingExtend(models.Model):
         res = super(StockPickingExtend, self).create(vals)
         return res
 
+
     @api.depends('comp1_vol','comp2_vol','comp3_vol','comp4_vol','comp5_vol','comp6_vol','comp7_vol','comp8_vol')
     def _compute_ticket_param(self):
         for rec in self:

@@ -117,13 +117,13 @@
                     <attribute name="string" >Basic Salary</attribute>
                 </label>
 
-                 <label for="hra"   position="attributes" >
-                    <attribute name="string" >Housing Allowance</attribute>
-                </label>
+<!--                 <label for="hra"   position="attributes" >-->
+<!--                    <attribute name="string" >Housing Allowance</attribute>-->
+<!--                </label>-->
 
-                 <label for="travel_allowance"   position="attributes" >
-                    <attribute name="string" >Transport Allowance</attribute>
-                </label>
+<!--                 <label for="travel_allowance"   position="attributes" >-->
+<!--                    <attribute name="string" >Transport Allowance</attribute>-->
+<!--                </label>-->
 
 <!--                 <label for="da"   position="attributes" >-->
 <!--                    <attribute name="string" >Logistics / Call Allowance</attribute>-->
@@ -144,9 +144,9 @@
                         <field name="bank_account_no" />
                     </div>
 
-                <group name="allowances" position="attributes">
-                    <attribute name="invisible" >1</attribute>
-                </group>
+<!--                <group name="allowances" position="attributes">-->
+<!--                    <attribute name="invisible" >1</attribute>-->
+<!--                </group>-->
 
                 <group name="yearly_advantages"  position="attributes" >
                      <attribute name="invisible" >1</attribute>

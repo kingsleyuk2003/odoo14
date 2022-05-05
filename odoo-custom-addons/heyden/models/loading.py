@@ -161,6 +161,8 @@ class SaleOrder(models.Model):
                 invoiceable_line_ids.append(line.id)
         return self.env['sale.order.line'].browse(invoiceable_line_ids)
 
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
@@ -224,3 +226,21 @@ class SaleOrderLine(models.Model):
         if self.display_type:
             res['account_id'] = False
         return res
+
+
+class AccountMove(models.Model):
+    _inherit = 'account.move'
+
+    invoice_date = fields.Date(string='Invoice/Bill Date', readonly=True, index=True, copy=False,
+                               states={'draft': [('readonly', False)]}, default=lambda self: fields.Datetime.now())
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+
+class AccountPayment(models.Model):
+    _inherit = 'account.payment'
+
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+
+class AccountPayment(models.Model):
+    _inherit = 'stock.picking'
+
+    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
