@@ -105,6 +105,11 @@ class ResPartner(models.Model):
         res = super(ResPartner, self).create(vals)
         return res
 
+
+    manager = fields.Char(string='Manager')
+
+
+
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 

@@ -18,7 +18,7 @@
             <field name="arch" type="xml">
 
                 <field name="partner_ref" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
 
                 <field name="secondary_uom_qty" position="attributes" >
@@ -64,7 +64,7 @@
                     <field name="attachment" />
                 </field>
                 <field name="assigned_to" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
             </field>
          </record>
@@ -87,6 +87,9 @@
 
                  <field name="email"  position="attributes" >
                     <attribute name="required" >True</attribute>
+                </field>
+                <field name="vat" position="after" >
+                    <field name="manager" />
                 </field>
             </field>
          </record>
@@ -116,7 +119,7 @@
                     </div>
                 </div>
                 <field name="payment_reference" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
 
             </field>
@@ -128,7 +131,7 @@
             <field name="inherit_id" ref="account.view_account_payment_form" />
             <field name="arch" type="xml">
                 <field name="company_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
 
             </field>
@@ -141,7 +144,7 @@
             <field name="inherit_id" ref="stock.view_picking_form" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ('done'))]}" />
                 </field>
             </field>
         </record>
@@ -152,7 +155,7 @@
             <field name="inherit_id" ref="sale.view_order_form" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
             </field>
         </record>
@@ -163,7 +166,7 @@
             <field name="inherit_id" ref="kin_loading.view_order_form_other" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" />
+                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
                 </field>
             </field>
         </record>
