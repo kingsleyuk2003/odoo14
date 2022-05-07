@@ -14,6 +14,12 @@
             <field name="model">purchase.order</field>
             <field name="inherit_id" ref="purchase.purchase_order_form" />
             <field name="arch" type="xml">
+
+                <xpath expr="//button[@name='button_confirm']" position="before">
+                    <field name="is_request_approval_sent" invisible="1" />
+                       <button name="btn_request_approval" attrs="{'invisible': [('is_request_approval_sent', '=', True)]}" string="Request Approval" type="object" class="oe_highlight" groups="kin_purchase.group_purchase_order_show_request_approval_btn" />
+                </xpath>
+
                  <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
                      <attribute name="options" >{'no_open':True,'no_create':True}</attribute>

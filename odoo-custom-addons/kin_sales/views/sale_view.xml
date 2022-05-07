@@ -64,6 +64,10 @@
                 <xpath expr="//button[@id='action_confirm']" position="attributes">
                        <attribute name="groups" >kin_sales.group_show_confirm_sale_button</attribute>
                 </xpath>
+                <xpath expr="//button[@id='action_confirm']" position="before">
+                    <field name="is_request_approval_sent" invisible="1" />
+                       <button name="btn_request_approval" attrs="{'invisible': [('is_request_approval_sent', '=', True)]}" string="Request Approval" type="object" class="oe_highlight" groups="kin_sales.group_sales_order_show_request_approval_btn" />
+                </xpath>
 
                 <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
@@ -94,7 +98,7 @@
             </field>
         </record>
 
-        <!-- Sales Ordee Lines -->
+        <!-- Sales Order Lines -->
         <record id="view_order_line_tree_extend" model="ir.ui.view">
             <field name="name">sale.order.line.tree.extend</field>
             <field name="model">sale.order.line</field>

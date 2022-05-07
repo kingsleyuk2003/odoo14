@@ -11,6 +11,40 @@ from datetime import datetime,date, timedelta
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
+    def send_grp_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                              force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+    def button_draft(self):
+        self.is_request_approval_sent = False
+        self.is_request_approval_by = False
+        self.is_request_approval_date = False
+        return super(AccountMove, self).button_draft()
+
+    def btn_request_approval(self):
+        if self.state == 'posted':
+            raise UserError('Sorry, the record has already been posted')
+        if self.state == 'cancel':
+            raise UserError('Sorry, the record is cancelled')
+        msg = 'Journal/Invoice Entry (%s) from %s requires your approval' % (self.name, self.env.user.name)
+        self.send_grp_email(grp_name='kin_account.group_account_move_receive_request_approval_email', subject=msg, msg=msg)
+        self.is_request_approval_sent = True
+        self.is_request_approval_by = self.env.user
+        self.is_request_approval_date = fields.Datetime.now()
+
+    is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
+    is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
+    is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
 
     def action_view_po(self):
         action = self.env["ir.actions.actions"]._for_xml_id("purchase.purchase_form_action")
@@ -167,3 +201,7 @@ class AccountMove(models.Model):
     so_count = fields.Integer(compute="_compute_so_count", string='# of Sales Orders', copy=False, default=0)
     payment_id = fields.Many2one('account.payment',string='Payment')
     picking_id = fields.Many2one('stock.picking', string='Transfer Document')
+
+
+
+

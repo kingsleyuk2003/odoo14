@@ -17,6 +17,26 @@
 			<field name="category_id" ref="module_category_stock"/>
 		</record>
 
+	<record id="group_stock_picking_show_request_approval_btn" model="res.groups">
+			<field name="name">Show "Request Approval" Button for Stock Picking</field>
+			<field name="category_id" ref="module_category_stock"/>
+	</record>
+
+	<record id="group_stock_picking_receive_request_approval_email" model="res.groups">
+			<field name="name">Receive Request Approval Email for Stock Picking</field>
+			<field name="category_id" ref="module_category_stock"/>
+	</record>
+
+	<record id="group_landed_cost_show_request_approval_btn" model="res.groups">
+			<field name="name">Show "Request Approval" Button for Landed Cost</field>
+			<field name="category_id" ref="module_category_stock"/>
+	</record>
+
+	<record id="group_landed_cost_receive_request_approval_email" model="res.groups">
+			<field name="name">Receive Request Approval Email for Landed Cost</field>
+			<field name="category_id" ref="module_category_stock"/>
+	</record>
+
 	<record id="group_show_inventory_control" model="res.groups">
 			<field name="name">Show "Products" Menu</field>
 			<field name="category_id" ref="module_category_stock"/>

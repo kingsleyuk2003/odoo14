@@ -31,6 +31,40 @@ class SaleOrderExtend(models.Model):
     #         'state': 'sale'
     #     }
 
+
+
+    def send_grp_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            #self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+    def action_draft(self):
+        self.is_request_approval_sent = False
+        self.is_request_approval_by = False
+        self.is_request_approval_date = False
+        return super(SaleOrderExtend, self).action_draft()
+
+
+    def btn_request_approval(self):
+        if self.state == 'done' :
+            raise UserError('Sorry, the record has already been approved')
+        if self.state == 'cancel' :
+            raise UserError('Sorry, the record is cancelled')
+        msg = 'Sales Order (%s) from %s requires your approval' % (self.name,self.env.user.name)
+        self.send_grp_email(grp_name='kin_sales.group_sales_order_receive_request_approval_email',subject=msg, msg=msg)
+        self.is_request_approval_sent = True
+        self.is_request_approval_by = self.env.user
+        self.is_request_approval_date = fields.Datetime.now()
+
+
     def send_email(self, grp_name, subject, msg):
         partn_ids = []
         user_names = ''
@@ -296,7 +330,9 @@ class SaleOrderExtend(models.Model):
             order.invoice_count = len(invoices)
 
     invoice_ids = fields.Many2many("account.move", 'sales_account_move_rel', 'account_id', 'sale_id', string='Invoices', compute="_get_invoiced", readonly=True, copy=False, search="_search_invoice_ids")
-
+    is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
+    is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
+    is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'

@@ -51,6 +51,12 @@
                     <attribute name="duplicate">0</attribute>
                 </xpath>
 
+                <xpath expr="//button[@name='action_post']" position="before">
+                    <field name="is_request_approval_sent" invisible="1" />
+                       <button name="btn_request_approval" attrs="{'invisible': [('is_request_approval_sent', '=', True)]}" string="Request Approval" type="object" class="oe_highlight" groups="kin_account.group_account_move_show_request_approval_btn" />
+                </xpath>
+
+
                 <field name="partner_id" position="attributes" >
                     <attribute name="widget">False</attribute>
                 </field>

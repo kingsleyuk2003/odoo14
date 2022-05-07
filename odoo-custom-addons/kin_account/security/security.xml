@@ -43,6 +43,26 @@
 		<field name="category_id" ref="module_category_accounting"/>
 	</record>
 
+	<record id="group_account_move_show_request_approval_btn" model="res.groups">
+			<field name="name">Show "Request Approval" Button for Journal Entry</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
+	<record id="group_account_move_receive_request_approval_email" model="res.groups">
+			<field name="name">Receive Request Approval Email for Journal Entry</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
+	<record id="group_account_payment_show_request_approval_btn" model="res.groups">
+			<field name="name">Show "Request Approval" Button for Payment</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
+	<record id="group_account_payment_receive_request_approval_email" model="res.groups">
+			<field name="name">Receive Request Approval Email for Payment</field>
+			<field name="category_id" ref="module_category_accounting"/>
+	</record>
+
 	<record id="group_show_post_journal_entry_button" model="res.groups">
 			<field name="name">Show "Post" button </field>
 		 <field name="category_id" ref="module_category_accounting"/>
