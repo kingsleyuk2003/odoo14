@@ -271,6 +271,14 @@
                     <button name="btn_request_approval" attrs="{'invisible': [('is_request_approval_sent', '=', True)]}" string="Request Approval" type="object" class="oe_highlight" groups="kin_stock.group_landed_cost_show_request_approval_btn" />
                 </button>
 
+                <button name="button_validate" position="attributes" >
+                        <attribute name="groups" >kin_stock.group_stock_landed_cost_validate_button</attribute>
+                </button>
+                <button name="button_cancel"  position="attributes" >
+                        <attribute name="groups" >kin_stock.group_stock_landed_cost_stock_cancel_button</attribute>
+                </button>
+
+
 
             </field>
         </record>
