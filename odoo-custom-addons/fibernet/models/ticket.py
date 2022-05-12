@@ -158,7 +158,7 @@ class Ticket(models.Model):
             # date_diff = today - open_date
             # open_date_format = datetime.strptime(open_date, '%Y-%m-%d %H:%M:%S').strftime('%d-%m-%Y %H:%M:%S')
 
-            # send email
+             # send email
             partn_ids = []
             user_names = ''
             group_obj = self.env.ref('fibernet.group_receive_ticket_escalation_email')
