@@ -13,6 +13,19 @@
             <field name="nextcall" eval="(DateTime.now() + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
             <field name="doall" eval="False"/>
         </record>
+
+        <record forcecreate="True" id="ir_cron_run_escalate_check" model="ir.cron">
+            <field name="name">Run Escalation Check</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_escalate_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
     </data>
 </odoo>
 

@@ -107,6 +107,14 @@
                      <attribute name="groups" >kin_account.group_show_product_field_invoice</attribute>
                 </field>
 
+                 <field name="analytic_account_id" position="attributes"  >
+                    <attribute name="options">{'no_open':True,'no_create':True}</attribute>
+                </field>
+
+                 <field name="analytic_tag_ids" position="attributes"  >
+                    <attribute name="options">{'no_open':True,'no_create':True}</attribute>
+                </field>
+
 
                  <page id="aml_tab" position="attributes" >
                           <attribute name="groups" >kin_account.group_show_move_lines</attribute>

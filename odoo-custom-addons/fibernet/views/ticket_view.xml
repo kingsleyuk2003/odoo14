@@ -31,7 +31,7 @@
                       <attribute  name="states" >maint_approve,new</attribute>
                  </button>
                  <button name="btn_ticket_close" position="attributes" >
-                     <attribute  name="states" >finalized</attribute>
+                     <attribute  name="states" >finalized,archived</attribute>
                  </button>
                 <button name="btn_ticket_cancel" position="attributes" >
                      <attribute  name="states" >new,maint_approve,progress,done,finalized,archived</attribute>
@@ -93,8 +93,8 @@
 
                  <field name="user_ticket_group_id" position="attributes" >
                     <attribute name="required" >1</attribute>
-                     <attribute name="readonly" >1</attribute>
-                     <attribute name="force_save" >1</attribute>
+<!--                     <attribute name="readonly" >1</attribute>-->
+<!--                     <attribute name="force_save" >1</attribute>-->
                 </field>
 
                 <field name="name" position="before" >
@@ -347,6 +347,11 @@
                                 <field name="last_log_datetime"  readonly="1" />
                                  <field name="last_log_user_id" readonly="1"  />
                                 <field name="last_log_message" readonly="1" />
+                            </group>
+                            <group string="Escalation" >
+                                <field name="expiry_date"  />
+                                <field name="is_escalation_email_sent"  readonly="1" />
+                                <field name="is_escalation_email_sent_date"  readonly="1" />
                             </group>
                         </group>
                     </page>

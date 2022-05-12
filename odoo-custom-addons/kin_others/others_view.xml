@@ -36,6 +36,20 @@
             </field>
         </record>
 
+        <record model="ir.ui.view" id="email_compose_message_wizard_form_extend">
+            <field name="name">mail.compose.message.extend</field>
+            <field name="model">mail.compose.message</field>
+             <field name="inherit_id" ref="mail.email_compose_message_wizard_form"/>
+            <field name="arch" type="xml">
+
+                <field name="partner_ids" position="attributes" >
+                    <attribute name="options" >{'no_open': True, 'no_create': True}</attribute>
+                </field>
+
+            </field>
+         </record>
+
+
 
     </data>
 </odoo>

@@ -6,6 +6,13 @@
             <field name="name">Fibernet Modifications</field>
 	</record>
 
+    <record id="group_receive_ticket_escalation_email" model="res.groups">
+			<field name="name">Receive "Ticket Escalation" Email Notification</field>
+			<field name="comment" >The people that should be notified will get an email when a ticket is escalated</field>
+			<field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
+
     <record id="group_receive_quotation_confirmed_email" model="res.groups">
 			<field name="name">Receive "Manager Make Order" Email Notification</field>
 			<field name="comment" >The people that should be notified will get an email when a quotation is confirmed</field>

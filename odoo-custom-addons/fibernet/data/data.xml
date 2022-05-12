@@ -37,6 +37,23 @@
             <field name="code" >change_request</field>
         </record>
 
+        <record model="kin.ticket.category" id="backend_support">
+          <field name="name">Backend Support</field>
+            <field name="code" >backend_support</field>
+        </record>
+
+        <record model="kin.ticket.category" id="software_support">
+          <field name="name">Software Support</field>
+            <field name="code" >software_support</field>
+        </record>
+
+        <record model="kin.ticket.category" id="account_support">
+          <field name="name">Account Support</field>
+            <field name="code" >account_support</field>
+        </record>
+
+
+
 
 
     </data>

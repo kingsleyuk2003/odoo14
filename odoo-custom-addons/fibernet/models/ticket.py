@@ -146,6 +146,38 @@ class Ticket(models.Model):
     _inherit = 'kin.ticket'
     _rec_name = 'ticket_id'
 
+    @api.model
+    def run_escalate_check(self):
+        now = datetime.now()
+        records = self.search([('expiry_date', '<', now), ('state', 'not in', ('draft','closed')), ('is_escalation_email_sent', '=', False)])
+
+        for record in records:
+            # open_date = prospect.open_date
+            # today = datetime.strptime(datetime.today().strftime('%Y-%m-%d %H:%M:%S'), DEFAULT_SERVER_DATETIME_FORMAT)
+            # open_date = datetime.strptime(open_date, '%Y-%m-%d %H:%M:%S')
+            # date_diff = today - open_date
+            # open_date_format = datetime.strptime(open_date, '%Y-%m-%d %H:%M:%S').strftime('%d-%m-%Y %H:%M:%S')
+
+            # send email
+            partn_ids = []
+            user_names = ''
+            group_obj = self.env.ref('fibernet.group_receive_ticket_escalation_email')
+            for user in group_obj.users:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+            if partn_ids:
+                subject = '%s Ticket (%s) Escalation Notification' % (record.category_id.name,record.ticket_id)
+                msg = 'The is to inform you that the ticket (%s) with id: (%s) , for the category (%s) has not be closed within the stipulated time of 30minutes.' % (record.name,record.ticket_id, record.category_id.name)
+
+                record.message_post(
+                body = msg,
+                subject = subject, partner_ids = partn_ids,
+                subtype_xmlid = 'mail.mt_comment')
+                record.is_escalation_email_sent = True
+                record.is_escalation_email_sent_date = datetime.now()
+        return True
+
 
     @api.onchange('area_customer_id')
     def _set_assigned_user_group_from_area(self):
@@ -691,6 +723,23 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'csc@fibernet.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+        if self.category_id in [self.env.ref('fibernet.backend_support'), self.env.ref('fibernet.software_support'), self.env.ref('fibernet.account_support')]:
+            self.expiry_date = datetime.now() + relativedelta(minutes=+30)
+            # send carbon copy email to assigned group
+            csc_users = []
+            user_ticket_groups = self.env.user.user_ticket_group_ids
+            for user_ticket_group in user_ticket_groups:
+                if user_ticket_group.is_csc_group:
+                    csc_users = user_ticket_group.sudo().user_ids
+
+            msg = 'The Ticket (%s) with description (%s), has been Opened by %s' % (
+                self.ticket_id, self.name, self.env.user.name)
+            partn_csc_ids = []
+            for user in csc_users:
+                if user.is_group_email:
+                    user_names += user.name + ", "
+                    partn_csc_ids.append(user.partner_id.id)
+
         return
 
 
@@ -802,6 +851,10 @@ class Ticket(models.Model):
     def btn_ticket_reset(self):
         for rec in self:
             rec.invoice_id.unlink()
+            rec.is_escalation_email_sent = False
+            rec.is_escalation_email_sent_date = False
+            rec.expiry_date = False
+
         if self.category_id == self.env.ref('fibernet.request'):
             self.prospect_id.unlink()
         return super(Ticket, self).btn_ticket_reset()
@@ -1140,7 +1193,8 @@ class Ticket(models.Model):
                 self.state = 'finalized'
                 self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
-            self.partner_id.amount = self.order_id.amount_total
+            mrc_subscription = self.order_id.order_line.filtered(lambda line: line.product_id.is_sub == True)
+            self.partner_id.amount = mrc_subscription.price_unit
             self.partner_id.action_create_customer_selfcare()
 
             self.partner_id.status = 'active'
@@ -1491,6 +1545,10 @@ class Ticket(models.Model):
     assigned_eng_user_ids = fields.Many2many(related='user_ticket_group_id.user_ids', string='Engineers')
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
+
+    expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
+    is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
+    is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')
 
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
