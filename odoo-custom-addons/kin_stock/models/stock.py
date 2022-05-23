@@ -96,6 +96,8 @@ class StockPicking(models.Model):
                 bill_move.action_post()
             bill_move.is_from_inventory = True
             self.invoice_id = bill_move
+            return bill_move
+        return False
 
     def create_sales_invoice(self):
         # create sales invoice
@@ -110,6 +112,8 @@ class StockPicking(models.Model):
                 inv.action_post()
             inv.is_from_inventory = True
             self.invoice_id = inv
+            return inv
+        return False
 
     @api.depends('purchase_id')
     def _compute_po_count(self):

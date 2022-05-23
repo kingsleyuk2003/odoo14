@@ -15,12 +15,30 @@
             <field name="arch" type="xml">
                 <search position="inside">
                     <group string="Approval Status">
-                        <filter string="Awaiting My Approval" name="awaiting_approval" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
+                        <filter string="Awaiting My Validation" name="awaiting_validation" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
                          <filter string="Validated" name="validated" domain="[('validated', '=', True)]" />
+                        <filter string="Validated Yet Awaiting Posting" name="validated" domain="[('validated', '=', True),('state','!=','posted')]" />
                     </group>
                 </search>
             </field>
         </record>
+
+        <record id="view_account_invoice_filter_extend" model="ir.ui.view">
+            <field name="name">account.move.select.invoice.tier</field>
+            <field name="model">account.move</field>
+         <field name="inherit_id" ref="account.view_account_invoice_filter" />
+            <field name="arch" type="xml">
+                <search position="inside">
+                    <group string="Approval Status">
+                        <filter string="Awaiting My Validation" name="awaiting_validation" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
+                         <filter string="Validated" name="validated" domain="[('validated', '=', True)]" />
+                        <filter string="Validated Yet Awaiting Posting" name="validated" domain="[('validated', '=', True),('state','!=','posted')]" />
+                    </group>
+                </search>
+            </field>
+        </record>
+
+
 
 
     </data>

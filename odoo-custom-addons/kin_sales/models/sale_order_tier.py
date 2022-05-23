@@ -14,6 +14,14 @@ class SaleOrder(models.Model):
     _state_to = ['sale']
     _tier_validation_manual_config = False
 
+    @api.model
+    def _get_under_validation_exceptions(self):
+        res = super(SaleOrder, self)._get_under_validation_exceptions()
+        res.append("is_request_approval_sent")
+        res.append("is_request_approval_by")
+        res.append("is_request_approval_date")
+        return res
+
 
 class TierDefinition(models.Model):
     _inherit = 'tier.definition'

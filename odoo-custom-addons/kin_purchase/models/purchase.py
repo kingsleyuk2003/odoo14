@@ -21,6 +21,21 @@ class PurchaseOrder(models.Model):
                               force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            #self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
     def button_draft(self):
         self.is_request_approval_sent = False
         self.is_request_approval_by = False
@@ -37,6 +52,15 @@ class PurchaseOrder(models.Model):
         self.is_request_approval_sent = True
         self.is_request_approval_by = self.env.user
         self.is_request_approval_date = fields.Datetime.now()
+
+    def button_confirm(self):
+        # Receive sales order approved email notification
+        msg = 'A New purchase order has been approved  with source document (%s)  for the vendor (%s)' % (
+                            self.name, self.partner_id.name)
+        self.send_email(grp_name='kin_purchase.group_purchase_order_approved_email',
+                        subject=msg,
+                        msg=msg)
+        return super(PurchaseOrder, self).button_confirm()
 
     @api.depends('order_line.invoice_lines.move_id')
     def _compute_invoice(self):

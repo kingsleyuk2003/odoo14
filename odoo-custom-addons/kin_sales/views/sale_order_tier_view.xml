@@ -10,8 +10,9 @@
             <field name="arch" type="xml">
                     <search position="inside">
                         <group string="Approval Status">
-                            <filter string="Awaiting my Approval" name="awaiting_approval" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
+                            <filter string="Awaiting My Validation" name="awaiting_validation" domain="[('reviewer_ids', '=', uid),('state','not in',('done','cancel'))]" />
                              <filter string="Validated" name="validated" domain="[('validated', '=', True)]" />
+                            <filter string="Validated Yet Awaiting Approval" name="validated" domain="[('validated', '=', True),('state','not in',('sale','done'))]" />
                         </group>
                     </search>
 

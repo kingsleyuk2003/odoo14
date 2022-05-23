@@ -254,10 +254,10 @@ class SaleOrderExtend(models.Model):
 
 
         #Receive sales order approved email notification
+        msg = 'A New sales order has been approved  with source document (%s)  for the customer (%s)' % (
+                            self.name, self.partner_id.name)
         self.send_email(grp_name='kin_sales.group_sales_order_approved_email',
-                        subject='A New sales order has been finally  with source document (%s) has been created for the customer (%s)' % (
-                            self.name, self.partner_id.name),
-                        msg='A New Draft Invoice with Source Document Number (%s) has been created. Crosscheck and validate the invoice' % self.name)
+                        subject=msg, msg=msg)
 
 
 

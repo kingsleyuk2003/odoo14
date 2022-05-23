@@ -36,8 +36,29 @@ class AccountMove(models.Model):
             raise UserError('Sorry, the record has already been posted')
         if self.state == 'cancel':
             raise UserError('Sorry, the record is cancelled')
-        msg = 'Journal/Invoice Entry (%s) from %s requires your approval' % (self.name, self.env.user.name)
-        self.send_grp_email(grp_name='kin_account.group_account_move_receive_request_approval_email', subject=msg, msg=msg)
+
+        doc_type = ''
+        grp = ''
+        if self.move_type == 'out_invoice':
+            doc_type = 'Invoice'
+            grp = 'kin_account.group_account_move_receive_request_approval_invoice_email'
+        elif self.move_type == 'out_refund':
+            doc_type = 'Credit Note'
+            grp = 'kin_account.group_account_move_receive_request_approval_invoice_email'
+        elif self.move_type == 'in_invoice':
+            doc_type = 'Bill'
+            grp = 'kin_account.group_account_move_receive_request_approval_bill_email'
+        elif self.move_type == 'in_refund':
+            doc_type = 'Debit Note'
+            grp = 'kin_account.group_account_move_receive_request_approval_bill_email'
+        elif self.move_type == 'entry':
+            doc_type = 'Journal Entry'
+            grp = 'kin_account.group_account_move_receive_request_approval_entry_email'
+
+        msg = '%s Entry (%s) from %s requires your approval' % (doc_type,self.name, self.env.user.name)
+        self.send_grp_email(grp_name=grp, subject=msg, msg=msg)
+
+
         self.is_request_approval_sent = True
         self.is_request_approval_by = self.env.user
         self.is_request_approval_date = fields.Datetime.now()

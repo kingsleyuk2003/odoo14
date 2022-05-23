@@ -717,7 +717,6 @@ class StockPickingExtend(models.Model):
         res = super(StockPickingExtend, self).create(vals)
         return res
 
-
     @api.depends('comp1_vol','comp2_vol','comp3_vol','comp4_vol','comp5_vol','comp6_vol','comp7_vol','comp8_vol')
     def _compute_ticket_param(self):
         for rec in self:
@@ -1241,6 +1240,10 @@ class SaleOrderLoading(models.Model):
                 order.unlink()
 
         return True
+
+    def btn_request_approval(self):
+        self.action_submit_quote()
+        return super(SaleOrderLoading, self).btn_request_approval()
 
     def btn_print_atl(self):
         return self.env.ref('kin_loading.action_report_atl').report_action(self)
@@ -2778,6 +2781,8 @@ class SaleOrderLoading(models.Model):
 
 class SaleOrderLineLoading(models.Model):
     _inherit = "sale.order.line"
+
+
 
     def _default_action_lauch_stock_rule(self,previous_product_uom_qty=False):
         precision = self.env['decimal.precision'].precision_get('Product Unit of Measure')

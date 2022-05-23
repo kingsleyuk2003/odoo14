@@ -14,6 +14,29 @@ class StockPicking(models.Model):
     _state_to = ["done"]
     _tier_validation_manual_config = False
 
+    @api.model
+    def _get_under_validation_exceptions(self):
+        res = super(StockPicking, self)._get_under_validation_exceptions()
+        res.append("is_request_approval_sent")
+        res.append("is_request_approval_by")
+        res.append("is_request_approval_date")
+        return res
+
+class StockLandedCost(models.Model):
+    _name = 'stock.landed.cost'
+    _inherit = ['stock.landed.cost','tier.validation']
+    _state_from = ["draft"]
+    _state_to = ["posted"]
+    _tier_validation_manual_config = False
+
+    @api.model
+    def _get_under_validation_exceptions(self):
+        res = super(StockLandedCost, self)._get_under_validation_exceptions()
+        res.append("is_request_approval_sent")
+        res.append("is_request_approval_by")
+        res.append("is_request_approval_date")
+        return res
+
 
 class TierDefinition(models.Model):
     _inherit = 'tier.definition'

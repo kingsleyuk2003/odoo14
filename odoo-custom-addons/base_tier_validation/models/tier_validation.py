@@ -7,7 +7,6 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
-from odoo.osv import expression
 
 
 class TierValidation(models.AbstractModel):
@@ -31,13 +30,16 @@ class TierValidation(models.AbstractModel):
         domain=lambda self: [("model", "=", self._name)],
         auto_join=True,
     )
+    to_validate_message = fields.Html(compute="_compute_validated_rejected")
     validated = fields.Boolean(
         compute="_compute_validated_rejected", search="_search_validated"
     )
+    validated_message = fields.Html(compute="_compute_validated_rejected")
     need_validation = fields.Boolean(compute="_compute_need_validation")
     rejected = fields.Boolean(
         compute="_compute_validated_rejected", search="_search_rejected"
     )
+    rejected_message = fields.Html(compute="_compute_validated_rejected")
     reviewer_ids = fields.Many2many(
         string="Reviewers",
         comodel_name="res.users",
@@ -48,6 +50,7 @@ class TierValidation(models.AbstractModel):
         compute="_compute_can_review", search="_search_can_review"
     )
     has_comment = fields.Boolean(compute="_compute_has_comment")
+    next_review = fields.Char(compute="_compute_next_review")
 
     def _compute_has_comment(self):
         for rec in self:
@@ -104,18 +107,24 @@ class TierValidation(models.AbstractModel):
         assert operator in ("=", "!="), "Invalid domain operator"
         assert value in (True, False), "Invalid domain value"
         pos = self.search([(self._state_field, "in", self._state_from)]).filtered(
-            lambda r: r.review_ids and r.validated == value
+            lambda r: r.validated
         )
-        return [("id", "in", pos.ids)]
+        if value:
+            return [("id", "in", pos.ids)]
+        else:
+            return [("id", "not in", pos.ids)]
 
     @api.model
     def _search_rejected(self, operator, value):
         assert operator in ("=", "!="), "Invalid domain operator"
         assert value in (True, False), "Invalid domain value"
         pos = self.search([(self._state_field, "in", self._state_from)]).filtered(
-            lambda r: r.review_ids and r.rejected == value
+            lambda r: r.rejected
         )
-        return [("id", "in", pos.ids)]
+        if value:
+            return [("id", "in", pos.ids)]
+        else:
+            return [("id", "not in", pos.ids)]
 
     @api.model
     def _search_reviewer_ids(self, operator, value):
@@ -135,10 +144,42 @@ class TierValidation(models.AbstractModel):
         )
         return [("id", model_operator, list(set(reviews.mapped("res_id"))))]
 
+    def _get_to_validate_message_name(self):
+        return self._description
+
+    def _get_to_validate_message(self):
+        return (
+            """<i class="fa fa-info-circle" /> %s"""
+            % _("This %s needs to be validated")
+            % self._get_to_validate_message_name()
+        )
+
+    def _get_validated_message(self):
+        msg = """<i class="fa fa-thumbs-down" /> %s""" % _(
+            """Operation has been <b>validated</b>!"""
+        )
+        return self.validated and msg or ""
+
+    def _get_rejected_message(self):
+        msg = """<i class="fa fa-thumbs-down" /> %s""" % _(
+            """Operation has been <b>rejected</b>."""
+        )
+        return self.rejected and msg or ""
+
     def _compute_validated_rejected(self):
         for rec in self:
             rec.validated = self._calc_reviews_validated(rec.review_ids)
+            rec.validated_message = rec._get_validated_message()
             rec.rejected = self._calc_reviews_rejected(rec.review_ids)
+            rec.rejected_message = rec._get_rejected_message()
+            rec.to_validate_message = rec._get_to_validate_message()
+
+    def _compute_next_review(self):
+        for rec in self:
+            review = rec.review_ids.sorted("sequence").filtered(
+                lambda l: l.status == "pending"
+            )[:1]
+            rec.next_review = review and _("Next: %s") % review.name or ""
 
     @api.model
     def _calc_reviews_validated(self, reviews):
@@ -166,10 +207,11 @@ class TierValidation(models.AbstractModel):
             )
 
     def evaluate_tier(self, tier):
-        domain = []
         if tier.definition_domain:
             domain = literal_eval(tier.definition_domain)
-        return self.search(expression.AND([[("id", "=", self.id)], domain]))
+            return self.filtered_domain(domain)
+        else:
+            return self
 
     @api.model
     def _get_under_validation_exceptions(self):
@@ -185,19 +227,41 @@ class TierValidation(models.AbstractModel):
                 return False
         return True
 
+    def _check_tier_state_transition(self, vals):
+        """
+        Check we are in origin state and not destination state
+        """
+        self.ensure_one()
+        return getattr(self, self._state_field) in self._state_from and not vals.get(
+            self._state_field
+        ) in (self._state_to + [self._cancel_state])
+
     def write(self, vals):
-        for rec in self:
+        new_self = self
+        if (
+            "from_review_systray" in self.env.context
+            and "active_test" in self.env.context
+        ):
+            context = self.env.context.copy()
+            context.pop("active_test")
+            new_self = self.with_context(context)
+        for rec in new_self:
             if rec._check_state_conditions(vals):
                 if rec.need_validation:
                     # try to validate operation
                     reviews = rec.request_validation()
                     rec._validate_tier(reviews)
-                    if not self._calc_reviews_validated(reviews):
+                    if not new_self._calc_reviews_validated(reviews):
+                        pending_reviews = reviews.filtered(
+                            lambda r: r.status == "pending"
+                        ).mapped("name")
                         raise ValidationError(
                             _(
                                 "This action needs to be validated for at least "
-                                "one record. \nPlease request a validation."
+                                "one record. Reviews pending:\n - %s "
+                                "\nPlease request a validation."
                             )
+                            % "\n - ".join(pending_reviews)
                         )
                 if rec.review_ids and not rec.validated:
                     raise ValidationError(
@@ -208,15 +272,15 @@ class TierValidation(models.AbstractModel):
                     )
             if (
                 rec.review_ids
-                and getattr(rec, self._state_field) in self._state_from
-                and not vals.get(self._state_field)
-                in (self._state_to + [self._cancel_state])
-                and not self._check_allow_write_under_validation(vals)
+                and rec._check_tier_state_transition(vals)
+                and not rec._check_allow_write_under_validation(vals)
             ):
                 raise ValidationError(_("The operation is under validation."))
-        if vals.get(self._state_field) in self._state_from:
-            self.mapped("review_ids").unlink()
-        return super(TierValidation, self).write(vals)
+        if vals.get(new_self._state_field) in (
+            new_self._state_from + [new_self._cancel_state]
+        ):
+            new_self.mapped("review_ids").unlink()
+        return super(TierValidation, new_self).write(vals)
 
     def _check_state_conditions(self, vals):
         self.ensure_one()
@@ -251,11 +315,14 @@ class TierValidation(models.AbstractModel):
     def _get_rejected_notification_subtype(self):
         return "base_tier_validation.mt_tier_validation_rejected"
 
+    def _get_restarted_notification_subtype(self):
+        return "base_tier_validation.mt_tier_validation_restarted"
+
     def _notify_accepted_reviews(self):
         post = "message_post"
         if hasattr(self, post):
             # Notify state change
-            getattr(self, post)(
+            getattr(self.sudo(), post)(
                 subtype_xmlid=self._get_accepted_notification_subtype(),
                 body=self._notify_accepted_reviews_body(),
             )
@@ -320,7 +387,7 @@ class TierValidation(models.AbstractModel):
         post = "message_post"
         if hasattr(self, post):
             # Notify state change
-            getattr(self, post)(
+            getattr(self.sudo(), post)(
                 subtype_xmlid=self._get_rejected_notification_subtype(),
                 body=self._notify_rejected_review_body(),
             )
@@ -388,11 +455,23 @@ class TierValidation(models.AbstractModel):
         self._notify_review_requested(created_trs)
         return created_trs
 
+    def _notify_restarted_review_body(self):
+        return _("The review has been reset by %s.") % (self.env.user.name)
+
+    def _notify_restarted_review(self):
+        post = "message_post"
+        if hasattr(self, post):
+            getattr(self.sudo(), post)(
+                subtype_xmlid=self._get_restarted_notification_subtype(),
+                body=self._notify_restarted_review_body(),
+            )
+
     def restart_validation(self):
         for rec in self:
             if getattr(rec, self._state_field) in self._state_from:
                 rec.mapped("review_ids").unlink()
                 self._update_counter()
+            rec._notify_restarted_review()
 
     @api.model
     def _update_counter(self):

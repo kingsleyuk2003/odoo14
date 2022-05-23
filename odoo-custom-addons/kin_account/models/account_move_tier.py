@@ -14,6 +14,27 @@ class AccountMove(models.Model):
     _state_to = ["posted"]
     _tier_validation_manual_config = False
 
+    @api.model
+    def _get_under_validation_exceptions(self):
+        res = super(AccountMove, self)._get_under_validation_exceptions()
+        res.append("is_request_approval_sent")
+        res.append("is_request_approval_by")
+        res.append("is_request_approval_date")
+        res.append("posted_before")
+        res.append("amount_in_words")
+        res.append("description_report")
+        res.append("po_count")
+        res.append("so_count")
+        res.append("state")
+        res.append("invoice_line_ids")
+        res.append("line_ids")
+
+
+
+
+
+        return res
+
 
 class TierDefinition(models.Model):
     _inherit = 'tier.definition'
