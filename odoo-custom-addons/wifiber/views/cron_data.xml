@@ -13,6 +13,45 @@
             <field name="nextcall" eval="(DateTime.now() + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
             <field name="doall" eval="False"/>
         </record>
+
+        <record forcecreate="True" id="ir_cron_run_ticket_check" model="ir.cron">
+            <field name="name">Ticket Escalation Check</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_escalate_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
+        <record forcecreate="True" id="ir_cron_run_ticket_every_twelve_hours_check" model="ir.cron">
+            <field name="name">12 Hours Ticket Escalation Check</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_escalate_twelve_hours_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">12</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(hours=12)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
+        <record forcecreate="True" id="ir_cron_run_stock_picking_wifiber_check" model="ir.cron">
+            <field name="name">Stock Picking Escalation Check</field>
+            <field name="model_id" ref="model_stock_picking"/>
+            <field name="state">code</field>
+            <field name="code">model.run_escalate_stock_picking_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">2</field>
+            <field name="interval_type">hours</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(hours=2)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
     </data>
 </odoo>
 

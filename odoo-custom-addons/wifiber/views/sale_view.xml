@@ -440,14 +440,7 @@
                       <attribute name="invisible" >1</attribute>
                 </xpath>
 
-                <field name="payment_term_id" position="after"  >
-                      <field name="is_special_other_sme" invisible="1" />
-                 </field>
 
-                <field name="order_line" position="attributes" >
-                    <attribute name="force_save" >1</attribute>
-                    <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
-                </field>
                  <xpath expr="//field[@name='order_line']/form"  position="replace" />
                  <xpath expr="//field[@name='order_line']/kanban"  position="replace" />
 
@@ -507,8 +500,14 @@
                 <field name="inherit_id" ref="product.product_template_form_view"/>
                 <field name="arch" type="xml">
                     <div name="options" position="inside" >
-                        <field name="is_sub" />
+                       <div>
+                           <field name="is_sub" />
                         <label for="is_sub"/>
+                       </div>
+                        <div>
+                            <field name="is_material" />
+                           <label for="is_material" />
+                        </div>
                     </div>
                     <field name="categ_id" position="before"  >
                         <field name="selfcare_package_id"/>
@@ -637,9 +636,6 @@
         <field name="type">form</field>
         <field name="inherit_id" ref="sale_management.sale_order_template_view_form" />
         <field name="arch" type="xml">
-             <field name="company_id" position="after">
-                    <field name="is_special_other_sme" />
-            </field>
             <xpath expr="//tree/field[@name='product_uom_qty']"  position="after">
                     <field name="amount" required="1" />
             </xpath>

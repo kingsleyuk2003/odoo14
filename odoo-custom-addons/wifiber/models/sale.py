@@ -52,6 +52,42 @@ class SaleOrderExtend(models.Model):
             self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+    def send_sale_order_email(self):
+        partner_id = self.partner_id
+        if not partner_id.email:
+            raise UserError(
+                'Kindly set the email for the %s with client id %s, in the customers database, before this order can be sent' % (
+                    partner_id.name, partner_id.ref or ''))
+
+        report = self.env.ref('sale.action_report_pro_forma_invoice')._render_qweb_pdf(self.id)
+        name = '%s Proforma Invoice (%s)' % (self.env.company.name, self.name)
+        filename = name + '.pdf'
+        receipt = self.env['ir.attachment'].create({
+            'name': filename,
+            'type': 'binary',
+            'datas': base64.b64encode(report[0]),
+            'store_fname': filename,
+            'res_model': 'sale.order',
+            'res_id': self.id,
+            # 'mimetype': 'application/x-pdf'
+        })
+        msg = "<p>Dear %s</p><p>Thank you for your order. See attached document for your proforma invoice %s amounting to %s from %s.</p><p>Do not hesitate to contact us if you have any questions.</p><p>Best regards,</p>" % (
+        self.partner_id.name, (self.name or '').replace('/', '-'),
+        format_amount(self.env, self.amount_total, self.currency_id), self.company_id.name)
+        mail_values = {
+            'subject': name,
+            'body_html': msg,
+            'author_id': self.env.user.partner_id.id,
+            'email_from': 'sales@wifiber.ng',
+            'email_to': self.partner_id.email,
+            'attachment_ids': [(4, receipt.id)],
+            'auto_delete': True
+        }
+        mail_values['attachment_ids'] += [(4, receipt.id)]
+        mail = self.env['mail.mail'].create(mail_values)
+        #mail.send()
+        mail.mark_outgoing()
+
     @api.onchange('sale_order_template_id')
     def onchange_sale_order_template_id(self):
 
@@ -130,6 +166,7 @@ class SaleOrderExtend(models.Model):
         msg = _('The Sales Order %s by %s, requires your approval') % (
             self.name, self.env.user.name)
         self.send_email(grp_name, subject, msg)
+        self.send_sale_order_email()
 
         return
 
@@ -527,8 +564,6 @@ class ResPartnerExtend(models.Model):
             raise UserError('Kindly set the client phone number')
         if not self.email:
             raise UserError('Kindly set the client email address')
-        if not self.expiration_date:
-            raise UserError('Kindly set the client service expiration date')
         if not self.product_id:
             raise UserError('Kindly set the client service package')
         if not self.ip_address:
@@ -661,7 +696,7 @@ class ResPartnerExtend(models.Model):
     estate_id = fields.Many2one('estate', string='Estate',tracking=True)
     area_id = fields.Many2one('area',string='Area',tracking=True)
     installation_fse_id = fields.Many2one('res.users', string='Installation FSE', tracking=True)
-    power_level_id = fields.Many2one('pl', string='Power Level', tracking=True)
+    power_level_id = fields.Char(string='Power Level', tracking=True)
     comment = fields.Char(string='Comment',tracking=True)
     activation_date = fields.Date(string='Activation Date',tracking=True)
     status = fields.Selection([
@@ -728,12 +763,10 @@ class ResPartnerExtend(models.Model):
 class AccountPayment(models.Model):
     _inherit = 'account.payment'
 
-
-
-
     def amount_to_text(self, amt):
         amount_text = self.currency_id.amount_to_text(amt)
         return str.upper('**** ' + amount_text + '**** ONLY')
+
 
     def action_receipt_plain_sent_no_logging_no_button_document(self):
         #this is just raw email without the default sent by footer, view button and there is no email log on the document
@@ -741,7 +774,7 @@ class AccountPayment(models.Model):
         partner_id = self.partner_id
         if not partner_id.email:
             raise UserError(
-                'Kindly set the email for the %s with client id %s, in the customers database, before this ticket can be opened' % (
+                'Kindly set the email for the %s with client id %s, in the customers database, before this receipt can be sent' % (
                     partner_id.name, partner_id.ref or ''))
 
         report = self.env.ref('kin_account.action_report_receipt')._render_qweb_pdf(self.id)
@@ -782,7 +815,7 @@ class ProductTemplateExtend(models.Model):
 
     is_sub = fields.Boolean(string='Is Subscription Package', track_visibility='always')
     selfcare_package_id = fields.Integer(string='Selfcare Package ID', track_visibility='always')
-
+    is_material = fields.Boolean(string='Is Material', track_visibility='always')
 
 
 

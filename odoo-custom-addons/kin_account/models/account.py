@@ -176,13 +176,13 @@ class AccountMove(models.Model):
             small = 'kobo'
 
         amount_text = currency.amount_to_text(amt).replace('euro',big).replace('Cent',small)
-        return str.upper('**** ' + amount_text + '**** ONLY')
+        return str.upper('  **** ' + amount_text + '**** ONLY')
 
 
     @api.depends('amount_total')
     def _compute_amount_in_words(self):
         for rec in self:
-            current_curr = self.env.company.currency_id
+            current_curr = self.currency_id
             if current_curr:
                 #amount_in_words = current_curr.amount_to_text(self.move_ids_without_package[0].quantity_done)
                 rec.amount_in_words = rec.replace_amount_to_text(rec.amount_total,current_curr)

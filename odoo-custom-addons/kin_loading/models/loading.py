@@ -2594,7 +2594,7 @@ class SaleOrderLoading(models.Model):
         #
 
         #For throughput or internal use orders
-        if not self.is_throughput_order and not self.is_internal_use_order :
+        if not self.is_throughput_order and not self.is_internal_use_order and self.env.company.id == 1 :
             self.create_advance_invoice_depot()
 
             # Send Email to the Accountant
@@ -2775,6 +2775,7 @@ class SaleOrderLoading(models.Model):
     atl_id = fields.Char(string='ATL ID')
     atl_approved_user_id = fields.Many2one('res.users',string='ATL Approved By')
     atl_date = fields.Date(string='ATL Date')
+    is_other_sale = fields.Boolean(string='Is Other Sale')
 
 
 

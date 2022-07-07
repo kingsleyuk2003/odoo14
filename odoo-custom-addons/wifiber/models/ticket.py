@@ -23,18 +23,19 @@ class UserGroups(models.Model):
     is_installation_group_default_csc = fields.Boolean(string='Is Installation Group Default for CSC')
     is_maint_default = fields.Boolean(string='Is Maintenance Close Team Default')
     is_csc_group = fields.Boolean(string='Is CSC Group')
-
-    is_bpsq_cto_manager = fields.Boolean(string='Is BPSQ/CTO')
-    is_bpsq_md_manager = fields.Boolean(string='Is MD/BPSQ')
-    is_regional_manager_hcx = fields.Boolean(string='Is Regional Manager/HCX')
-    is_cto_rm_hcx = fields.Boolean(string='Is CTO/RM/HCX')
-    is_hcx = fields.Boolean(string='Is HCX')
-    is_hcx_team_lead = fields.Boolean(string='Is HCX/Teamlead')
-    is_cx = fields.Boolean(string='Is CX')
-    is_team_lead = fields.Boolean(string='Is Teamlead')
-    is_bpsq_hcx = fields.Boolean(string='Is BPSQ/HCX')
     is_request_ticket_group = fields.Boolean(string='Is Request Ticket Group')
 
+
+class MaterialRequest(models.Model):
+    _name = "material.request"
+    _description = 'Material Request'
+
+    product_id = fields.Many2one('product.product',string='Material')
+    qty = fields.Float(string='Quantity')
+    is_requested = fields.Boolean(string="Is Requested")
+    requested_by = fields.Many2one('res.users', string='Requested By')
+    requested_datetime = fields.Datetime(string='Requested Date and Time')
+    ticket_id = fields.Many2one('kin.ticket', string='Ticket')
 
 
 class Estate(models.Model):
@@ -50,11 +51,6 @@ class OLT(models.Model):
     name = fields.Char(string='OLT')
 
 
-class PowerLevel(models.Model):
-    _name = "pl"
-    _description = 'Power Level'
-
-    name = fields.Char(string='Power Level')
 
 class REGION(models.Model):
     _name = "region"
@@ -68,37 +64,17 @@ class Area(models.Model):
     _name = "area"
     _description = 'Area'
 
-    @api.model
-    def create(self, vals):
-        prefix = vals.get('prefix',False)
-        if prefix :
-            IrSequence = self.env['ir.sequence'].sudo()
-            company_id = self.env.company.id
-            val = {
-                'name': _('%s Sequence', vals['name']),
-                'padding': 4,
-                'number_next': 1,
-                'number_increment': 1,
-                'prefix': "%s" % vals['prefix'],
-                'code': '%s-code' % (vals['prefix']),
-                'company_id': company_id,
-            }
-            vals['sequence_id'] = IrSequence.create(val).id
-        return super(Area, self).create(vals)
-
 
     name = fields.Char(string='Area')
     area_manager_id = fields.Many2one('res.users',string="Area Manager")
     area_manager_id = fields.Many2one('res.users', string="Area Manager")
     sales_person_id = fields.Many2one('res.users', string="Sales Person")
     user_ticket_group_id = fields.Many2one('user.ticket.group', string='Engineer User Ticket Group')
-    prefix = fields.Char(string='Prefix')
-    sequence_id = fields.Many2one('ir.sequence', string="Sequence",ondelete="restrict")
     is_others = fields.Boolean(string="Is Others", default=False)
+    stock_location_id = fields.Many2one('stock.location',string='Stock Location', required=True)
 
     _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'Area name must be unique !'),
-        ('prefix_uniq', 'unique(prefix)', 'Prefix must be unique !'),
+        ('name_uniq', 'unique(name)', 'Area name must be unique !')
     ]
 
 
@@ -115,36 +91,201 @@ class RSSI(models.Model):
 
     name = fields.Char(string='RSSI')
 
-class ElapsedHoursFirst(models.Model):
-    _name = "elapsed.hour.first"
-    _description = 'Elepsed Hour First'
-
-    day_no = fields.Integer(string="Day No.")
-    elapsed_hours = fields.Integer(string="Elapsed Hours")
-    ticket_id = fields.Many2one('kin.ticket',  string='Ticket')
-
-
-
-class ElapsedHoursSecond(models.Model):
-    _name = "elapsed.hour.second"
-    _description = 'Elapsed Hour Second'
-
-    day_no = fields.Integer(string="Day No.")
-    elapsed_hours = fields.Integer(string="Elapsed Hours")
-    ticket_id = fields.Many2one('kin.ticket',  string='Ticket')
-
-
-class ElapsedHoursThird(models.Model):
-    _name = "elapsed.hour.third"
-    _description = 'Elapsed Hour Third'
-
-    day_no = fields.Integer(string="Day No.")
-    elapsed_hours = fields.Integer(string="Elapsed Hours")
-    ticket_id = fields.Many2one('kin.ticket',  string='Ticket')
-
 class Ticket(models.Model):
     _inherit = 'kin.ticket'
     _rec_name = 'ticket_id'
+
+    # reference: https://stackoverflow.com/a/12691993
+    # adds days except weekends
+    def date_by_adding_business_days(self,from_date, add_days):
+        business_days_to_add = add_days
+        current_date = from_date
+        while business_days_to_add > 0:
+            current_date += timedelta(days=1)
+            weekday = current_date.weekday()
+            if weekday >= 5:  # sunday = 6
+                continue
+            business_days_to_add -= 1
+        return current_date
+
+    def escalation_installation_ticket(self):
+        records = self.search([('expiry_date', '<', datetime.now()), ('state', 'not in', ('draft', 'closed')),
+                               ('is_escalation_email_sent', '=', False),('is_pause_escalation','=',False),('category_id', '=', self.env.ref('wifiber.installation').id)])
+
+        for record in records:
+            odate = record.open_date
+            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
+            open_date = odate.astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
+
+            subject = '%s Ticket (%s) Escalation Notification for %s' % (record.category_id.name, record.ticket_id, record.partner_id.name)
+            msg = 'The is to inform you that the ticket (%s) with id: (%s) which was opened on %s, for the category (%s) has not be closed within the stipulated time of 5 working days' % (
+            record.name, record.ticket_id,open_date, record.category_id.name)
+
+            record.send_email('wifiber.group_receive_ticket_escalation_email',subject,msg)
+            record.is_escalation_email_sent = True
+            record.is_escalation_email_sent_date = datetime.now()
+
+    def escalation_draft_ticket(self):
+        records = self.search([('draft_expiry_date', '<', datetime.now()), ('state', '=', 'draft'),
+                               ('is_draft_escalation_email_sent', '=', False),('is_pause_escalation','=',False)])
+
+        for record in records:
+            cdate = record.create_date
+            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
+            create_date = cdate.astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
+
+            subject = '%s Ticket (%s) Draft Escalation Notification' % (
+            record.category_id.name, record.ticket_id)
+            msg = 'The is to inform you that the ticket (%s) with id: (%s) which was created on %s, for the category (%s), is still in draft state, against the stipulated time of 6 hours' % (
+                record.name, record.ticket_id, create_date, record.category_id.name)
+
+            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+            record.is_draft_escalation_email_sent = True
+            record.is_draft_escalation_email_sent_date = datetime.now()
+
+    def escalation_open_ticket(self):
+        records = self.search([('open_expiry_date', '<', datetime.now()), ('state', '=', 'new'),
+                               ('is_open_escalation_email_sent', '=', False),('is_pause_escalation','=',False)])
+
+        for record in records:
+            odate = record.open_date
+            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
+            open_date = odate.astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
+
+            subject = '%s Ticket (%s) Open Escalation Notification' % (
+            record.category_id.name, record.ticket_id)
+            msg = 'The is to inform you that the ticket (%s) with id: (%s) which was opened on %s, for the category (%s) is still in open state, against the stipulated time of 12 hours' % (
+                record.name, record.ticket_id, open_date, record.category_id.name)
+
+            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+            record.is_open_escalation_email_sent = True
+            record.is_open_escalation_email_sent_date = datetime.now()
+
+    @api.model
+    def run_escalate_check(self):
+        self.escalation_draft_ticket()
+        self.escalation_open_ticket()
+        self.escalation_installation_ticket()
+        return True
+
+
+
+    def escalation_twelve_hours_installation_ticket(self):
+        records = self.search([('is_escalation_email_sent_date', '<', self.is_escalation_email_sent_date), ('state', 'not in', ('draft', 'closed')),
+                               ('is_escalation_email_sent', '=', True),('is_pause_escalation','=',False),('category_id', '=', self.env.ref('wifiber.installation').id)])
+
+        for record in records:
+            subject = '%s Ticket (%s) REMINDER HIGH Escalation Notification for %s' % (record.category_id.name, record.ticket_id, record.partner_id.name)
+            msg = 'The is to remind you that the ticket (%s) with id: (%s), for the category (%s) has not be closed' % (
+            record.name, record.ticket_id, record.category_id.name)
+            record.send_email('wifiber.group_receive_ticket_escalation_email',subject,msg)
+
+
+    def escalation_six_hours_draft_ticket(self):
+        records = self.search([('is_draft_escalation_email_sent_date', '<', self.is_draft_escalation_email_sent_date), ('state', '!=', 'closed'),
+                               ('is_draft_escalation_email_sent', '=', True),('is_pause_escalation','=',False)])
+
+        for record in records:
+            subject = '%s Ticket (%s) REMINDER HIGH Draft Escalation Notification' % (
+            record.category_id.name, record.ticket_id)
+            msg = 'The is to remind you that the ticket (%s) with id: (%s), for the category (%s has not been closed' % (
+                record.name, record.ticket_id,  record.category_id.name)
+            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+
+
+    def escalation_twelve_hours_open_ticket(self):
+        records = self.search([('is_open_escalation_email_sent_date', '<', datetime.now()), ('state', '!=', 'closed'),
+                               ('is_open_escalation_email_sent', '=', True),('is_pause_escalation','=',False)])
+
+        for record in records:
+            subject = '%s Ticket (%s) REMINDER HIGH Open Escalation Notification' % (
+            record.category_id.name, record.ticket_id)
+            msg = 'The is to remind you that the ticket (%s) with id: (%s), for the category (%s) has not been closed' % (
+                record.name, record.ticket_id,  record.category_id.name)
+            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+
+
+    @api.model
+    def run_escalate_twelve_hours_check(self):
+        self.escalation_twelve_hours_installation_ticket()
+        self.escalation_six_hours_draft_ticket()
+        self.escalation_twelve_hours_open_ticket()
+        return
+
+
+
+
+    def btn_view_stock_picking(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("stock.action_picking_tree_all")
+        action['views'] = [
+            (self.env.ref('stock.vpicktree').id, 'tree'),
+             (self.env.ref('stock.view_picking_form').id, 'form')
+        ]
+        action['context'] = self.env.context
+        picking_ids = self.mapped('picking_ids')
+        action['domain'] = [('id', 'in', picking_ids.ids)]
+
+        if len(picking_ids) > 1:
+            action['domain'] = [('id', 'in', picking_ids.ids)]
+        elif len(picking_ids) == 1:
+            action['views'] = [(self.env.ref('stock.view_picking_form').id, 'form'),]
+            action['res_id'] = picking_ids.ids[0]
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        return action
+
+
+    @api.depends('picking_ids')
+    def _compute_stock_picking_count(self):
+        for rec in self:
+            rec.stock_picking_count = len(rec.picking_ids)
+
+
+    def btn_ticket_material_request(self):
+        self.state = 'material_request'
+
+        self._stock_picking_ticket()
+        for rec in self.material_request_ids:
+            if not rec.is_requested:
+                rec.requested_by = self.env.user
+                rec.requested_datetime = datetime.today()
+                rec.is_requested = True
+
+    def _stock_picking_ticket(self):
+        pick_id = False
+        if len(self.picking_ids) == 1 :
+            picking_id = self.picking_ids[0]
+            if picking_id.state not in ('done','cancel') :
+                pick_id = picking_id
+
+        if not pick_id :
+            stock_picking_obj = self.env['stock.picking']
+            vals = {
+                'partner_id': self.partner_id.id,
+                'picking_type_id':self.env.ref('stock.picking_type_out').id,
+                'origin': self.name,
+                'location_id': self.area_customer_id.stock_location_id.id,
+                'location_dest_id' : self.env.ref('stock.stock_location_customers').id,
+            }
+            pick_id = stock_picking_obj.create(vals)
+            pick_id.ticket_id = self
+
+        for rec in self.material_request_ids:
+            if not rec.is_requested:
+                #stock_move
+                stock_move_vals = {
+                    'name': rec.product_id.name,
+                    'product_id': rec.product_id.id,
+                    'product_uom_qty': rec.qty,
+                    'product_uom': rec.product_id.uom_id.id,
+                    'picking_id': pick_id.id,
+                    'location_id': self.area_customer_id.stock_location_id.id,
+                    'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+                }
+                stock_move = self.env['stock.move'].create(stock_move_vals)
+
+        return pick_id
+
 
 
     @api.onchange('area_customer_id')
@@ -174,338 +315,6 @@ class Ticket(models.Model):
             self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
-
-    def send_escalation_msg(self,partner_ids,subject,msg):
-        if partner_ids:
-            self.message_follower_ids.unlink()
-            self.message_post(body=msg, subject=subject, partner_ids=partner_ids, subtype_xmlid='mail.mt_comment', force_send=False)
-        return
-
-    def get_escalation_partners(self, user_type):
-        partner_ids = []
-        if user_type == "is_area_manager" :
-            area = self.area_change_request_id
-            if area :
-                area_manager = area.area_manager_id
-                if area_manager :
-                    self.message_follower_ids.unlink()
-                    partner_ids.append(area_manager.partner_id.id)
-        else :
-            user_ticket_group = self.env['user.ticket.group'].search([(user_type, '=', True)])
-            if user_ticket_group:
-                users = user_ticket_group[0].user_ids
-                self.message_follower_ids.unlink()
-                for user in users:
-                    partner_ids.append(user.partner_id.id)
-        return partner_ids
-
-
-    def escalate_first(self,user_type,esc_type, hours):
-        subject = False
-        msg = False
-        if self.open_date :
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            open_date_format = localize_tz(datetime.strptime(self.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which was opened on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                    self.ticket_id, self.name, open_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-    def escalate_second(self, user_type, esc_type, hours):
-        subject = False
-        msg = False
-        if self.done_date:
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            done_date_format = localize_tz(datetime.strptime(self.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Completed Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which has been completed on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                      self.ticket_id, self.name, done_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-    def escalate_third(self, user_type, esc_type, hours):
-        subject = False
-        msg = False
-        if self.finalized_date:
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            finalized_date_format = localize_tz(datetime.strptime(self.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Finalized Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which has been finalized on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                      self.ticket_id, self.name, finalized_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-
-
-    def escalate_first_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('open_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_first
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 54:
-                user_type = 'is_bpsq_md_manager'
-                esc_type = 'EXTREMELY OVERDUE ESCALATION'
-                hours = 54
-            elif total_elapsed_hours == 41:
-                user_type = 'is_bpsq_cto_manager'
-                esc_type = 'OVERDUE ESCALATION'
-                hours = 41
-            elif total_elapsed_hours == 27:
-                user_type = 'is_bpsq_cto_manager'
-                esc_type = 'DUE ESCALATION'
-                hours = 27
-            elif total_elapsed_hours == 21:
-                user_type = 'is_cto_rm_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 21
-            elif total_elapsed_hours == 14:
-                user_type = 'is_regional_manager_hcx'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 14
-            elif total_elapsed_hours == 7:
-                user_type = 'is_area_manager'
-                esc_type = 'NORMAL'
-                hours = 7
-
-            if user_type and esc_type and hours :
-                ticket.escalate_first(user_type, esc_type, hours)
-
-
-
-    def escalate_second_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('done_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', '=', 'done')])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_second
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 6:
-                user_type = 'is_bpsq_md_manager'
-                esc_type = 'EXTREMELY OVERDUE ESCALATION'
-                hours = 6
-            elif total_elapsed_hours == 4:
-                user_type = 'is_hcx'
-                esc_type = 'DUE ESCALATION'
-                hours = 4
-            elif total_elapsed_hours == 3:
-                user_type = 'is_hcx_team_lead'
-                esc_type = 'HIGH ESCALATION'
-                hours = 3
-            elif total_elapsed_hours == 2:
-                user_type = 'is_hcx'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 2
-            elif total_elapsed_hours == 1:
-                user_type = 'is_hcx'
-                esc_type = 'NORMAL ESCALATION'
-                hours = 1
-
-            if user_type and esc_type and hours:
-                ticket.escalate_second(user_type, esc_type, hours)
-
-
-    def escalate_third_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('finalized_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', '=', 'done')])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_third
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 12:
-                user_type = 'is_bpsq_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 12
-            elif total_elapsed_hours == 9:
-                user_type = 'is_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 9
-            elif total_elapsed_hours == 6:
-                user_type = 'is_team_lead'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 6
-            elif total_elapsed_hours == 3:
-                user_type = 'is_cx'
-                esc_type = 'NORMAL ESCALATION'
-                hours = 3
-
-            if user_type and esc_type and hours:
-                ticket.escalate_third(user_type, esc_type, hours)
-
-    @api.depends('elapsed_hours_first')
-    def _compute_total_elapsed_hours_first(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_first:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_first = total_elapsed_hours
-
-
-    @api.depends('elapsed_hours_second')
-    def _compute_total_elapsed_hours_second(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_second:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_second = total_elapsed_hours
-
-
-    @api.depends('elapsed_hours_third')
-    def _compute_total_elapsed_hours_third(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_third:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_third = total_elapsed_hours
-
-
-    def update_elapsed_table_first(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_first.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_first.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-    def update_elapsed_table_second(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_second.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_second.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-    def update_elapsed_table_third(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_third.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_third.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-
-    def set_hours_elapsed(self,tickets,escalation_type):
-        dtoday = datetime.today()
-        tday = dtoday.day
-        user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-        localize_tz = pytz.utc.localize
-        for ticket in tickets:
-            start_day = False
-            start_hour = False
-            if escalation_type == 'first':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-            elif escalation_type == 'second':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-            elif escalation_type == 'third':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-
-            day_no = tday - start_day + 1
-            current_hour = dtoday.hour + 1
-
-            is_sunday = False
-            if dtoday.weekday() == 6 :
-                is_sunday = True
-            if 8 < current_hour < 18 and not is_sunday:
-                current_hours_elapsed = current_hour - 8
-                if day_no == 1:
-                    if start_hour <= 8 :
-                        start_hour = 8
-                    current_hours_elapsed = current_hour - start_hour
-                if escalation_type == 'first' :
-                    ticket.update_elapsed_table_first(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_first()
-                elif escalation_type == 'second' :
-                    ticket.update_elapsed_table_second(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_second()
-                elif escalation_type == 'third' :
-                    ticket.update_elapsed_table_third(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_third()
-
-
-
-    def set_hours_elapsed_first(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('open_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets,'first')
-
-    def set_hours_elapsed_second(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('done_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets, 'second')
-
-    def set_hours_elapsed_third(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('finalized_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets, 'third')
-
-
-    
-    def run_check_service_relocation_escalation_ticket(self):
-        dtoday = datetime.today()
-        current_hour = dtoday.hour + 1
-        is_sunday = False
-        if dtoday.weekday() == 6:
-            is_sunday = True
-        if 8 < current_hour < 18 and not is_sunday:
-            self.set_hours_elapsed_first()
-            self.escalate_first_service_relocation()
-            self.set_hours_elapsed_second()
-            self.escalate_second_service_relocation()
-            self.set_hours_elapsed_third()
-            self.escalate_third_service_relocation()
-        return True
-
-
-    
     def run_check_expected_finished_date_ticket(self):
 
         is_send_email_expiry_finish = self.env['ir.config_parameter'].sudo().get_param('wifiber.is_send_email_expiry_finish',default=False)
@@ -660,6 +469,10 @@ class Ticket(models.Model):
         #Send email to the customer for opening the installation ticket
         partner_id = self.partner_id
         if partner_id and self.category_id == self.env.ref('wifiber.installation'):
+
+            if not partner_id.ref :
+                partner_id.ref = self.env['ir.sequence'].get('cust_id_code')
+
             if not partner_id.email:
                 raise UserError(
                     'Kindly set the email for the %s with client id %s, in the customers database, before this ticket can be opened' % (
@@ -678,6 +491,14 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'csc@wifiber.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+
+            #no need for this, because it shows an increase in one hour on the user interface
+            #user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
+            #now = datetime.strptime(datetime.now().astimezone(user_tz_obj).strftime('%Y-%m-%d %H:%M:%S'))
+
+            # set escalation expiry date
+            self.expiry_date = self.date_by_adding_business_days(datetime.now(),5)
+
         elif partner_id and  self.category_id in [self.env.ref('wifiber.support'),self.env.ref('wifiber.updown_grade')]:
             msg = 'Dear %s (%s), <p>We acknowledge the receipt of your complaints dated - %s with ticket ID - %s </p><p>Thank you for bringing this issue to our attention and we sincerely apologize for any inconvenience this may have caused you.</p><p>Please be assured that your complaint is being taken seriously and as such, you will be contacted shortly on necessary action for resolution.</p><p>Thank you for your patience.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
@@ -690,7 +511,8 @@ class Ticket(models.Model):
             mail_obj.email_from = 'csc@wifiber.ng'
             mail_obj.reply_to = 'csc@wifiber.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
+            # set escalation expiry date
+            self.expiry_date = datetime.now() + relativedelta(hours=+24)
         return
 
 
@@ -709,6 +531,7 @@ class Ticket(models.Model):
                 now_date = datetime.strptime(datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT),DEFAULT_SERVER_DATETIME_FORMAT)
                 date_diff =  str(now_date - open_date)
                 ticket.duration_close =  date_diff
+
 
 
     def action_view_order(self):
@@ -802,6 +625,16 @@ class Ticket(models.Model):
     def btn_ticket_reset(self):
         for rec in self:
             rec.invoice_id.unlink()
+            rec.expiry_date = False
+            rec.is_escalation_email_sent = False
+            rec.is_escalation_email_sent_date = False
+            rec.draft_expiry_date = False
+            rec.is_draft_escalation_email_sent = False
+            rec.is_draft_escalation_email_sent_date = False
+            rec.open_expiry_date = False
+            rec.is_open_escalation_email_sent = False
+            rec.is_open_escalation_email_sent_date = False
+
         if self.category_id == self.env.ref('wifiber.request'):
             self.prospect_id.unlink()
         return super(Ticket, self).btn_ticket_reset()
@@ -962,9 +795,6 @@ class Ticket(models.Model):
                     self.name,self.env.user.name))
 
         return super(Ticket,self).btn_ticket_close()
-
-
-
 
 
     #CTO approves maintenance ticket
@@ -1221,6 +1051,7 @@ class Ticket(models.Model):
 
 
 
+
     def write(self,vals):
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation') :
             area_id =  vals.get('area_customer_id', False)
@@ -1290,7 +1121,24 @@ class Ticket(models.Model):
                     body=_(msg),
                     subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
                 self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+        #escalation
+        status = vals.get('state',False)
+        if status == 'draft':
+            vals['draft_expiry_date'] = datetime.now() + relativedelta(hours=+6)
+        elif status == 'new':
+            vals['open_expiry_date'] = datetime.now() + relativedelta(hours=+12)
         return super(Ticket, self).write(vals)
+
+    @api.model
+    def create(self,vals):
+        status = vals.get('state', False)
+        if status == 'draft':
+            vals['draft_expiry_date'] = datetime.now() + relativedelta(hours=+6)
+        elif status == 'new':
+            vals['open_expiry_date'] = datetime.now() + relativedelta(hours=+12)
+        res = super(Ticket, self).create(vals)
+        return res
 
 
     #remove store=True for the related fields, because it prevents the helpdesk user from saving a ticket with partner information if there are other tickets attached to the partner, and the user is not in the group for all the previous tickets attached to the partner. so the helpdesk user rule prevents it from saving the form for the related fields with store parameter, since it will want to update the partner which inturns update all other previous tickets having the store=True paramter ( I have tested the fact  the system updates other previous tickets indirectly, whne given the  Helpdesk general manager rights which have access to all tickets)
@@ -1380,7 +1228,7 @@ class Ticket(models.Model):
 
 
     state = fields.Selection(
-        [('draft', 'Draft'), ('new', 'Open'), ('maint_approve', 'Maint. Approved'), ('progress', 'Work In Progress'),('done', 'Completed'), ('finalized','Finalized'),('closed', 'Closed'),('cancel', 'Cancelled'),('archived', 'Archived')],
+        [('draft', 'Draft'), ('new', 'Open'), ('maint_approve', 'Maint. Approved'),('material_request', 'Material Request') ,('progress', 'Work In Progress'),('done', 'Completed'), ('finalized','Finalized'),('closed', 'Closed'),('cancel', 'Cancelled'),('archived', 'Archived')],
         default='draft', tracking=True)
 
     description = fields.Text(string='Incident Details')
@@ -1418,7 +1266,7 @@ class Ticket(models.Model):
     #activation form
     olt_id = fields.Many2one(related='partner_id.olt_id',  string='OLT')
     gpon_level = fields.Char(related='partner_id.gpon',string='GPON Port')
-    power_level_id = fields.Many2one(related='partner_id.power_level_id',string='Power Level')
+    power_level_id = fields.Char(string='Power Level')
     idu_serial_no = fields.Char(related='partner_id.serial_no',string='IDU SerialNumber')
     wifi_ssid = fields.Char(string='Wifi SSID')
     splitter_box_code = fields.Char(string='Splitter Box Code')
@@ -1433,6 +1281,13 @@ class Ticket(models.Model):
     radio_model = fields.Char(string='Radio Model(microwave,MK,UB,Vjjt etc)')
     comment_activation = fields.Char(string='Comment')
 
+    #material request
+    is_request_material = fields.Boolean(string='Request for Material',tracking=True)
+    material_request_ids = fields.One2many('material.request', 'ticket_id', string='Material Requests',tracking=True)
+    stock_picking_count = fields.Integer(compute="_compute_stock_picking_count", string='# of Stock Pickings', copy=False, default=0)
+    picking_ids = fields.One2many('stock.picking', 'ticket_id', string='Stock Picking(s)')
+
+
 
     #Call Log and Request
     prospect_name = fields.Char(string='Prospect Name')
@@ -1445,13 +1300,6 @@ class Ticket(models.Model):
     is_others = fields.Boolean(related='prospect_area_id.is_others',string="Is Others")
 
     #Change Request
-    is_service_relocation = fields.Selection([('yes', 'Yes'),('no', 'No')], string='Is Service Relocation',  tracking=True)
-    elapsed_hours_first = fields.One2many('elapsed.hour.first','ticket_id', string='First Escalation Elapsed Hours')
-    elapsed_hours_second = fields.One2many('elapsed.hour.second', 'ticket_id', string='Second Escalation Elapsed Hours')
-    elapsed_hours_third = fields.One2many('elapsed.hour.third', 'ticket_id', string='Third Escalation Elapsed Hours')
-    total_elapsed_hours_first = fields.Integer(compute=_compute_total_elapsed_hours_first, string="First Escalation Total Elapsed Hours", store=True)
-    total_elapsed_hours_second = fields.Integer(compute=_compute_total_elapsed_hours_second, string="Second Escalation Total Elapsed Hours", store=True)
-    total_elapsed_hours_third = fields.Integer(compute=_compute_total_elapsed_hours_third, string="Third Escalation Total Elapsed Hours", store=True)
     area_change_request_id = fields.Many2one('area', string="Area", tracking=True)
     updown_grade_type = fields.Selection([('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('disconnect', 'Disconnect'),('reconnection', 'Reconnection'),('relocation', 'Relocation'),('voip', 'Voip')], string='Change Request Type')
     product_curr_id = fields.Many2one('product.product',string='Current Package')
@@ -1470,27 +1318,24 @@ class Ticket(models.Model):
     last_log_message = fields.Html(string='Last Log Message')
     category_code = fields.Char(related='category_id.code', string='Category Code')
 
-    is_area_manager_email_sent = fields.Boolean(string='Is Area Manager Email Sent')
-    is_regional_manager_hcx_email_sent = fields.Boolean(string='Is Regional Manager/HCX Email Sent')
-    is_cto_rm_hcx_email_sent = fields.Boolean(string='Is CTO/RM/HCX Email Sent')
-    is_bpsq_cto_manager_email_sent = fields.Boolean(string='Is BPSQ/CTO Email Sent')
-    is_bpsq_cto_manager1_email_sent = fields.Boolean(string='Is BPSQ/CTO 1 Email Sent')
-    is_bpsq_md_manager_email_sent = fields.Boolean(string='Is MD/BPSQ Email Sent')
-
-    is_hcx_email_sent = fields.Boolean(string='Is HCX Email Sent')
-    is_hcx1_email_sent = fields.Boolean(string='Is HCX 1 Email Sent')
-    is_hcx_team_lead_email_sent = fields.Boolean(string='Is HCX/Teamlead')
-    is_hcx2_email_sent = fields.Boolean(string='Is HCX 2 Email Sent')
-    is_bpsq_md_manager1_email_sent = fields.Boolean(string='Is MD/BPSQ 1 Email Sent')
-
-    is_cx_email_sent = fields.Boolean(string='Is CX')
-    is_team_lead_email_sent = fields.Boolean(string='Is Teamlead')
-    is_hcx3_email_sent = fields.Boolean(string='Is HCX 3 Email Sent')
-    is_bpsq_hcx_email_sent = fields.Boolean(string='Is BPSQ/HCX')
 
     assigned_eng_user_ids = fields.Many2many(related='user_ticket_group_id.user_ids', string='Engineers')
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
+
+    expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
+    is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
+    is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')
+    is_pause_escalation = fields.Boolean(string='Pause Escalation')
+    is_pause_comment = fields.Text(string='Paused Escalation Comment')
+    draft_expiry_date = fields.Datetime(string='Draft Expiry Date', tracking=True)
+    is_draft_escalation_email_sent = fields.Boolean(string='Is Draft Escalation Email Sent', default=False, tracking=True)
+    is_draft_escalation_email_sent_date = fields.Datetime(string='Draft Escalation Email Sent Date')
+    open_expiry_date = fields.Datetime(string='Open Expiry Date', tracking=True)
+    is_open_escalation_email_sent = fields.Boolean(string='Is Open Escalation Email Sent', default=False, tracking=True)
+    is_open_escalation_email_sent_date = fields.Datetime(string='Open Escalation Email Sent Date')
+
+
 
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
@@ -1532,3 +1377,71 @@ class Message(models.Model):
             ticket_obj.last_log_user_id = ticket_obj.env.user
             ticket_obj.last_log_message = values['body']
         return res
+
+
+class StockPicking(models.Model):
+    _inherit = 'stock.picking'
+
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+    def escalation_stock_picking(self):
+        records = self.search([('expiry_date', '<', datetime.now()), ('state', '!=', 'done'),
+                               ('is_escalation_email_sent', '=', False),('is_pause_escalation','=',False)])
+
+        for record in records:
+            cdate = record.create_date
+            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
+            create_date = cdate.astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
+
+            subject = '%s Delivery Order (%s) Escalation Notification' % (
+            record.name, record.ticket_id)
+            msg = 'The is to inform you that the Delivery Order (%s) for the ticket id: (%s) , created on %s, is still in pending delivery, against the stipulated time of 2 hours' % (
+                record.name, record.ticket_id, create_date)
+
+            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+            record.is_escalation_email_sent = True
+            record.is_escalation_email_sent_date = datetime.now()
+
+    @api.model
+    def run_escalate_stock_picking_check(self):
+        self.escalation_stock_picking()
+        return True
+
+    def write(self,vals):
+        is_pause_escalation = vals.get('is_pause_escalation',False)
+        is_pause_comment = vals.get('is_pause_comment', False)
+        if is_pause_escalation and self.ticket_id:
+            self.ticket_id.is_pause_escalation = is_pause_escalation
+            self.ticket_id.is_pause_comment = is_pause_comment
+
+        res = super(StockPicking, self).write(vals)
+
+    @api.model
+    def create(self, vals):
+        status = vals.get('state', False)
+        if status != 'done':
+            vals['expiry_date'] = datetime.now() + relativedelta(hours=+2)
+        res = super(StockPicking, self).create(vals)
+        return res
+
+
+
+    is_pause_escalation = fields.Boolean(string='Pause Escalation')
+    is_pause_comment = fields.Text(string='Paused Escalation Comment')
+    ticket_id = fields.Many2one('kin.ticket', string="Ticket", readonly=True)
+    expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
+    is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
+    is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')

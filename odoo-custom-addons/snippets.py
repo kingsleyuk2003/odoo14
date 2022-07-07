@@ -786,3 +786,57 @@ def create_customer_invoice(self, order):
                               subject='The Station to Station Transfer %s has been Reset by %s' % (self.name, self.env.user.name),
                               partner_ids=partn_ids)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
+
+
+#Send email with attachment
+#..odoo-custom-addons/wifiber/models/sale.py:55
+def send_sale_order_email(self):
+    partner_id = self.partner_id
+    if not partner_id.email:
+        raise UserError(
+            'Kindly set the email for the %s with client id %s, in the customers database, before this order can be sent' % (
+                partner_id.name, partner_id.ref or ''))
+
+    report = self.env.ref('sale.action_report_pro_forma_invoice')._render_qweb_pdf(self.id)
+    name = '%s Proforma Invoice (%s)' % (self.env.company.name, self.name)
+    filename = name + '.pdf'
+    receipt = self.env['ir.attachment'].create({
+        'name': filename,
+        'type': 'binary',
+        'datas': base64.b64encode(report[0]),
+        'store_fname': filename,
+        'res_model': 'sale.order',
+        'res_id': self.id,
+        # 'mimetype': 'application/x-pdf'
+    })
+    msg = "<p>Dear %s</p><p>Thank you for your order. See attached document for your proforma invoice %s amounting to %s from %s.</p><p>Do not hesitate to contact us if you have any questions.</p><p>Best regards,</p>" % (
+        self.partner_id.name, (self.name or '').replace('/', '-'),
+        format_amount(self.env, self.amount_total, self.currency_id), self.company_id.name)
+    mail_values = {
+        'subject': name,
+        'body_html': msg,
+        'author_id': self.env.user.partner_id.id,
+        'email_from': 'sales@wifiber.ng',
+        'email_to': self.partner_id.email,
+        'attachment_ids': [(4, receipt.id)],
+        'auto_delete': True
+    }
+    mail_values['attachment_ids'] += [(4, receipt.id)]
+    mail = self.env['mail.mail'].create(mail_values)
+    # mail.send()
+    mail.mark_outgoing()
+
+
+
+    # reference: https://stackoverflow.com/a/12691993
+    # adds days except weekends
+    def date_by_adding_business_days(self,from_date, add_days):
+        business_days_to_add = add_days
+        current_date = from_date
+        while business_days_to_add > 0:
+            current_date += timedelta(days=1)
+            weekday = current_date.weekday()
+            if weekday >= 5:  # sunday = 6
+                continue
+            business_days_to_add -= 1
+        return current_date

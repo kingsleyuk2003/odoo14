@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 	<data>
-
-
-
+		<record model="ir.sequence" id="seq_cust_id">
+			<field name="name">Client ID</field>
+			<field name="code">cust_id_code</field>
+			<field name="prefix">CHO</field>
+			<field name="padding">5</field>
+			<field name="company_id" eval="False" />
+    	</record>
 	</data>
 </odoo>

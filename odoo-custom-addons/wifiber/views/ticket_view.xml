@@ -28,7 +28,7 @@
                      <button type="action"  string="Maintenance Declined"  name="%(action_disapprove_maint)d"   class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket"   attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"  />
                 </button>
                  <button name="btn_ticket_progress" position="attributes" >
-                      <attribute  name="states" >maint_approve,new</attribute>
+                      <attribute  name="states" >maint_approve,new,material_request</attribute>
                  </button>
                  <button name="btn_ticket_close" position="attributes" >
                      <attribute  name="states" >finalized</attribute>
@@ -43,6 +43,14 @@
                 <field name="state" widget="statusbar"  position="attributes">
                     <attribute name="statusbar_visible" >draft,new,progress,done,finalized,closed</attribute>
                 </field>
+
+                 <xpath expr="//sheet/group" position="before">
+                        <div class="oe_button_box" name="button_box">
+                            <button type="object"  name="btn_view_stock_picking" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('stock_picking_count', '=', 0)]}"  groups="stock.group_stock_manager" >
+                                <field name="stock_picking_count" widget="statinfo" string="Transfers"/>
+                            </button>
+                        </div>
+                </xpath>
 
                 <field name="partner_id" position="after" >
                      <field name="assigned_eng_user_ids" invisible="1" />
@@ -78,6 +86,11 @@
                 <field name="expected_finish_date" position="attributes" >
                      <attribute name="required" >1</attribute>
                  </field>
+
+                <field name="ticket_company_id" position="after" >
+                    <field name="is_pause_escalation"  />
+                    <field name="is_pause_comment" attrs="{'required': [('is_pause_escalation', '=', True)],'invisible': [('is_pause_escalation', '=', False)]}" />
+                </field>
 
 
 <!--                 <field name="engineer_ids"  position="after" >-->
@@ -120,6 +133,7 @@
 <!--                    <field name="survey_ticket_id"  domain = "[('id','!=',id),('category_id','=',2)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />-->
                     <field name="duration_close" />
                     <field name="order_id" readonly="1" />
+                    <field name="is_request_material" />
                 </field>
 
                 <page name="description" position="before" >
@@ -155,14 +169,43 @@
                                 <field name="maint_disapprove_date" readonly="1"  />
                             </group>
                     </page>
+
+                    <page string="Material Request" attrs="{'invisible': [('category_code', '!=', 'installation'),('is_request_material', '!=', True)]}" >
+
+                        <group string="Requested Materials" >
+                             <field nolabel="1" name="material_request_ids"  attrs="{'required': [('is_request_material', '=', True )]}"  >
+                                <tree editable="bottom" >
+                                    <field name="product_id" domain="[('is_material', '=', True)]"  />
+                                    <field name="qty" sum="Total" />
+                                    <field name="is_requested" readonly="1" />
+                                    <field name="requested_by" readonly="1" />
+                                    <field name="requested_datetime" readonly="1" />
+                                </tree>
+                            </field>
+                        </group>
+                         <group class="oe_subtotal_footer oe_right" colspan="2" >
+                              <button name="btn_ticket_material_request" type="object" colspan="4"  string="Request Material"   class="oe_highlight"   attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('new') )]}" groups="wifiber.group_show_prospect_request_material_btn"   />
+
+                         </group>
+
+<!--                         <group colspan="2" string="Issued Materials" >-->
+<!--&lt;!&ndash;                             <field nolabel="1" name="material_request_ids"  attrs="{'required': [('is_request_material', '=', True )]}"  >&ndash;&gt;-->
+<!--&lt;!&ndash;                                <tree editable="bottom" >&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <field name="product_id" domain="[('is_material', '=', True)]"  />&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <field name="qty" />&ndash;&gt;-->
+<!--&lt;!&ndash;                                </tree>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </field>&ndash;&gt;-->
+<!--                        </group>-->
+                    </page>
+
                     <page string="Activation Form" attrs="{'invisible': [('category_code', '!=', 'installation' )]}" >
                         <group col="4" >
                               <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                            <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                              <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                            <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                            <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                            <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','material_request','maint_approve') )]}" />
+                              <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
+                              <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
+                            <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
+                            <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
                            <field name="gpon_level" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
                          <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
                           <field name="wifi_ssid"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -199,8 +242,7 @@
                     </page>
                     <page  string="Change Request Form" attrs="{'invisible': [('category_code', '!=', 'change_request' )]}" >
                             <group col="4" >
-                                <field name="is_service_relocation" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
-                                 <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('is_service_relocation', '=', 'yes' )], 'invisible': [('is_service_relocation', '=', 'no')]}"   />
+                                 <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
                                 <field name="updown_grade_type" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                  <field name="product_curr_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))],'required': [('category_code', '=', 'change_request' )]}"    options="{'no_open': True, 'no_create': True}"  />
                                  <field name="product_new_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   options="{'no_open': True, 'no_create': True}"   />
@@ -211,43 +253,6 @@
                                  <field name="address_ip_current" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                  <field name="adddress_ip_new" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
                             </group>
-                        <group col="4" string="First Escalation Elapsed Hours" >
-                            <field nolabel="1" name="elapsed_hours_first" readonly="1"  >
-                                <tree editable="bottom" >
-                                    <field name="day_no" />
-                                    <field name="elapsed_hours" />
-                                </tree>
-                            </field>
-                        </group>
-                          <group class="oe_subtotal_footer oe_right" colspan="2" >
-                                        <field name="total_elapsed_hours_first" />
-                          </group>
-
-                        <group col="4" string="Second Escalation Elapsed Hours" >
-                            <field nolabel="1" name="elapsed_hours_second" readonly="1"  >
-                                <tree editable="bottom" >
-                                    <field name="day_no" />
-                                    <field name="elapsed_hours" />
-                                </tree>
-                            </field>
-                        </group>
-                          <group class="oe_subtotal_footer oe_right" colspan="2" >
-                                       <field name="total_elapsed_hours_second" />
-                          </group>
-
-
-                        <group string="Third Escalation Elapsed Hours"  col="4" >
-                            <field name="elapsed_hours_third" nolabel="1" readonly="1"  >
-                                <tree editable="bottom" >
-                                    <field name="day_no" />
-                                    <field name="elapsed_hours" />
-                                </tree>
-                            </field>
-                        </group>
-                          <group class="oe_subtotal_footer oe_right" colspan="2" >
-                                       <field name="total_elapsed_hours_third" />
-                          </group>
-
 
                     </page>
                     <page  string="Site Survey and SRF Form"  attrs="{'invisible': [('category_code', '!=', 'survey' )]}" >
@@ -348,6 +353,17 @@
                                  <field name="last_log_user_id" readonly="1"  />
                                 <field name="last_log_message" readonly="1" />
                             </group>
+                             <group string="Escalation" >
+                                <field name="expiry_date" readonly="1"  />
+                                <field name="is_escalation_email_sent"  readonly="1" />
+                                <field name="is_escalation_email_sent_date"  readonly="1" />
+                                <field name="draft_expiry_date" readonly="1"  />
+                                <field name="is_draft_escalation_email_sent"  readonly="1" />
+                                <field name="is_draft_escalation_email_sent_date"  readonly="1" />
+                                 <field name="open_expiry_date" readonly="1"  />
+                                <field name="is_open_escalation_email_sent"  readonly="1" />
+                                <field name="is_open_escalation_email_sent_date"  readonly="1" />
+                             </group>
                         </group>
                     </page>
                 </page>
@@ -405,41 +421,6 @@
          <menuitem id="menu_olt" name="OLT" parent="kin_helpdesk.menu_help_desk_config" action="action_olt" sequence="10"/>
 
 
-        <!-- Power Level -->
-          <record id="pl_form" model="ir.ui.view">
-            <field name="name">pl.form</field>
-            <field name="model">pl</field>
-            <field name="arch" type="xml">
-                <form string="Power Level">
-                    <sheet>
-                        <group>
-                              <field name="name" />
-                        </group>
-                    </sheet>
-
-                </form>
-            </field>
-          </record>
-
-        <record model="ir.ui.view" id="pl_tree_view">
-            <field name="name">Power Level Tree</field>
-            <field name="model">pl</field>
-              <field name="arch" type="xml">
-                  <tree string="Power Level" >
-                        <field name="name" />
-                  </tree>
-              </field>
-        </record>
-
-         <record id="action_pl" model="ir.actions.act_window">
-            <field name="res_model">pl</field>
-
-            <field name="name">Power Level</field>
-            <field name="view_mode">tree,form,pivot,graph</field>
-        </record>
-
-         <menuitem id="menu_pl" name="Power Level" parent="kin_helpdesk.menu_help_desk_config" action="action_pl" sequence="11"/>
-
 
         <!-- -Region -->
         <record id="region_form" model="ir.ui.view">
@@ -488,9 +469,8 @@
                             <field name="area_manager_id" required="True" options="{'no_open': True, 'no_create': True}" />
                            <field name="sales_person_id" required="True" options="{'no_open': True, 'no_create': True}" />
                             <field name="user_ticket_group_id" required="True" options="{'no_open': True, 'no_create': True}" />
-                            <field name="prefix"  />
-                            <field name="sequence_id" readonly="1" />
-                            <field name="is_others" />
+                             <field name="is_others" />
+                            <field name="stock_location_id" />
                         </group>
                     </sheet>
 
@@ -647,19 +627,35 @@
                      <field name="is_installation_group_default_csc" />
                      <field name="is_maint_default" />
                      <field name="is_csc_group" />
-                     <field name="is_bpsq_cto_manager" />
-                     <field name="is_bpsq_md_manager" />
-                     <field name="is_regional_manager_hcx" />
-                     <field name="is_cto_rm_hcx" />
-                     <field name="is_hcx" />
-                     <field name="is_hcx_team_lead" />
-                     <field name="is_cx" />
-                     <field name="is_team_lead" />
-                     <field name="is_bpsq_hcx" />
                      <field name="is_request_ticket_group" />
                  </field>
             </field>
           </record>
+
+        <!-- Stock Picking -->
+        <record id="view_stock_picking_form_wifiber_extend" model="ir.ui.view">
+            <field name="name">stock.picking.form.wifiber.extend</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form" />
+            <field name="arch" type="xml">
+                 <field name="origin" position="after" >
+                     <field name="is_pause_escalation"     />
+                     <field name="is_pause_comment" attrs="{'required': [('is_pause_escalation', '=', True)],'invisible': [('is_pause_escalation', '=', False)]}" />
+                    <field name="ticket_id"     />
+                </field>
+
+                <group name="other_infos" position="after"  >
+                    <group string="Escalation" >
+                        <field name="expiry_date" readonly="1"  />
+                        <field name="is_escalation_email_sent"  readonly="1" />
+                        <field name="is_escalation_email_sent_date"  readonly="1" />
+                    </group>
+                </group>
+
+
+
+            </field>
+        </record>
 
     </data>
 </odoo>
