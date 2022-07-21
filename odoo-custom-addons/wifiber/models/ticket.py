@@ -1056,11 +1056,7 @@ class Ticket(models.Model):
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation') :
             area_id =  vals.get('area_customer_id', False)
             if area_id and not self.partner_id.ref  :
-                sequence_id = self.env['ir.sequence'].get('cust_wid_code')
-                if sequence_id:
-                    vals['ref'] = sequence_id.next_by_id()
-                else:
-                    vals['ref'] = ''
+                vals['ref'] = self.env['ir.sequence'].next_by_code('cust_wid_code')
 
             cust_vals = {
                 'location_id' : vals.get('location_id',self.partner_id.location_id),
