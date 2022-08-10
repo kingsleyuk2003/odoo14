@@ -447,12 +447,12 @@ class SaleOrderExtend(models.Model):
             self.user_id.name, self.name)
 
             for ticket in self.ticket_ids:
-                ticket.alert_msg = debt_msg
-                ticket.show_alert_box = True
+                ticket.sudo().alert_msg = debt_msg
+                ticket.sudo().show_alert_box = True
         else:
             for ticket in self.ticket_ids:
-                ticket.alert_msg = ''
-                ticket.show_alert_box = False
+                ticket.sudo().alert_msg = ''
+                ticket.sudo().show_alert_box = False
         return
 
     @api.depends('payment_ids')
@@ -677,7 +677,7 @@ class ResPartnerExtend(models.Model):
 
 
 
-    product_id = fields.Many2one('product.product', string='Package',tracking=True)
+    product_id = fields.Many2one('product.product', string='Plan',tracking=True)
     amount = fields.Float(string='Package Amount')
     location_id = fields.Many2one('location',string='Location',tracking=True)
     base_station_id = fields.Many2one('base.station',string='Base Station',tracking=True)
@@ -712,6 +712,13 @@ class ResPartnerExtend(models.Model):
     gpon = fields.Char(string="GPON Port",tracking=True)
     interface = fields.Char(string="Interface",tracking=True)
     serial_no = fields.Char(string="IDU Serial No",tracking=True)
+    mac_address = fields.Char(string="MAC Address", tracking=True)
+    service_port_no = fields.Char(string="Service Port No", tracking=True)
+    onu_pon_power = fields.Char(string="ONU PON Power", tracking=True)
+    remote_access = fields.Selection([
+        ('enabled', 'Enabled'), ('disabled', 'Not Enabled')
+    ], string='Remote Access', tracking=True)
+    cust_priority = fields.Integer(string='Priority')
     state_ng = fields.Selection([
         ('Abia', 'Abia'),
         ('FCT', 'Abuja Federal Capital Territory'),
@@ -818,101 +825,6 @@ class ProductTemplateExtend(models.Model):
     is_material = fields.Boolean(string='Is Material', track_visibility='always')
 
 
-
-
-class Prospect(models.Model):
-    _name = "prospect"
-    _inherit = ['mail.thread', 'mail.activity.mixin']
-    _description = 'Prospect'
-    _order = 'open_date desc'
-
-    @api.model
-    def run_prospect_contacted_check(self):
-        now = datetime.now()
-        prospects = self.search([('expiry_date', '<', now), ('state', '!=', 'contacted'), ('is_non_compliance_email_sent', '=', False)])
-
-        for prospect in prospects:
-            # open_date = prospect.open_date
-            # today = datetime.strptime(datetime.today().strftime('%Y-%m-%d %H:%M:%S'), DEFAULT_SERVER_DATETIME_FORMAT)
-            # open_date = datetime.strptime(open_date, '%Y-%m-%d %H:%M:%S')
-            # date_diff = today - open_date
-            # open_date_format = datetime.strptime(open_date, '%Y-%m-%d %H:%M:%S').strftime('%d-%m-%Y %H:%M:%S')
-
-            # send email back to the ticket opener
-            partn_ids = []
-            user_names = ''
-            init_users = prospect.request_ticket_id.initiator_ticket_group_id.sudo().user_ids
-            for user in init_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-            if partn_ids:
-                subject = 'Sales person (%s) Non-Complaince within the stipulated time ' % (prospect.user_id.name)
-                msg = 'The sales person (%s) has failed to contact the new prospect (%s). A debit is applicable to %s, for not contacting the lead within the stipulated time of 30minutes.' % (prospect.user_id.name, prospect.name, prospect.user_id.name)
-
-                prospect.message_post(
-                body = msg,
-                subject = subject, partner_ids = partn_ids,
-                subtype_xmlid = 'mail.mt_comment')
-                prospect.is_non_compliance_email_sent = True
-                prospect.is_non_compliance_email_sent_date = datetime.now()
-        return True
-
-
-
-    def btn_contacted(self):
-
-        if not self.comment :
-            raise UserError('Please enter your comment before marking this prospect as contacted ')
-        self.state = 'contacted'
-        self.contacted_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-
-        #send email to ticket opener, which is probably csc group
-        users = self.sudo().request_ticket_id.initiator_ticket_group_id.sudo().user_ids
-        partn_ids = []
-        user_names = ''
-        msg = 'The Prospect (%s) has been contacted by %s with comment: <p>%s</p>' % (
-            self.name,  self.env.user.name, self.comment)
-        for user in users:
-            if user.is_group_email:
-                user_names += user.name + ", "
-                partn_ids.append(user.partner_id.id)
-
-        if partn_ids:
-            self.message_follower_ids.unlink()
-            self.message_post(
-                body=_(msg),
-                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
-            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
-    def btn_reset(self):
-        self.state = 'new'
-
-    @api.model
-    def create(self,vals):
-        request_ticket_id = vals.get('request_ticket_id', False)
-        if not request_ticket_id :
-            raise UserError('Sorry, you cannot create a prospect from here. This can only be created from CSC support team')
-        res = super(Prospect, self).create(vals)
-        return res
-
-    name = fields.Char(string='Name', tracking=True)
-    address = fields.Char(string='Address',tracking=True)
-    area_id = fields.Many2one('area',string='Area',tracking=True)
-    email = fields.Char(string='Email',tracking=True)
-    phone = fields.Char(string='Phone',tracking=True)
-    comment = fields.Text(string="Comment",tracking=True)
-    user_id = fields.Many2one('res.users', string='Sales Person',tracking=True)
-    open_date = fields.Datetime(string='Open Date', tracking=True)
-    expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
-    contacted_date = fields.Datetime(string='Contacted Date',tracking=True)
-    state = fields.Selection(
-        [('new', 'New'), ('contacted', 'Contacted')],
-        default='new', tracking=True)
-    is_non_compliance_email_sent = fields.Boolean(string='Is Non-Compliance Email Sent', default=False,tracking=True)
-    is_non_compliance_email_sent_date = fields.Datetime(string='Non-Compliance Email Sent Date')
-    request_ticket_id = fields.Many2one('kin.ticket', string='Request Ticket',tracking=True)
 
 
 class ResCompany(models.Model):

@@ -27,16 +27,15 @@
             <field name="code" >call_log</field>
         </record>
 
-         <record model="kin.ticket.category" id="request">
-          <field name="name">Request</field>
-            <field name="code" >request</field>
+         <record model="kin.ticket.category" id="major">
+          <field name="name">Major Incident</field>
+            <field name="code" >major</field>
         </record>
 
         <record model="kin.ticket.category" id="updown_grade">
           <field name="name">Change Request</field>
             <field name="code" >change_request</field>
         </record>
-
 
 
     </data>

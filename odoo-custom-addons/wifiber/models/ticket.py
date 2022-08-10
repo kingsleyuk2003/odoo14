@@ -23,7 +23,6 @@ class UserGroups(models.Model):
     is_installation_group_default_csc = fields.Boolean(string='Is Installation Group Default for CSC')
     is_maint_default = fields.Boolean(string='Is Maintenance Close Team Default')
     is_csc_group = fields.Boolean(string='Is CSC Group')
-    is_request_ticket_group = fields.Boolean(string='Is Request Ticket Group')
 
 
 class MaterialRequest(models.Model):
@@ -70,7 +69,6 @@ class Area(models.Model):
     area_manager_id = fields.Many2one('res.users', string="Area Manager")
     sales_person_id = fields.Many2one('res.users', string="Sales Person")
     user_ticket_group_id = fields.Many2one('user.ticket.group', string='Engineer User Ticket Group')
-    is_others = fields.Boolean(string="Is Others", default=False)
     stock_location_id = fields.Many2one('stock.location',string='Stock Location', required=True)
 
     _sql_constraints = [
@@ -292,13 +290,9 @@ class Ticket(models.Model):
     def _set_assigned_user_group_from_area(self):
         for rec in self:
             user_ticket_group_id = rec.area_customer_id.user_ticket_group_id
-            request_ticket_group = self.env['user.ticket.group'].search([('is_request_ticket_group', '=', True)], limit=1)
-            category_code = self.category_id.code
             if user_ticket_group_id:
                 rec.user_ticket_group_id = user_ticket_group_id
-            if user_ticket_group_id and category_code == 'request':
-                rec.user_ticket_group_id = request_ticket_group
-                rec.prospect_area_id = self.area_customer_id
+
 
 
     def send_email(self, grp_name, subject, msg):
@@ -364,42 +358,6 @@ class Ticket(models.Model):
         return super(Ticket,self).btn_ticket_progress()
 
 
-    def create_prospect_with_email(self):
-        sales_person =  self.others_sales_person_id or self.prospect_area_id.sales_person_id
-        if not sales_person :
-            raise UserError('Contact your Admin to set the sales person for the area')
-        vals =  {
-                'name':self.prospect_name,
-                'address': self.prospect_address,
-                'area_id' :self.prospect_area_id.id,
-                'email' : self.prospect_email,
-                'phone': self.prospect_phone,
-                'user_id': sales_person.id ,
-                'request_ticket_id' : self.id,
-                'open_date' : datetime.now(),
-                'expiry_date': datetime.now() + relativedelta(minutes=+30),
-            }
-        prospect = self.env['prospect'].create(vals)
-        self.prospect_id = prospect
-
-        # Send email to sales person
-        partn_ids = []
-        user = sales_person
-        user_name = user.name
-        partn_ids.append(user.partner_id.id)
-
-        if partn_ids:
-            prospect.message_follower_ids.unlink()
-            msg = _(
-                'A prospect (%s)  has been created from the request ticket with id: %s by %s. You are required to contact this prospect, within 30mins  and mark the prospect as contacted on your erp system.   ') % (
-                      self.prospect_name, self.name, self.env.user.name)
-            self.message_post(
-                body=msg,
-                subject=msg, partner_ids=partn_ids,
-                subtype_xmlid='mail.mt_comment', force_send=False)
-            self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
-
-
 
     def btn_ticket_open(self):
         if not self.category_id or not self.user_intg_ticket_group_id :
@@ -422,12 +380,9 @@ class Ticket(models.Model):
         self.open_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         self.user_id = self.env.user
 
-        if self.category_id == self.env.ref('wifiber.request') :
-            self.state = 'archived'
-            # create prospect with email
-            self.create_prospect_with_email()
-            return
-        else:
+        if self.category_id == self.env.ref('wifiber.major') :
+            self.state = 'major'
+
             # send email to the Assigned users too
             partn_ids = []
             user_names = ''
@@ -486,6 +441,7 @@ class Ticket(models.Model):
                 body=_(msg),
                 subject='%s Opened Installation Ticket Notification for %s' % (
                     self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
+            user_names = ''
             user_names += partner_id.name + ", "
             mail_obj.email_from = 'csc@wifiber.ng'
             mail_obj.reply_to = 'csc@wifiber.ng'
@@ -553,7 +509,7 @@ class Ticket(models.Model):
             rec.order_count = len(rec.order_id)
 
 
-    
+
     def action_view_invoice(self):
         invoice_id = self.mapped('invoice_id')
         imd = self.env['ir.model.data']
@@ -621,7 +577,8 @@ class Ticket(models.Model):
     def onchange_location(self):
         self.base_station_id = ''
 
-    
+
+
     def btn_ticket_reset(self):
         for rec in self:
             rec.invoice_id.unlink()
@@ -635,28 +592,24 @@ class Ticket(models.Model):
             rec.is_open_escalation_email_sent = False
             rec.is_open_escalation_email_sent_date = False
 
-        if self.category_id == self.env.ref('wifiber.request'):
-            self.prospect_id.unlink()
         return super(Ticket, self).btn_ticket_reset()
 
-    
+
     def btn_ticket_cancel(self):
         for rec in self:
             rec.invoice_id.unlink()
-        if self.category_id == self.env.ref('wifiber.request'):
-            self.prospect_id.unlink()
         return super(Ticket, self).btn_ticket_cancel()
 
-    
+
     def unlink(self):
         for rec in self:
             rec.invoice_id.unlink()
         return super(Ticket,self).unlink()
 
-    
+
     def btn_ticket_done(self):
 
-        if self.category_id in (self.env.ref('wifiber.support'), self.env.ref('wifiber.survey'), self.env.ref('wifiber.maintenance')) :
+        if self.category_id in (self.env.ref('wifiber.survey'), self.env.ref('wifiber.maintenance')) :
             self.state = "finalized"
             self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
@@ -709,7 +662,7 @@ class Ticket(models.Model):
         self.done_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         return super(Ticket,self).btn_ticket_done()
 
-    
+
     def btn_ticket_close(self):
 
         if self.category_id == self.env.ref('wifiber.installation') and self.state != 'finalized' :
@@ -828,10 +781,10 @@ class Ticket(models.Model):
         msg = subject
         self.send_email(grp_name, subject, msg)
 
-    
 
 
-    
+
+
     def action_ticket_opener_reject(self, msg):
         self.state = 'progress'
         self.opener_disapprove_by = self.env.user
@@ -868,7 +821,7 @@ class Ticket(models.Model):
 
 
 
-    
+
     def action_ticket_maint_reject(self,msg):
         if self.category_id != self.env.ref('wifiber.maintenance') :
             raise UserError(_('Sorry, you may rather Click the Done button. This is not a maintenance ticket'))
@@ -937,6 +890,7 @@ class Ticket(models.Model):
                 subject=debt_subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
+
     def btn_ticket_finalized(self):
 
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation'):
@@ -967,8 +921,6 @@ class Ticket(models.Model):
             else:
                 self.alert_msg = ''
                 self.show_alert_box = False
-                self.state = 'finalized'
-                self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
             self.partner_id.amount = self.order_id.amount_total
             #self.partner_id.action_create_customer_selfcare()
@@ -986,10 +938,13 @@ class Ticket(models.Model):
                 mail_obj.email_from = 'csc@wifiber.ng'
                 mail_obj.reply_to = 'csc@wifiber.ng'
 
+        self.state = 'finalized'
+        self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
         # email ticket opener users
         partn_ids = []
         user_names = ''
-        msg = 'The Ticket (%s) with description (%s), has been finalized by %s from the finalized team, you may now close the ticket' % (
+        msg = 'The Ticket (%s) with description (%s), has been finalized by %s from the NOC team, you may now close the ticket' % (
             self.ticket_id, self.name, self.env.user.name)
 
         ope_users = self.initiator_ticket_group_id.sudo().user_ids
@@ -1004,7 +959,6 @@ class Ticket(models.Model):
                 body=_(msg),
                 subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
 
 
     #finalized rejection
@@ -1054,7 +1008,7 @@ class Ticket(models.Model):
 
     def write(self,vals):
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation') :
-            area_id =  vals.get('area_customer_id', False)
+            area_id = vals.get('area_customer_id', False)
             if area_id and not self.partner_id.ref  :
                 vals['ref'] = self.env['ir.sequence'].next_by_code('cust_wid_code')
 
@@ -1080,6 +1034,11 @@ class Ticket(models.Model):
                 'gpon': vals.get('gpon_level', self.partner_id.gpon),
                 'interface': vals.get('interface', self.partner_id.interface),
                 'serial_no': vals.get('idu_serial_no', self.partner_id.serial_no),
+                'mac_address': vals.get('mac_address', self.partner_id.mac_address),
+                'service_port_no': vals.get('service_port_no', self.partner_id.service_port_no),
+                'onu_pon_power': vals.get('idu_serial_no', self.partner_id.onu_pon_power),
+                'remote_access': vals.get('idu_serial_no', self.partner_id.remote_access),
+                'cust_priority': vals.get('idu_serial_no', self.partner_id.cust_priority),
                 'product_id': vals.get('product_id', self.partner_id.product_id),
                 'olt_id' : vals.get('olt_id', self.partner_id.olt_id),
                 'status' : vals.get('status', self.partner_id.status),
@@ -1174,9 +1133,9 @@ class Ticket(models.Model):
     invoice_count = fields.Integer(compute="_compute_invoice_count", string='# of Invoices', copy=False, default=0)
 
     title = fields.Many2one(related='partner_id.title',string="Title", readonly=True)
-    gender = fields.Selection(related='partner_id.gender',  string='Gender', readonly=True)    
+    gender = fields.Selection(related='partner_id.gender',  string='Gender', readonly=True)
     estate_id = fields.Many2one(related='partner_id.estate_id',string='Estate', readonly=True)
-    city_cust = fields.Char(related='partner_id.city_cust',string='City', readonly=True)  
+    city_cust = fields.Char(related='partner_id.city_cust',string='City', readonly=True)
     dob = fields.Date(related='partner_id.dob',string="DOB", readonly=True)
     state_ng = fields.Selection(related='partner_id.state_ng',string="State", readonly=True)
 
@@ -1188,7 +1147,7 @@ class Ticket(models.Model):
     serial_no = fields.Char(related='partner_id.serial_no', string="Serial No")
 
     #survey_ticket_id = fields.Many2one('kin.ticket',string='Site Survey Ticket')
-    product_id = fields.Many2one(related='partner_id.product_id',string='Package')
+    product_id = fields.Many2one(related='partner_id.product_id',string='Plan')
     installation_form = fields.Binary(string='Installation Picture', attachment=True)
 
     rejection_evidence = fields.Binary(string='Rejection Evidence')
@@ -1222,9 +1181,10 @@ class Ticket(models.Model):
     user_ticket_group_id = fields.Many2one('user.ticket.group', default=get_default_eng_group, string='Assigned User Group')
     user_maint_ticket_group_id = fields.Many2one('user.ticket.group',string='Maintenance Ticket Close Group' )
 
-
     state = fields.Selection(
-        [('draft', 'Draft'), ('new', 'Open'), ('maint_approve', 'Maint. Approved'),('material_request', 'Material Request') ,('progress', 'Work In Progress'),('done', 'Completed'), ('finalized','Finalized'),('closed', 'Closed'),('cancel', 'Cancelled'),('archived', 'Archived')],
+        [('draft', 'Draft'), ('new', 'Open'), ('new_call', 'Open Call Log'), ('maint_approve', 'Maint. Approved'),
+         ('progress', 'Work In Progress'), ('done', 'Completed'), ('qa', 'Quality Assured'),
+         ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'),('major', 'Major')],
         default='draft', tracking=True)
 
     description = fields.Text(string='Incident Details')
@@ -1264,6 +1224,11 @@ class Ticket(models.Model):
     gpon_level = fields.Char(related='partner_id.gpon',string='GPON Port')
     power_level_id = fields.Char(string='Power Level')
     idu_serial_no = fields.Char(related='partner_id.serial_no',string='IDU SerialNumber')
+    mac_address = fields.Char(related='partner_id.mac_address', string='MAC Address')
+    service_port_no = fields.Char(related='partner_id.service_port_no', string='Service Port No.')
+    onu_pon_power = fields.Char(related='partner_id.onu_pon_power', string='ONU PON Power')
+    remote_access = fields.Selection(related='partner_id.remote_access', string='Remote Access')
+    cust_priority = fields.Integer(related='partner_id.cust_priority', string='Priority')
     wifi_ssid = fields.Char(string='Wifi SSID')
     splitter_box_code = fields.Char(string='Splitter Box Code')
     region_id = fields.Many2one(related='partner_id.region_id', string='Region')
@@ -1291,9 +1256,6 @@ class Ticket(models.Model):
     prospect_area_id = fields.Many2one('area',string='Prospect Area')
     prospect_email = fields.Char(string='Prospect Email')
     prospect_phone = fields.Char(string='Prospect Phone')
-    prospect_id = fields.Many2one('prospect', string ='Prospect')
-    others_sales_person_id = fields.Many2one('res.users',string='Sales Person')
-    is_others = fields.Boolean(related='prospect_area_id.is_others',string="Is Others")
 
     #Change Request
     area_change_request_id = fields.Many2one('area', string="Area", tracking=True)
@@ -1336,7 +1298,7 @@ class Ticket(models.Model):
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
     #
-    # 
+    #
     # def write(self, vals):
     #     is_partner = vals.get('partner_id', False)
     #     if is_partner and self.is_advance_invoice:
@@ -1345,7 +1307,7 @@ class AccountInvoice(models.Model):
     #     res = super(AccountInvoice, self).write(vals)
     #     return res
 
-    
+
     # def unlink(self):
     #     for rec in self:
     #         if rec.is_installation_invoice :

@@ -20,7 +20,7 @@
                     </div>
                 </xpath>
                 <button name="btn_ticket_done" position="after" >
-                    <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="wifiber.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('done') )]}"   />
+                    <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="wifiber.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', 'not in', ('installation','support') ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="wifiber.group_helpdesk_finalized_ticket"  />
                 </button>
                 <button name="btn_ticket_progress" position="before" >
@@ -34,10 +34,11 @@
                      <attribute  name="states" >finalized</attribute>
                  </button>
                 <button name="btn_ticket_cancel" position="attributes" >
-                     <attribute  name="states" >new,maint_approve,progress,done,finalized,archived</attribute>
-                 </button>
+                     <attribute  name="states" >new,maint_approve,progress,done,finalized,major</attribute>
+                    <attribute name="confirm" >Are you sure you want to cancel this ticket?</attribute>
+                </button>
                  <button name="btn_ticket_reset" position="attributes" >
-                         <attribute name="states" >new,progress,done,finalized,closed,cancel,archived</attribute>
+                         <attribute name="states" >new,progress,done,finalized,closed,cancel,major</attribute>
                         <attribute name="confirm" >Are you sure you want to reset this ticket back to draft state?</attribute>
                  </button>
                 <field name="state" widget="statusbar"  position="attributes">
@@ -59,8 +60,9 @@
                      <attribute name="invisible" >1</attribute>
                  </field>
 
+
                  <page  name="description" position="attributes" >
-                     <attribute name="string" >Incident Details</attribute>
+                     <attribute name="string" >Details</attribute>
                  </page>
 
                 <field name="category_id" position="attributes" >
@@ -136,10 +138,11 @@
                     <field name="is_request_material" />
                 </field>
 
-                <page name="description" position="before" >
+                <page name="description" position="replace" >
 
                     <page string="Maintenance Form"  attrs="{'invisible': [('category_code', '!=', 'maintenance' )]}" >
                          <group col="4"  >
+                               <field name="description" />
                                  <field name="user_maint_ticket_group_id"  readonly="1" />
                                 <field name="base_station_maint_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' )]}" />
                                 <field name="rfs_in_charge" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'maintenance' ),('state', '!=', 'draft' )]}" />
@@ -184,7 +187,7 @@
                             </field>
                         </group>
                          <group class="oe_subtotal_footer oe_right" colspan="2" >
-                              <button name="btn_ticket_material_request" type="object" colspan="4"  string="Request Material"   class="oe_highlight"   attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('new') )]}" groups="wifiber.group_show_prospect_request_material_btn"   />
+                              <button name="btn_ticket_material_request" type="object" colspan="4"  string="Request Material"   class="oe_highlight"   attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('new') )]}" groups="wifiber.group_show_request_material_btn"   />
 
                          </group>
 
@@ -200,7 +203,8 @@
 
                     <page string="Activation Form" attrs="{'invisible': [('category_code', '!=', 'installation' )]}" >
                         <group col="4" >
-                              <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="description" />
+                            <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','material_request','maint_approve') )]}" />
                               <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
@@ -208,6 +212,12 @@
                             <field name="olt_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new','maint_approve','material_request') )]}" />
                            <field name="gpon_level" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
                          <field name="ip_address" attrs="{'readonly': [('state', 'in', ('closed'))]}"  /> <!-- required should not be set on the view for ip-address, so that the system does not require it when the installation ticket is about to be disapproved -->
+                           <field name="mac_address"  attrs="{'readonly': [('state', 'in', ('closed'))]}"  />
+                                <field name="service_port_no"  attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+                                <field name="onu_pon_power"  attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+                                <field name="remote_access"  attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+                                <field name="cust_priority"  attrs="{'readonly': [('state', 'in', ('closed'))]}" />
+                                <field name="location_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('closed'))]}" />
                           <field name="wifi_ssid"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="expiration_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
                             <field name="splitter_box_code"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -231,9 +241,11 @@
                     <page  string="Support Form" attrs="{'invisible': [('category_code', '!=', 'support' )]}" >
 
                             <group col="4" >
+                                <field name="description" />
                                  <field name="source_support" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"   />
                                  <field name="complaint_type_support_id" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"    />
                                   <field name="call_type_support" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
+
                             </group>
                             <group col="4" >
                                   <field name="root_cause" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'support'),('state', '=', 'progress' )]}"   />
@@ -242,7 +254,8 @@
                     </page>
                     <page  string="Change Request Form" attrs="{'invisible': [('category_code', '!=', 'change_request' )]}" >
                             <group col="4" >
-                                 <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
+                                <field name="description" />
+                                <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
                                 <field name="updown_grade_type" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                  <field name="product_curr_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))],'required': [('category_code', '=', 'change_request' )]}"    options="{'no_open': True, 'no_create': True}"  />
                                  <field name="product_new_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   options="{'no_open': True, 'no_create': True}"   />
@@ -257,6 +270,7 @@
                     </page>
                     <page  string="Site Survey and SRF Form"  attrs="{'invisible': [('category_code', '!=', 'survey' )]}" >
                              <group col="4" >
+                                 <field name="description" />
                                  <field name="site_survey_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                  <field name="srf_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                  <field name="dist_fpop" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
@@ -270,55 +284,51 @@
                     </page>
                     <page  string="Call Log" attrs="{'invisible': [('category_code', '!=', 'call_log' )]}" >
                          <group col="4" string="Potential Customer" >
-                            <field name="prospect_name"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
-                             <field name="prospect_area_id"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
-                             <field name="prospect_address"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
-
-                             <field name="prospect_phone"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'call_log' )]}" />
-                             <field name="prospect_email"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
-                            <field name="prospect_id" readonly="1" />
+                            <field name="description" />
+                             <field name="prospect_name"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_area_id"  options="{'no_open': True, 'no_create': True}"   />
+                             <field name="prospect_address"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_phone"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_email"  />
                          </group>
                     </page>
-                    <field name="is_others" invisible="1" />
-                    <page  string="Request" attrs="{'invisible': [('category_code', '!=', 'request' )]}" >
-                         <group col="4" string="Potential Customer" >
-
-                            <field name="prospect_name"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
-                            <field name="prospect_area_id"  attrs="{'readonly': [('state', 'in', ('archived'))]}" />
-                            <field name="prospect_address"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
-
-                             <field name="others_sales_person_id"    attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('is_others', '=', True)], 'invisible': [('is_others', '=', False)]}"    />
-                             <field name="prospect_phone"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
-
-                            <field name="prospect_email"  attrs="{'readonly': [('state', 'in', ('archived'))], 'required': [('category_code', '=', 'request' )]}" />
-                            <field name="prospect_id" readonly="1" />
+                    <page  string="Major Incident" attrs="{'invisible': [('category_code', '!=', 'major' )]}" >
+                         <group col="4" string="Major" >
+                            <field name="description"  />
                          </group>
                     </page>
 
                     <page name="cust_details"  string="Customer Details"  groups="wifiber.group_helpdesk_show_customer_other_tabs" >
                             <group col="4" >
-
                                   <field name="cust_name" />
                                  <field name="title" />
                                  <field name="gender" />
                                  <field name="estate_id" />
                                  <field name="city_cust" />
                                 <field name="website" />
-                                <field name="company_id" />
-                                <field name="location_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="mac_address"  />
+                                <field name="ip_address" />
+                                 <field name="gpon" />
+                                 <field name="serial_no" />
+                                <field name="service_port_no"  />
+                                <field name="onu_pon_power"  />
+                                <field name="remote_access"  />
+                                <field name="cust_priority"  />
+                                <field name="location_id"   />
+                                <field name="vlan"  />
+                                 <field name="bandwidth" />
                                 <field name="region_cust_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
 
                                 <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                                <field name="bandwidth" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+
                                   <field name="reg_date" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                   <field name="activation_date"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                    <field name="last_logoff" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                                    <field name="gpon" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+
                                      <field name="interface" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                                      <field name="serial_no" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+
                                 <field name="contact_person" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="cpe" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
-                                <field name="ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="radio_ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="base_station_ip_address" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="subnet" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -326,7 +336,7 @@
                                 <field name="indoor_wan" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="comment" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                  <field name="status" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
-
+                                <field name="company_id" />
                             </group>
 
                   </page>
@@ -469,7 +479,6 @@
                             <field name="area_manager_id" required="True" options="{'no_open': True, 'no_create': True}" />
                            <field name="sales_person_id" required="True" options="{'no_open': True, 'no_create': True}" />
                             <field name="user_ticket_group_id" required="True" options="{'no_open': True, 'no_create': True}" />
-                             <field name="is_others" />
                             <field name="stock_location_id" />
                         </group>
                     </sheet>
@@ -627,7 +636,6 @@
                      <field name="is_installation_group_default_csc" />
                      <field name="is_maint_default" />
                      <field name="is_csc_group" />
-                     <field name="is_request_ticket_group" />
                  </field>
             </field>
           </record>
