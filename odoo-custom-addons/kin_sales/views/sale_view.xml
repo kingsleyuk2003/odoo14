@@ -61,9 +61,18 @@
                     <attribute name="groups" >kin_sales.group_show_cancel_sale_button</attribute>
                 </button>
 
-                <xpath expr="//button[@id='action_confirm']" position="attributes">
-                       <attribute name="groups" >kin_sales.group_show_confirm_sale_button</attribute>
-                </xpath>
+
+                 <button name="action_confirm" id="action_confirm"  class="btn-primary" type="object" attrs="{'invisible': [('state', 'not in', ['sent'])]}" position="attributes" >
+                    <attribute name="groups" >kin_sales.group_show_confirm_sale_button</attribute>
+                     <attribute name="string" >Confirm Order</attribute>
+                 </button>
+
+                 <button name="action_confirm"  type="object" attrs="{'invisible': [('state', 'not in', ['draft'])]}"  position="attributes" >
+                    <attribute name="string" >Confirm Order</attribute>
+                    <attribute name="groups" >kin_sales.group_show_confirm_sale_button</attribute>
+                 </button>
+
+
                 <xpath expr="//button[@id='action_confirm']" position="before">
                     <field name="is_request_approval_sent" invisible="1" />
                        <button name="btn_request_approval" attrs="{'invisible': [('is_request_approval_sent', '=', True)]}" string="Request Approval" type="object" class="oe_highlight" groups="kin_sales.group_sales_order_show_request_approval_btn" />

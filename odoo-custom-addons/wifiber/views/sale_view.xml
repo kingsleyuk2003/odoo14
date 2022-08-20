@@ -342,14 +342,18 @@
             <field name="inherit_id" ref="sale.view_order_form" />
             <field name="arch" type="xml">
 
-                 <xpath expr="//button[@name='action_confirm'][@class='btn-primary']" position="attributes" >
+                 <button name="action_confirm" id="action_confirm"  class="btn-primary" type="object" attrs="{'invisible': [('state', 'not in', ['sent'])]}" position="attributes" >
                     <attribute name="groups" >wifiber.group_show_confirm_btn</attribute>
                      <attribute name="string" >Manager Make Order</attribute>
-                </xpath>
-                <xpath expr="//button[@name='action_confirm'][@type='object']" position="attributes" >
+                 </button>
+
+                 <button name="action_confirm"  type="object" attrs="{'invisible': [('state', 'not in', ['draft'])]}"  position="attributes" >
                     <attribute name="groups" >wifiber.group_show_confirm_btn</attribute>
-                    <attribute name="string" >Manager Make Order</attribute>
-                </xpath>
+                     <attribute name="string" >Manager Make Order</attribute>
+                 </button>
+
+
+
 
                 <div  name="button_box" position="inside">
                      <button type="object"  name="btn_view_payment" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('payment_count', '=', 0)]}" >

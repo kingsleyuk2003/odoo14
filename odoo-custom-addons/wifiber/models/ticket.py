@@ -463,6 +463,7 @@ class Ticket(models.Model):
             mail_obj = self.message_post(
                 body=_(msg),
                 subject='%s Opened Support Ticket Notification for %s' % (self.sudo().product_id.name,partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
+            user_names = ''
             user_names += partner_id.name + ", "
             mail_obj.email_from = 'csc@wifiber.ng'
             mail_obj.reply_to = 'csc@wifiber.ng'
@@ -1036,9 +1037,9 @@ class Ticket(models.Model):
                 'serial_no': vals.get('idu_serial_no', self.partner_id.serial_no),
                 'mac_address': vals.get('mac_address', self.partner_id.mac_address),
                 'service_port_no': vals.get('service_port_no', self.partner_id.service_port_no),
-                'onu_pon_power': vals.get('idu_serial_no', self.partner_id.onu_pon_power),
-                'remote_access': vals.get('idu_serial_no', self.partner_id.remote_access),
-                'cust_priority': vals.get('idu_serial_no', self.partner_id.cust_priority),
+                'onu_pon_power': vals.get('onu_pon_power', self.partner_id.onu_pon_power),
+                'remote_access': vals.get('remote_access', self.partner_id.remote_access),
+                'cust_priority': vals.get('cust_priority', self.partner_id.cust_priority),
                 'product_id': vals.get('product_id', self.partner_id.product_id),
                 'olt_id' : vals.get('olt_id', self.partner_id.olt_id),
                 'status' : vals.get('status', self.partner_id.status),

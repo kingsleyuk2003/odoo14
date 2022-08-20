@@ -233,19 +233,19 @@ class SaleOrderExtend(models.Model):
 
         # Create ticket
         product_name = False
+        product = False
         product_order_line = self.order_line.filtered(lambda line: line.product_id.is_sub == True)
         if product_order_line :
             product = product_order_line.product_id.id
             product_name = product_order_line.product_id.name
-        else:
-            product = False
+
         vals = {
             'name': '%s Installation Ticket for %s with sales order reference (%s)' %  (product_name or '', self.partner_id.name ,  self.name),
             'category_id': category_id.id,
             'partner_id': self.partner_id.id,
             'ticket_company_id' : self.company_id.id,
             'initiator_ticket_group_id' : is_default_installation_group,
-            'description' : 'Kindly proceed with the installation of %s for %s (%s) with sales order reference (%s)' %  (product_name or '', self.partner_id.name , self.partner_id.ref, self.name),
+            'description' : 'Kindly proceed with the installation of %s for %s with sales order reference (%s)' %  (product_name or '', self.partner_id.name ,  self.name),
 
         }
         ticket_obj = self.env['kin.ticket'].create(vals)

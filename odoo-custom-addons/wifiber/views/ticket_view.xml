@@ -306,17 +306,17 @@
                                  <field name="estate_id" />
                                  <field name="city_cust" />
                                 <field name="website" />
-                                <field name="mac_address"  />
-                                <field name="ip_address" />
+                                <field name="mac_address"   attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="ip_address"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                  <field name="gpon" />
-                                 <field name="serial_no" />
-                                <field name="service_port_no"  />
-                                <field name="onu_pon_power"  />
-                                <field name="remote_access"  />
-                                <field name="cust_priority"  />
-                                <field name="location_id"   />
-                                <field name="vlan"  />
-                                 <field name="bandwidth" />
+                                 <field name="serial_no"  />
+                                <field name="service_port_no"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="onu_pon_power"   attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="remote_access"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}"  />
+                                <field name="cust_priority"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="location_id"   attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                <field name="vlan"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                                 <field name="bandwidth"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="region_cust_id"   options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
 
                                 <field name="base_station_id" domain="[('location_id','=',location_id)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />

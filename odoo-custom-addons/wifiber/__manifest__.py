@@ -14,7 +14,7 @@ wifiber Modifications
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-     'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others'],
+     'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others','sale_management'],
     'data': [
         'data/data.xml',
         'report/report_invoice.xml',
