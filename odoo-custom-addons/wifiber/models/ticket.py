@@ -238,6 +238,8 @@ class Ticket(models.Model):
         for rec in self:
             rec.stock_picking_count = len(rec.picking_ids)
 
+    def btn_ticket_installed(self):
+        self.state = 'installed'
 
     def btn_ticket_material_request(self):
         self.state = 'material_request'
@@ -1184,7 +1186,7 @@ class Ticket(models.Model):
 
     state = fields.Selection(
         [('draft', 'Draft'), ('new', 'Open'), ('new_call', 'Open Call Log'), ('maint_approve', 'Maint. Approved'),
-         ('progress', 'Work In Progress'), ('done', 'Completed'), ('qa', 'Quality Assured'),
+         ('progress', 'Work In Progress'), ('material_request', 'Material Requested'), ('installed', 'Installed') ,('done', 'Completed'), ('qa', 'Quality Assured'),
          ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'),('major', 'Major')],
         default='draft', tracking=True)
 

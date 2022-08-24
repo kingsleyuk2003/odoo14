@@ -81,17 +81,25 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 },
                 "width": 25,
             },
-            "3_input": {
+            "3_details": {
+                "header": {"value": "Details"},
+                "data": {
+                    "value": self._render("details"),
+                    "format": FORMATS["format_tcell_left"],
+                },
+                "width": 25,
+            },
+            "4_input": {
                 "header": {"value": "In"},
                 "data": {"value": self._render("input")},
                 "width": 25,
             },
-            "4_output": {
+            "5_output": {
                 "header": {"value": "Out"},
                 "data": {"value": self._render("output")},
                 "width": 25,
             },
-            "5_balance": {
+            "6_balance": {
                 "header": {"value": "Balance"},
                 "data": {"value": self._render("balance")},
                 "width": 25,
@@ -170,6 +178,8 @@ class ReportStockCardReportXlsx(models.AbstractModel):
         )
         for line in product_lines:
             balance += line.product_in - line.product_out
+            purchase_info = line.picking_id.purchase_id
+            sales_info = line.picking_id.sale_id
             row_pos = self._write_line(
                 ws,
                 row_pos,
@@ -178,6 +188,7 @@ class ReportStockCardReportXlsx(models.AbstractModel):
                 render_space={
                     "date": line.date or "",
                     "reference": line.display_name or "",
+                    "details" : (purchase_info and purchase_info.partner_id.name ) or (sales_info and sales_info.partner_id.name) or "",
                     "input": line.product_in or 0,
                     "output": line.product_out or 0,
                     "balance": balance,

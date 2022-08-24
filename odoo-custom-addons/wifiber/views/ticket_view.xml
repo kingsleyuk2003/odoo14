@@ -23,9 +23,16 @@
                     <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="wifiber.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', 'not in', ('installation','support') ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="wifiber.group_helpdesk_finalized_ticket"  />
                 </button>
+                <button name="btn_ticket_done" position="attributes" >
+                      <attribute  name="states" >progress,installed</attribute>
+                 </button>
                 <button name="btn_ticket_progress" position="before" >
                      <button name="btn_ticket_maint_approve" type="object"  string="Maintenance Approved"  class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket" attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"    />
                      <button type="action"  string="Maintenance Declined"  name="%(action_disapprove_maint)d"   class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket"   attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"  />
+                </button>
+                <button name="btn_ticket_progress" position="after" >
+                     <button name="btn_ticket_installed" type="object"  string="Installed"  class="oe_highlight" attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('progress','material_request') )]}"    />
+
                 </button>
                  <button name="btn_ticket_progress" position="attributes" >
                       <attribute  name="states" >maint_approve,new,material_request</attribute>

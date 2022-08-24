@@ -102,6 +102,18 @@
                         t-foreach="o.results.filtered(lambda l: l.product_id == product and not l.is_initial)"
                         t-as="product_line"
                     >
+                        <t t-if="product_line.picking_id.purchase_id" >
+                            <t
+                                t-set="details"
+                                t-value="product_line.picking_id.purchase_id.partner_id.name"
+                            />
+                        </t>
+                        <t t-if="product_line.picking_id.sale_id" >
+                            <t
+                                t-set="details"
+                                t-value="product_line.picking_id.sale_id.partner_id.name"
+                            />
+                        </t>
                         <t
                             t-set="product_balance"
                             t-value="product_balance + product_line.product_in - product_line.product_out"
@@ -140,6 +152,7 @@
             <div class="act_as_row labels">
                 <div class="act_as_cell">Date</div>
                 <div class="act_as_cell">Reference</div>
+                <div class="act_as_cell">Details</div>
                 <div class="act_as_cell">In</div>
                 <div class="act_as_cell">Out</div>
                 <div class="act_as_cell">Balance</div>
@@ -154,6 +167,9 @@
             </div>
             <div class="act_as_cell left">
                 <t t-esc="product_line.display_name" />
+            </div>
+            <div class="act_as_cell left">
+                <t t-esc="details" />
             </div>
             <div class="act_as_cell right">
                 <t t-esc="'{0:,.2f}'.format(product_line.product_in)" />
