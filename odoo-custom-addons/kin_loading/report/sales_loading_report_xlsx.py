@@ -7,9 +7,11 @@
 
 from odoo import api, fields, models
 from datetime import datetime
+from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 import pytz
 from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
+
 
 class SalesReport(models.TransientModel):
     _name = 'report.kin_loading.report_sales_loading_report'
@@ -31,7 +33,7 @@ class SalesReport(models.TransientModel):
             where_start_date = "sale_order.date_order >= '%s' AND" % (start_date)
 
         if not end_date :
-            end_date = datetime.today().strftime('%Y-%m-%d')
+            end_date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         where_type = ''
         if type == 'is_throughput' :
@@ -164,8 +166,8 @@ class SalesReport(models.TransientModel):
         report_worksheet.set_row(3, 20)
         if start_date and end_date:
             report_worksheet.merge_range(3, 0, 3, 10,
-                                          'Period: ' + datetime.strptime(start_date, '%Y-%m-%d').strftime(
-                                              '%d/%m/%Y') + '  to ' + datetime.strptime(end_date, '%Y-%m-%d').strftime(
+                                          'Period: ' + datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S').strftime(
+                                              '%d/%m/%Y') + '  to ' + datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(
                                               '%d/%m/%Y'), title_format)
         else:
             report_worksheet.merge_range(3, 0, 3, 10, 'Period: All', title_format)

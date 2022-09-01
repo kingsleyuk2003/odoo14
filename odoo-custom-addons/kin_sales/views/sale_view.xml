@@ -172,7 +172,7 @@
         <record id="action_sale_order_lines" model="ir.actions.act_window">
             <field name="name">Sale Order Lines</field>
             <field name="res_model">sale.order.line</field>
-            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_state': 1,'search_default_groupby_cust': 1}</field>
+            <field name="context">{'search_default_groupby_product': 1,'search_default_groupby_state': 1}</field>
             <field name="domain">[('state', 'not in', ['draft', 'cancel'])]</field>
             <field name="view_mode">tree,pivot,graph</field>
             <field name="view_id" ref="view_order_line_tree_extend"/>
@@ -182,6 +182,8 @@
         <menuitem id="menu_sale_order_lines" name="Sales Analysis"
                 action="action_sale_order_lines" parent="sale.menu_sale_report"
                 sequence="31"/>
+
+
 
 
 

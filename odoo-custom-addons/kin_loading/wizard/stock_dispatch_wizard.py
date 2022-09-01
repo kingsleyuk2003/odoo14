@@ -34,8 +34,8 @@ class StockDispatchWizard(models.TransientModel):
     stock_dispatch_location_ids = fields.Many2many('stock.location', 'stock_dispatch_wizard_rel', 'stock_dispatch_wizard_id', 'stock_dispatch_loc_id', string='Stock Locations')
     product_ids = fields.Many2many('product.product', 'prod_stock_rel', 'stock_dispatch_wizard_id', 'stock_dispatch_loc_id',
                                    string='Products')
-    start_date = fields.Date('Start Loaded Date')
-    end_date = fields.Date('End Loaded Date')
+    start_date = fields.Datetime('Start Loaded Date')
+    end_date = fields.Datetime('End Loaded Date')
     partner_id = fields.Many2one('res.partner', string='Customer')
     ticket_ids = fields.Many2many('stock.picking', string='Ticket(S)')
     waybill_no = fields.Char(string='Waybill')

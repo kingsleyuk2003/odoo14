@@ -95,7 +95,8 @@ class AccountPayment(models.Model):
 
     def action_post(self):
         res = super(AccountPayment,self).action_post()
-        self.move_id.payment_id = self
+        for rec in self:
+            rec.move_id.payment_id = rec
         return res
 
 

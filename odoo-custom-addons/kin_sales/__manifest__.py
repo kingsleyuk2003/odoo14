@@ -19,6 +19,8 @@ Sales Modifications.
 
         'security/ir.model.access.csv',
         'data/mail_template.xml',
+        'wizard/sales_lines_report_wizard_view.xml',
+         'views/report.xml',
         'views/partner_view.xml',
         'views/sale_view.xml',
         'views/res_config_settings_views.xml',

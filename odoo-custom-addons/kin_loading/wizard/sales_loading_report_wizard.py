@@ -28,8 +28,8 @@ class SalesLoadingReportWizard(models.TransientModel):
         return self.env.ref('kin_loading.sales_loading_report').report_action(self, data)
 
 
-    start_date = fields.Date('Start Date')
-    end_date = fields.Date('End Date')
+    start_date = fields.Datetime('Start Date')
+    end_date = fields.Datetime('End Date')
     partner_id = fields.Many2one('res.partner',string='Customer')
     partner_root_id = fields.Many2one('res.partner',string='Root Customer')
     include_root_customer_order = fields.Boolean(string='Include Root Customer Order')

@@ -36,7 +36,7 @@ class LoadingTicketReport(models.TransientModel):
             where_start_date = "sp.ticket_date >= '%s' AND" % (start_date)
 
         if not end_date :
-            end_date = datetime.today().strftime('%Y-%m-%d')
+            end_date = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         where_type = ''
         if type == 'is_throughput':
@@ -158,8 +158,8 @@ class LoadingTicketReport(models.TransientModel):
         report_worksheet.set_row(3, 20)
         if start_date and end_date:
             report_worksheet.merge_range(3, 0, 3, 10,
-                                          'Period: ' + datetime.strptime(start_date, '%Y-%m-%d').strftime(
-                                              '%d/%m/%Y') + '  to ' + datetime.strptime(end_date, '%Y-%m-%d').strftime(
+                                          'Period: ' + datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S').strftime(
+                                              '%d/%m/%Y') + '  to ' + datetime.strptime(end_date, '%Y-%m-%d %H:%M:%S').strftime(
                                               '%d/%m/%Y'), title_format)
         else:
             report_worksheet.merge_range(3, 0, 3, 10, 'Period: All', title_format)

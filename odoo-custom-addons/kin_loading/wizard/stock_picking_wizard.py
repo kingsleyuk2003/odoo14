@@ -32,8 +32,8 @@ class StockPickingWizard(models.TransientModel):
     ticket_ids = fields.Many2many('stock.picking',string='Ticket ID(s)')
     partner_id = fields.Many2one('res.partner', string='Customer')
     product_ids = fields.Many2many('product.product', 'stock_picking_loading_rel', 'stock_picking_wizard_id', 'prod_id', string='Products')
-    start_date = fields.Date('Start Ticket Date')
-    end_date = fields.Date('End Ticket Date')
+    start_date = fields.Datetime('Start Ticket Date')
+    end_date = fields.Datetime('End Ticket Date')
     states = fields.Selection([
          ('done', 'Loaded'),
         ('not_done', 'Not Loaded')

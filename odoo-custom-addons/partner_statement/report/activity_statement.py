@@ -178,10 +178,11 @@ class ActivityStatement(models.AbstractModel):
         )
         move_obj = self.env['account.move']
         for row in self.env.cr.dictfetchall():
-            move = move_obj.browse(row['m_id'])
-            for line in move.line_ids:
-                if line.exclude_from_invoice_tab:
-                    row['name'] += move.description_report
+            # move = move_obj.browse(row['m_id'])
+            # for line in move.line_ids:
+            #     if line.exclude_from_invoice_tab:
+            #         if move.description_report :
+            #             row['name'] += move.description_report
             res[row.pop("partner_id")].append(row)
         return res
 

@@ -15,7 +15,6 @@ class StockCardView(models.TransientModel):
     product_uom_qty = fields.Float()
     product_uom = fields.Many2one(comodel_name="uom.uom")
     reference = fields.Char()
-    details = fields.Char()
     location_id = fields.Many2one(comodel_name="stock.location")
     location_dest_id = fields.Many2one(comodel_name="stock.location")
     is_initial = fields.Boolean()
