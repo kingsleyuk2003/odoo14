@@ -619,7 +619,7 @@ class Ticket(models.Model):
             # email ticket opener users
             partn_ids = []
             user_names = ''
-            msg = 'The Ticket (%s) with description (%s), has been completed and  finalized by %s, you may now close the ticket' % (
+            msg = 'The Ticket (%s) with description (%s), has been completed and finalized by %s, you may now close the ticket' % (
                 self.ticket_id, self.name, self.env.user.name)
 
             ope_users = self.initiator_ticket_group_id.sudo().user_ids
@@ -654,6 +654,12 @@ class Ticket(models.Model):
 
         msg = 'The Ticket (%s) with description (%s), has been Done by %s' % (
         self.ticket_id, self.name, self.env.user.name)
+
+        intg_users = self.user_intg_ticket_group_id.sudo().user_ids
+        for user in intg_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
 
         if partn_ids:
             self.message_follower_ids.unlink()
