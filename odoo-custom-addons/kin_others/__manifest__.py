@@ -14,7 +14,7 @@ Other Miscelleaneous Modifications
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['base','mail'],
+    'depends': ['base','mail','contacts','calendar'],
     'data': [
          'security/security.xml',
         'cron_data.xml',

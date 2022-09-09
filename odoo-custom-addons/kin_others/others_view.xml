@@ -18,6 +18,14 @@
 		 <field name="groups_id" eval="[(6, 0, [ref('group_show_utm_tracker')])]"/>
         </record>
 
+        <record model="ir.ui.menu" id="contacts.menu_contacts">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_contact_menu')])]"/>
+        </record>
+
+        <record model="ir.ui.menu" id="calendar.mail_menu_calendar">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_calendar_tracker')])]"/>
+        </record>
+
 
 
   <record id="view_users_form_other_settings" model="ir.ui.view">

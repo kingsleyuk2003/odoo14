@@ -435,7 +435,7 @@ class Ticket(models.Model):
                     'Kindly set the email for the %s with client id %s, in the customers database, before this ticket can be opened' % (
                     partner_id.name, partner_id.ref or ''))
 
-            msg = 'Dear %s, <p>This is to acknowledge the receipt of your payment for (Package-%s) Broadband service. </p> An installation ticket with the ID: %s has been opened for your installation. <p> Your Service ID : %s (this will be required for future communication).</p> <p> Kindly note that installation takes 3 to 7 working days. </p> <p> For further enquiries and assistance, please feel free to contact us through any of the following channels:</p><p><ul class=o_timeline_tracking_value_list><li>Calls: +2349083301363</li><li>Email: csc@wifiber.ng</li></ul></p><p>Please visit our website <a href=https://wifiber.ng/ >https://wifiber.ng/</a> for other terms and conditions.</p><p>We appreciate your interest in wifiber Broadband and we hope you will enjoy our partnership as we provide you a reliable and steady internet connectivity.</p><p> Regards,</p>Customer Service Center</p>' % \
+            msg = 'Dear %s, <p>This is to acknowledge the receipt of your payment for (Package-%s) Broadband service. </p> An installation ticket with the ID: %s has been opened for your installation. <p> Your Service ID : %s (this will be required for future communication).</p> <p> Kindly note that installation takes 3 to 7 working days. </p> <p> For further enquiries and assistance, please feel free to contact us through any of the following channels:</p><p><ul class=o_timeline_tracking_value_list><li>Calls: 09087690000</li><li>Whatsapp: 09090008665</li><li>Email: cs@wifiber.ng</li></ul></p><p>Please visit our website <a href=https://wifiber.ng/ >https://wifiber.ng/</a> for other terms and conditions.</p><p>We appreciate your interest in wifiber Broadband and we hope you will enjoy our partnership as we provide you a reliable and steady internet connectivity.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
                       partner_id.name, self.sudo().product_id.name, self.ticket_id, partner_id.ref)
             self.message_follower_ids.unlink()
@@ -445,8 +445,8 @@ class Ticket(models.Model):
                     self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
             user_names = ''
             user_names += partner_id.name + ", "
-            mail_obj.email_from = 'csc@wifiber.ng'
-            mail_obj.reply_to = 'csc@wifiber.ng'
+            mail_obj.email_from = 'cs@wifiber.ng'
+            mail_obj.reply_to = 'cs@wifiber.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
@@ -467,8 +467,8 @@ class Ticket(models.Model):
                 subject='%s Opened Support Ticket Notification for %s' % (self.sudo().product_id.name,partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
             user_names = ''
             user_names += partner_id.name + ", "
-            mail_obj.email_from = 'csc@wifiber.ng'
-            mail_obj.reply_to = 'csc@wifiber.ng'
+            mail_obj.email_from = 'cs@wifiber.ng'
+            mail_obj.reply_to = 'cs@wifiber.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
             # set escalation expiry date
             self.expiry_date = datetime.now() + relativedelta(hours=+24)
@@ -710,8 +710,8 @@ class Ticket(models.Model):
                     body=_(msg),
                     subject='%s Completed and Closed Installation Ticket Notification for %s' % (self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += partner_id.name + ", "
-                mail_obj.email_from = 'csc@wifiber.ng'
-                mail_obj.reply_to = 'csc@wifiber.ng'
+                mail_obj.email_from = 'cs@wifiber.ng'
+                mail_obj.reply_to = 'cs@wifiber.ng'
 
                 self.env.user.notify_info('%s Will Be Notified by Email for Installation Ticket Closure' % (user_names))
 
@@ -729,8 +729,8 @@ class Ticket(models.Model):
                     self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],
                     subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += partner_id.name + ", "
-                mail_obj.email_from = 'csc@wifiber.ng'
-                mail_obj.reply_to = 'csc@wifiber.ng'
+                mail_obj.email_from = 'cs@wifiber.ng'
+                mail_obj.reply_to = 'cs@wifiber.ng'
                 self.env.user.notify_info('%s Will Be Notified by Email for Installation Ticket Closure' % (user_names))
 
         elif self.category_id == self.env.ref('wifiber.survey') :
@@ -939,13 +939,13 @@ class Ticket(models.Model):
             # Send email to the customer after activation from NOC for the installation ticket
             user_names = ''
             if self.partner_id and self.partner_id.email:
-                msg = '<p>Dear %s, (ID %s) </p> <p>We, at wifiber, are honored to have you as one of our reputable customers. </p> <p> Your account has been activated and we are confident that you will be very satisfied with our services. Find below details of your service portal login from which you can manage your account.</p> <p> Client ID: %s <br/> Service Plan: %s </p>   <p>You can manage your service via the platform below;<br/>wifiber Self-service Portal - <a href= https://selfcare.wifiber.ng/ > https://selfcare.wifiber.ng/</a> <br/>Username : %s<br/>Password : %s</p> <p><b>Contact Us</b><br/>You can contact our customer service center via the following platforms. <ul><li> Email: csc@wifiber.ng,support@wifiber.ng</li><li>Phone:+2349083301363 </li><li>Whatsapp: +2349071011409</li><li>Website online chat via: <a href= http://www.wifiber.ng > http://www.wifiber.ng</a>  </li></ul> </p> <p><b>Service Renewal:</b><br/>You can renew your service via our automated platform.<br/> wifiber Self-care Portal - <a href= https://selfcare.wifiber.ng/ > https://selfcare.wifiber.ng/</a></p> <p> Thank you again for your business.</p> <p> Sincerely, </p> <p><b> Customer Service Center </b> </p>' % (
+                msg = '<p>Dear %s, (ID %s) </p> <p>We, at wifiber, are honored to have you as one of our reputable customers. </p> <p> Your account has been activated and we are confident that you will be very satisfied with our services. Find below details of your service portal login from which you can manage your account.</p> <p> Client ID: %s <br/> Service Plan: %s </p>   <p>You can manage your service via the platform below;<br/>wifiber Self-service Portal - <a href= https://selfcare.wifiber.ng/ > https://selfcare.wifiber.ng/</a> <br/>Username : %s<br/>Password : %s</p> <p><b>Contact Us</b><br/>You can contact our customer service center via the following platforms. <ul><li> Email: cs@wifiber.ng,support@wifiber.ng</li><li>Phone:09087690000 </li><li>Whatsapp: 09090008665</li><li>Website online chat via: <a href= http://www.wifiber.ng > http://www.wifiber.ng</a>  </li></ul> </p> <p><b>Service Renewal:</b><br/>You can renew your service via our automated platform.<br/> wifiber Self-care Portal - <a href= https://selfcare.wifiber.ng/ > https://selfcare.wifiber.ng/</a></p> <p> Thank you again for your business.</p> <p> Sincerely, </p> <p><b> Customer Service Center </b> </p>' % (
                     self.partner_id.name, self.partner_id.ref, self.partner_id.ref, self.product_id.name, self.partner_id.ref, self.partner_id.ref)
                 mail_obj = self.message_post(body=_(msg), subject='%s - Welcome to wifiber Broadband' % (self.partner_id.name),
                                              partner_ids=[self.partner_id.id], subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += self.partner_id.name + ", "
-                mail_obj.email_from = 'csc@wifiber.ng'
-                mail_obj.reply_to = 'csc@wifiber.ng'
+                mail_obj.email_from = 'cs@wifiber.ng'
+                mail_obj.reply_to = 'cs@wifiber.ng'
 
         self.state = 'finalized'
         self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)

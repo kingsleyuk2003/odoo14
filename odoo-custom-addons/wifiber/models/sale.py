@@ -803,7 +803,7 @@ class AccountPayment(models.Model):
             'subject': name,
             'body_html': msg,
             'author_id': self.env.user.partner_id.id,
-            'email_from': 'csc@wifiber.ng',
+            'email_from': 'cs@wifiber.ng',
             'email_to': self.partner_id.email,
             'attachment_ids': [(4, receipt.id)],
             'auto_delete': True

@@ -21,5 +21,13 @@
 			<field name="name" >Show Link Tracker Menu</field>
 		</record>
 
+	<record id="group_show_contact_menu" model="res.groups" >
+			<field name="name" >Show Contact Menu</field>
+		</record>
+
+	<record id="group_show_calendar_tracker" model="res.groups" >
+			<field name="name" >Show Calendar Menu</field>
+		</record>
+
 </data>
 </odoo>
