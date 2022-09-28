@@ -248,7 +248,7 @@
 
 
                 <field name="vat" position="after" >
-                    <field name="ref" string="Client ID" readonly="1" />
+                    <field name="ref" string="Client ID" />
                     <field name="city_cust" required="1"  />
                     <field name="state_ng" required="1"   />
                     <field name="area_id" options="{'no_open': True, 'no_create': True}"  />

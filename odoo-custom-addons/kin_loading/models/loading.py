@@ -1119,23 +1119,25 @@ class AccountMoveExtend(models.Model):
 
 
     def button_draft(self):
-        order = self.sale_order_id
-        if self.is_advance_invoice :
-            for line in order.order_line:
-                if line.qty_delivered > 0:
-                    raise UserError(_('Sorry, this Invoice can no longer be reset, due to some delivered order on the sales'))
 
-        if order:
-            for picking in order.picking_ids:
-                if picking.state != 'cancel':
-                    raise UserError(_('Please first of all cancel all delivery orders for the sales order that is attached to this invoice, before this invoice can be reset'))
+        for rec in self:
+            order = rec.sale_order_id
+            if rec.is_advance_invoice :
+                for line in order.order_line:
+                    if line.qty_delivered > 0:
+                        raise UserError(_('Sorry, this Invoice can no longer be reset, due to some delivered order on the sales'))
 
-            if order.state == 'atl_approved' and self.is_advance_invoice :
-                raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
-            order.is_has_advance_invoice = True
-            order.is_cancelled_invoice = True
-            order.is_advance_invoice_validated = False
-        res = super(AccountMoveExtend,self).button_draft()
+            if order:
+                for picking in order.picking_ids:
+                    if picking.state != 'cancel':
+                        raise UserError(_('Please first of all cancel all delivery orders for the sales order that is attached to this invoice, before this invoice can be reset'))
+
+                if order.state == 'atl_approved' and rec.is_advance_invoice :
+                    raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
+                order.is_has_advance_invoice = True
+                order.is_cancelled_invoice = True
+                order.is_advance_invoice_validated = False
+            res = super(AccountMoveExtend,rec).button_draft()
         return res
 
     def button_cancel(self):

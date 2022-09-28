@@ -4,8 +4,8 @@
 		<record model="ir.sequence" id="seq_wifiber_cust_id">
 			<field name="name">Client ID</field>
 			<field name="code">cust_wid_code</field>
-			<field name="prefix">CHO</field>
-			<field name="padding">5</field>
+			<field name="prefix">cho</field>
+			<field name="padding">4</field>
 			<field name="company_id" eval="False" />
     	</record>
 	</data>

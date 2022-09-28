@@ -104,6 +104,43 @@
                     <attribute name="attrs" >{'readonly': [('state', 'not in', ['draft'])]}</attribute>
                 </field>
 
+
+<!--                 <xpath expr="//form//field[@name='price_tax']"  position="attributes">-->
+<!--                     <attribute name="invisible" >0</attribute>-->
+<!--                </xpath>-->
+<!--                 <xpath expr="//tree/field[@name='price_tax']"  position="attributes">-->
+<!--                     <attribute name="invisible" >0</attribute>-->
+<!--                </xpath>-->
+<!--                <xpath expr="//kanban/field[@name='price_tax']"  position="attributes">-->
+<!--                      <attribute name="invisible" >0</attribute>-->
+<!--                </xpath>-->
+
+<!--                <xpath expr="//form//field[@name='price_total']"  position="attributes">-->
+<!--                      <attribute name="groups" ></attribute>-->
+<!--                </xpath>-->
+<!--                 <xpath expr="//tree/field[@name='price_total']"  position="attributes">-->
+<!--                     <attribute name="groups" ></attribute>-->
+<!--                </xpath>-->
+<!--                <xpath expr="//kanban/field[@name='price_total']"  position="attributes">-->
+<!--                      <attribute name="groups" ></attribute>-->
+<!--                </xpath>-->
+
+<!--                <xpath expr="//form//field[@name='price_total']"  position="replace" />-->
+<!--                <xpath expr="//tree/field[@name='price_total']"  position="replace" />-->
+<!--                <xpath expr="//kanban/field[@name='price_total']" position="replace" />-->
+
+<!--                <xpath expr="//form//field[@name='price_tax']"  position="after">-->
+<!--                       <field name="price_total" widget="monetary" />-->
+<!--                </xpath>-->
+<!--                 <xpath expr="//tree/field[@name='price_tax']"  position="after">-->
+<!--                    <field name="price_total" widget="monetary" />-->
+<!--                </xpath>-->
+<!--                <xpath expr="//kanban/field[@name='price_tax']"  position="after">-->
+<!--                     <field name="price_total" widget="monetary" />-->
+<!--                </xpath>-->
+
+
+
             </field>
         </record>
 
@@ -211,6 +248,19 @@
                 </group>
             </field>
         </record>
+
+        <record id="sale_order_template_view_form" model="ir.ui.view">
+        <field name="name">sale.order.template.form</field>
+        <field name="model">sale.order.template</field>
+        <field name="type">form</field>
+        <field name="inherit_id" ref="sale_management.sale_order_template_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//tree/field[@name='product_uom_qty']"  position="after">
+                    <field name="amount" required="1" />
+                    <field name="tax_ids"  widget="many2many_tags"  />
+            </xpath>
+        </field>
+</record>
 
     </data>
 </odoo>

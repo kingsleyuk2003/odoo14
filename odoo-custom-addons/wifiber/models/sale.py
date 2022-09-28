@@ -88,64 +88,7 @@ class SaleOrderExtend(models.Model):
         #mail.send()
         mail.mark_outgoing()
 
-    @api.onchange('sale_order_template_id')
-    def onchange_sale_order_template_id(self):
 
-        if not self.sale_order_template_id:
-            self.require_signature = self._get_default_require_signature()
-            self.require_payment = self._get_default_require_payment()
-            return
-
-        template = self.sale_order_template_id.with_context(lang=self.partner_id.lang)
-
-        # --- first, process the list of products from the template
-        order_lines = [(5, 0, 0)]
-        for line in template.sale_order_template_line_ids:
-            data = self._compute_line_data_for_template_change(line)
-
-            if line.product_id:
-                price = line.product_id.lst_price
-                discount = 0
-
-                if self.pricelist_id:
-                    pricelist_price = self.pricelist_id.with_context(uom=line.product_uom_id.id).get_product_price(
-                        line.product_id, 1, False)
-
-                    if self.pricelist_id.discount_policy == 'without_discount' and price:
-                        discount = max(0, (price - pricelist_price) * 100 / price)
-                    else:
-                        price = pricelist_price
-
-                data.update({
-                    'price_unit': line.amount,
-                    'discount': discount,
-                    'product_uom_qty': line.product_uom_qty,
-                    'product_id': line.product_id.id,
-                    'product_uom': line.product_uom_id.id,
-                    'customer_lead': self._get_customer_lead(line.product_id.product_tmpl_id),
-                })
-
-            order_lines.append((0, 0, data))
-
-        self.order_line = order_lines
-        self.order_line._compute_tax_id()
-
-        # then, process the list of optional products from the template
-        option_lines = [(5, 0, 0)]
-        for option in template.sale_order_template_option_ids:
-            data = self._compute_option_data_for_template_change(option)
-            option_lines.append((0, 0, data))
-
-        self.sale_order_option_ids = option_lines
-
-        if template.number_of_days > 0:
-            self.validity_date = fields.Date.context_today(self) + timedelta(template.number_of_days)
-
-        self.require_signature = template.require_signature
-        self.require_payment = template.require_payment
-
-        if template.note:
-            self.note = template.note
 
     def unlink(self):
         for order in self:
@@ -523,10 +466,7 @@ class SaleOrderTemplate(models.Model):
 
     is_special_other_sme = fields.Boolean(string='Is Special Home / Other SME Packages')
 
-class SaleOrderTemplateLine(models.Model):
-    _inherit = "sale.order.template.line"
 
-    amount = fields.Float(string='Amount')
 
 
 class ResPartnerExtend(models.Model):
