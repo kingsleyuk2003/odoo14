@@ -222,7 +222,6 @@ class Ticket(models.Model):
         action['context'] = self.env.context
         picking_ids = self.mapped('picking_ids')
         action['domain'] = [('id', 'in', picking_ids.ids)]
-
         if len(picking_ids) > 1:
             action['domain'] = [('id', 'in', picking_ids.ids)]
         elif len(picking_ids) == 1:
@@ -239,17 +238,51 @@ class Ticket(models.Model):
             rec.stock_picking_count = len(rec.picking_ids)
 
     def btn_ticket_installed(self):
+        if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') :
+            raise UserError('All Installations needs materials to be requested.')
         self.state = 'installed'
+        for picking_id in self.picking_ids :
+            if picking_id.state not in ('done','cancel') :
+                raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please contact the inventory personnel to validate materials that have been dispatched')
+
 
     def btn_ticket_material_request(self):
+        if self.category_id != self.env.ref('wifiber.installation'):
+            raise UserError('Sorry, you cannot request for material except for installation')
+        if len(self.material_request_ids) <= 0 :
+            raise UserError('There is no material to be requested. Please request materials for all installations')
+        if len(self.picking_ids) > 0  and any(picking_id.state != 'cancel' for picking_id in self.picking_ids) :
+            raise UserError('There have been  material(s) previously requested. Re-requesting for material is not allowed')
+
         self.state = 'material_request'
 
-        self._stock_picking_ticket()
+        picking_id = self._stock_picking_ticket()
+        picking_id.action_assign()
+        picking_id.is_from_ticket = True
+        #picking_id.button_validate()
         for rec in self.material_request_ids:
             if not rec.is_requested:
                 rec.requested_by = self.env.user
                 rec.requested_datetime = datetime.today()
                 rec.is_requested = True
+
+        #send email to the inventory material request users
+        grp_name = 'wifiber.group_inventory_receive_material_request_email'
+        subject = 'The Ticket (%s) with description (%s), has some material request raised for the installation by %s' % (
+            self.ticket_id, self.name, self.env.user.name)
+        msg = subject
+        self.send_email(grp_name, subject, msg)
+
+        #show the picking dialog box
+        action = self.btn_view_stock_picking()
+        action['target'] = 'new'
+        return action
+
+
+
+
+
+
 
     def _stock_picking_ticket(self):
         pick_id = False
@@ -260,11 +293,12 @@ class Ticket(models.Model):
 
         if not pick_id :
             stock_picking_obj = self.env['stock.picking']
+
             vals = {
                 'partner_id': self.partner_id.id,
                 'picking_type_id':self.env.ref('stock.picking_type_out').id,
                 'origin': self.name,
-                'location_id': self.area_customer_id.stock_location_id.id,
+                'location_id': self.env.user.partner_id.partn_location_id.id,
                 'location_dest_id' : self.env.ref('stock.stock_location_customers').id,
             }
             pick_id = stock_picking_obj.create(vals)
@@ -279,7 +313,7 @@ class Ticket(models.Model):
                     'product_uom_qty': rec.qty,
                     'product_uom': rec.product_id.uom_id.id,
                     'picking_id': pick_id.id,
-                    'location_id': self.area_customer_id.stock_location_id.id,
+                    'location_id': self.env.user.partner_id.partn_location_id.id,
                     'location_dest_id': self.env.ref('stock.stock_location_customers').id,
                 }
                 stock_move = self.env['stock.move'].create(stock_move_vals)
@@ -355,6 +389,16 @@ class Ticket(models.Model):
 
 
     def btn_ticket_progress(self):
+        if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
+            raise UserError('There is no material to be requested')
+        if len(self.material_request_ids) > 0 and len(self.move_line_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
+            raise UserError('There is no issued material for this installation')
+        if len(self.picking_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
+            raise UserError('There is no stock pickings for this ticket. Request for materials before you can proceed')
+        if self.picking_ids and self.env.ref('wifiber.installation') :
+            for picking_id in self.picking_ids :
+                if picking_id.state not in ('done','cancel'):
+                    raise UserError('Sorry, you have to receive the total materials that have been requested or cancel the pickings that will not be used before you can proceed further')
         if self.category_id == self.env.ref('wifiber.maintenance') and self.state == 'new':
             raise UserError(_('CTO has to approve the maintenance ticket before it can commence work'))
         return super(Ticket,self).btn_ticket_progress()
@@ -422,6 +466,23 @@ class Ticket(models.Model):
                     user_names += user.name + ", "
                     partn_csc_ids.append(user.partner_id.id)
 
+        # send emails to assigned users groups
+        assign_users = self.user_ticket_group_id.sudo().user_ids
+        user_names = ''
+        partn_ids = []
+        for user in assign_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            mesg = 'The Ticket (%s) with description (%s), has been Opened by %s' % (
+                self.ticket_id, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            self.message_post(
+                body=_(mesg),
+                subject='%s' % mesg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
         #Send email to the customer for opening the installation ticket
         partner_id = self.partner_id
@@ -429,6 +490,7 @@ class Ticket(models.Model):
 
             if not partner_id.ref :
                 partner_id.ref = self.env['ir.sequence'].get('cust_wid_code')
+                partner_id.customer_rank = 1
 
             if not partner_id.email:
                 raise UserError(
@@ -449,7 +511,6 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'cs@wifiber.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
-
             #no need for this, because it shows an increase in one hour on the user interface
             #user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
             #now = datetime.strptime(datetime.now().astimezone(user_tz_obj).strftime('%Y-%m-%d %H:%M:%S'))
@@ -457,6 +518,10 @@ class Ticket(models.Model):
             # set escalation expiry date
             self.expiry_date = self.date_by_adding_business_days(datetime.now(),5)
 
+            #populate the material requested from the survey
+            material_request_ids = self.order_id.opportunity_id.ticket_ids[0].material_request_ids
+            if material_request_ids :
+                self.material_request_ids
         elif partner_id and  self.category_id in [self.env.ref('wifiber.support'),self.env.ref('wifiber.updown_grade')]:
             msg = 'Dear %s (%s), <p>We acknowledge the receipt of your complaints dated - %s with ticket ID - %s </p><p>Thank you for bringing this issue to our attention and we sincerely apologize for any inconvenience this may have caused you.</p><p>Please be assured that your complaint is being taken seriously and as such, you will be contacted shortly on necessary action for resolution.</p><p>Thank you for your patience.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
@@ -585,6 +650,9 @@ class Ticket(models.Model):
     def btn_ticket_reset(self):
         for rec in self:
             rec.invoice_id.unlink()
+            for picking_id in rec.picking_ids:
+                if picking_id.state != 'cancel':
+                    picking_id.unlink()
             rec.expiry_date = False
             rec.is_escalation_email_sent = False
             rec.is_escalation_email_sent_date = False
@@ -594,6 +662,15 @@ class Ticket(models.Model):
             rec.open_expiry_date = False
             rec.is_open_escalation_email_sent = False
             rec.is_open_escalation_email_sent_date = False
+            if rec.category_id == rec.env.ref('wifiber.survey') and rec.crm_id:
+                rec.crm_id.is_survey_ticket_close = False
+
+            if self.category_id == self.env.ref('wifiber.installation'):
+                for mat in rec.material_request_ids:
+                    mat.requested_by = False
+                    mat.requested_datetime = False
+                    mat.is_requested = False
+
 
         return super(Ticket, self).btn_ticket_reset()
 
@@ -601,16 +678,35 @@ class Ticket(models.Model):
     def btn_ticket_cancel(self):
         for rec in self:
             rec.invoice_id.unlink()
+            # for picking_id in rec.picking_ids :
+            #     if picking_id.state != 'cancel' :
+            #         picking_id.unlink()
+            if self.category_id == self.env.ref('wifiber.installation'):
+                for mat in rec.material_request_ids:
+                    mat.requested_by = False
+                    mat.requested_datetime = False
+                    mat.is_requested = False
         return super(Ticket, self).btn_ticket_cancel()
 
 
     def unlink(self):
         for rec in self:
             rec.invoice_id.unlink()
+            if rec.category_id == rec.env.ref('wifiber.survey') and rec.crm_id:
+                rec.crm_id.is_survey_ticket_close = False
         return super(Ticket,self).unlink()
 
 
     def btn_ticket_done(self):
+
+        if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') :
+            raise UserError('All Installations needs materials to be requested.')
+
+
+        for picking_id in self.picking_ids :
+            if picking_id.state not in ('done','cancel') :
+                raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please contact the inventory personnel to validate materials that have been dispatched')
+
 
         if self.category_id in (self.env.ref('wifiber.survey'), self.env.ref('wifiber.maintenance')) :
             self.state = "finalized"
@@ -669,6 +765,26 @@ class Ticket(models.Model):
 
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
         self.done_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
+        #send email to the NOC team
+        partn_ids = []
+        user_names = ''
+        intg_users = self.user_intg_ticket_group_id.sudo().user_ids
+
+        for user in intg_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            msg = 'The Ticket (%s) with description (%s), has been done by %s from the Engineering team' % (
+                self.ticket_id, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            self.message_post(
+                body=_(msg),
+                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
         return super(Ticket,self).btn_ticket_done()
 
 
@@ -734,6 +850,8 @@ class Ticket(models.Model):
                 self.env.user.notify_info('%s Will Be Notified by Email for Installation Ticket Closure' % (user_names))
 
         elif self.category_id == self.env.ref('wifiber.survey') :
+            if self.crm_id:
+                self.crm_id.is_survey_ticket_close = True
             # send email
             user_ids = []
             group_obj = self.env.ref('wifiber.group_ticket_survey_close_notify')
@@ -747,6 +865,27 @@ class Ticket(models.Model):
                                 msg=_(
                     'The Survey Ticket %s has been closed for the order id - %s, from %s') % (
                     self.name, self.order_id.name,self.env.user.name))
+
+            #notify the sales person
+            partn_ids = []
+            user = False
+            if self.crm_id:
+                crm_id = self.crm_id
+                user = crm_id.user_id
+                user_name = user.name
+                ticket_user = self.env.user
+                partn_ids.append(user.partner_id.id)
+                msg = "This is to inform you that the survey ticket with id %s has been closed by %s for the opportunity (%s). You may now proceed with the opportunity" % (
+                    self.ticket_id, ticket_user, crm_id.name)
+                if partn_ids:
+                    crm_id.message_follower_ids.unlink()
+                    crm_id.message_post(
+                        body=msg,
+                        subject='Survey Ticket with id %s Closed for the Opportunity (%s)' % (
+                            self.ticket_id, crm_id.name), partner_ids=partn_ids,
+                        subtype_xmlid='mail.mt_comment', force_send=False)
+                    self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
+
 
         elif self.category_id == self.env.ref('wifiber.updown_grade'):
             # send email
@@ -909,8 +1048,11 @@ class Ticket(models.Model):
             if not self.gpon_level:
                 raise UserError(_('Please set the GPON Port in the Activation Form Tab below'))
 
+            if not self.activation_date_date :
+                raise UserError('Please set the activation date for this service in the activation form tab below')
+
             if not self.expiration_date :
-                raise UserError('Please set the expiration date for this service in the activation tab below')
+                raise UserError('Please set the expiration date for this service in the activation form tab below')
 
             #push new customer to selfcare
             if not self.order_id :
@@ -1104,6 +1246,10 @@ class Ticket(models.Model):
         res = super(Ticket, self).create(vals)
         return res
 
+    @api.onchange('activation_date')
+    def onchange_activation_date(self):
+        if self.activation_date :
+            self.expiration_date = self.activation_date + relativedelta(days=30)
 
     #remove store=True for the related fields, because it prevents the helpdesk user from saving a ticket with partner information if there are other tickets attached to the partner, and the user is not in the group for all the previous tickets attached to the partner. so the helpdesk user rule prevents it from saving the form for the related fields with store parameter, since it will want to update the partner which inturns update all other previous tickets having the store=True paramter ( I have tested the fact  the system updates other previous tickets indirectly, whne given the  Helpdesk general manager rights which have access to all tickets)
     cust_name = fields.Char(related='partner_id.name', string='Name', readonly=True)
@@ -1192,7 +1338,7 @@ class Ticket(models.Model):
 
     state = fields.Selection(
         [('draft', 'Draft'), ('new', 'Open'), ('new_call', 'Open Call Log'), ('maint_approve', 'Maint. Approved'),
-         ('progress', 'Work In Progress'), ('material_request', 'Material Requested'), ('installed', 'Installed') ,('done', 'Completed'), ('qa', 'Quality Assured'),
+         ('material_request', 'Material Requested'),  ('progress', 'Work In Progress'), ('installed', 'Installed') ,('done', 'Completed'), ('qa', 'Quality Assured'),
          ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'),('major', 'Major')],
         default='draft', tracking=True)
 
@@ -1203,7 +1349,6 @@ class Ticket(models.Model):
     srf_form = fields.Binary(string='SRF Form', attachment=True)
     dist_fpop = fields.Char(string='Distance to FPOP')
     fpop_box_jb = fields.Char(string='FPOP Box / JB')
-    equipment_required = fields.Char(string='Equipment Required')
     comment_survey = fields.Text(string='Comment')
 
 
@@ -1256,7 +1401,7 @@ class Ticket(models.Model):
     material_request_ids = fields.One2many('material.request', 'ticket_id', string='Material Requests',tracking=True)
     stock_picking_count = fields.Integer(compute="_compute_stock_picking_count", string='# of Stock Pickings', copy=False, default=0)
     picking_ids = fields.One2many('stock.picking', 'ticket_id', string='Stock Picking(s)')
-
+    move_line_ids = fields.One2many('stock.move.line', 'ticket_id', string='Stock Move Lines')
 
 
     #Call Log and Request
@@ -1349,6 +1494,36 @@ class Message(models.Model):
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
+    def button_validate(self):
+        res = super(StockPicking, self).button_validate()
+
+        #notify the requester of the ticket to proceed
+        partn_ids = False
+        user = False
+        if self.ticket_id and self.ticket_id.material_request_ids and not self.is_done_email_notification_sent:
+            ticket_id = self.ticket_id
+            ticket_id.move_line_ids += self.move_line_ids_without_package
+            for tml in ticket_id.move_line_ids:
+                tml.issued_by = self.env.user
+                tml.issued_datetime = datetime.today()
+            # user = ticket_id.material_request_ids[0].requested_by
+            # if user :
+            #     user_name = user.name
+            #     inv_user = self.env.user
+            #     partn_ids.append(user.partner_id.id)
+            #     msg = "This is to inform you that %s has issued and validated the material request that was requested by you (%s) for the ticket with id %s and subject as (%s). You may now proceed and mark the ticket as work in progress" % (inv_user.name,user_name, ticket_id.ticket_id, ticket_id.name)
+            #     if partn_ids:
+            #         ticket_id.message_follower_ids.unlink()
+            #         ticket_id.message_post(
+            #             body=msg,
+            #             subject='Material Dispatch Notification for the ticket with id %s and subject as (%s)' % (ticket_id.ticket_id, ticket_id.name), partner_ids=partn_ids,
+            #             subtype_xmlid='mail.mt_comment', force_send=False)
+            #         self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
+            #         self.is_done_email_notification_sent = True
+            # # add stock move line to the ticket
+
+        return res
+
     def send_email(self, grp_name, subject, msg):
         partn_ids = []
         user_names = ''
@@ -1412,3 +1587,43 @@ class StockPicking(models.Model):
     expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
     is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
     is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')
+    is_done_email_notification_sent = fields.Boolean(string='Is Done Email Notification Sent', default=False, tracking=True)
+    is_from_ticket = fields.Boolean(string='Is from ticket')
+
+class StockMoveLine(models.Model):
+    _inherit = 'stock.move.line'
+
+    # def unlink(self):
+    #     if self.picking_id and  self.picking_id.is_from_ticket :
+    #         raise UserError('Sorry, you cannot delete the stock move line')
+    #     return super(StockMoveLine, self).unlink()
+    #
+    # def create(self,vals):
+    #     res = super(StockMoveLine, self).create(vals)
+    #     if res.picking_id and res.picking_id.is_from_ticket :
+    #         raise UserError('Sorry, you cannot add new stock move line')
+    #     return res
+
+    ticket_id = fields.Many2one('kin.ticket', string="Ticket")
+    issued_by = fields.Many2one('res.users', string='Issued By')
+    issued_datetime = fields.Datetime(string='Issued Date and Time')
+
+
+# class StockMove(models.Model):
+#     _inherit = 'stock.move'
+#
+#     def _do_unreserve(self):
+#         self.picking_id.is_from_ticket = False
+#         return super(StockMove, self)._do_unreserve()
+#
+#     def unlink(self):
+#         if self.picking_id and  self.picking_id.is_from_ticket:
+#             raise UserError('Sorry, you cannot delete the stock move')
+#         return super(StockMove, self).unlink()
+#
+#     def create(self, vals):
+#         res = super(StockMove, self).create(vals)
+#         if res.picking_id and res.picking_id.is_from_ticket:
+#             raise UserError('Sorry, you cannot add new stock move')
+#         return res
+#

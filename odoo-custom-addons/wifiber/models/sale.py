@@ -468,6 +468,17 @@ class SaleOrderTemplate(models.Model):
 
 
 
+class PartnerTrackingHistory(models.Model):
+    _name = 'partner.tracking.history'
+
+    field = fields.Char(string='Field Name')
+    curr_value = fields.Char(string='Current value')
+    prev_value = fields.Char(string='Previous Value')
+    date_value = fields.Datetime(string='Datetime Value Changed')
+    value_changed_by = fields.Many2one('res.users', string='Changed By')
+    partner_track_id = fields.Many2one('res.partner', string='Partner')
+
+
 
 class ResPartnerExtend(models.Model):
     _inherit = 'res.partner'
@@ -605,6 +616,43 @@ class ResPartnerExtend(models.Model):
             raise UserError('There is no initial customer created from ERP to selfcare from the installation ticket')
 
     def write(self,vals):
+        gpon = vals.get('gpon', False)
+        onu_pon_power = vals.get('onu_pon_power',False)
+        ip_address = vals.get('ip_address',False)
+        value_changed_by = self.env.user.id
+        date_value = datetime.today()
+
+        partner_tracking = self.env['partner.tracking.history']
+        if gpon :
+            partner_tracking.create({
+                'value_changed_by': value_changed_by,
+                'date_value' : date_value,
+                'field': "GPON",
+                'curr_value' : 'kk',
+                'prev_value' : 'jj',
+                'partner_track_id' : self.id
+            })
+
+        if onu_pon_power :
+            partner_tracking.create({
+                'value_changed_by': value_changed_by,
+                'date_value' : date_value,
+                'field': 'PON POWER',
+                'curr_value' : onu_pon_power,
+                'prev_value' : self.onu_pon_power,
+                'partner_track_id' : self.id
+            })
+
+        if ip_address :
+            partner_tracking.create({
+                'value_changed_by': value_changed_by,
+                'date_value' : date_value,
+                'field': 'IP ADDRESS',
+                'curr_value' : ip_address,
+                'prev_value' : self.ip_address,
+                'partner_track_id' : self.id
+            })
+
         res = super(ResPartnerExtend, self).write(vals)
         return res
 
@@ -703,7 +751,9 @@ class ResPartnerExtend(models.Model):
                               help='The internal user in charge of this contact.')
     selfcare_push = fields.Boolean(string='Selfcare Pushed')
     selfcare_response = fields.Char(string='Selfcare Response')
-
+    partner_tracking_ids = fields.One2many('partner.tracking.history','partner_track_id',string='Partner Tracking')
+    is_partn_stock = fields.Boolean(string='User Keeps Stock')
+    partn_location_id = fields.Many2one('stock.location', string='User Stock Location')
 
 
 

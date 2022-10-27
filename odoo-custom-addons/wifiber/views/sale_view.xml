@@ -298,6 +298,44 @@
                     <field name="selfcare_push" readonly="1"   />
                     <field name="selfcare_response" readonly="1"   />
                 </field>
+
+                <field name="industry_id" position="after" >
+                     <field name="is_partn_stock" />
+                    <field name="partn_location_id"  attrs="{'required':[('is_partn_stock','=',True)],'invisible':[('is_partn_stock','=',False)]}"  />
+                </field>
+
+                <page name="internal_notes" position="after">
+                       <page name="partner_history_tracking" string="History Tracking">
+                            <field name="partner_tracking_ids" readonly="1"  >
+                                <tree>
+                                    <field name="field" />
+                                    <field name="curr_value" />
+                                    <field name="prev_value" />
+                                    <field name="date_value" />
+                                    <field name="value_changed_by" />
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="field" />
+                                        <field name="curr_value" />
+                                        <field name="prev_value" />
+                                        <field name="date_value" />
+                                        <field name="value_changed_by" />
+                                    </group>
+                                </form>
+                                <kanban>
+                                    <group>
+                                        <field name="field" />
+                                        <field name="curr_value" />
+                                        <field name="prev_value" />
+                                        <field name="date_value" />
+                                        <field name="value_changed_by" />
+                                    </group>
+                                </kanban>
+                            </field>
+                       </page>
+                </page>
+
             </field>
          </record>
 
@@ -508,6 +546,10 @@
 
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="date_order" position="after" >
+                    <field name="opportunity_id" readonly="1" />
                 </field>
 
             </field>

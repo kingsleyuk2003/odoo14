@@ -3,3 +3,6 @@ from . import sales_order_disapprove
 from . import finalized_disapprove
 from . import maint_disapprove
 from . import ticket_report_wizard
+from . import survey_ticket
+from . import material_report_wizard
+from . import issued_report_wizard

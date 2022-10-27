@@ -689,6 +689,22 @@ class Ticket(models.Model):
                     partn_csc_ids.append(user.partner_id.id)
 
 
+        #send emails to assigned users groups
+        assign_users = self.user_ticket_group_id.sudo().user_ids
+        for user in assign_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            mesg = 'The Ticket (%s) with description (%s), has been Opened by %s' % (
+                self.ticket_id, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            self.message_post(
+                body=_(mesg),
+                subject='%s' % mesg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
         #Send email to the customer for opening the installation ticket
         partner_id = self.partner_id
         if partner_id and self.category_id == self.env.ref('fibernet.installation'):
@@ -927,6 +943,26 @@ class Ticket(models.Model):
 
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
         self.done_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+
+        #send email to the NOC team
+        partn_ids = []
+        user_names = ''
+        intg_users = self.user_intg_ticket_group_id.sudo().user_ids
+
+        for user in intg_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            msg = 'The Ticket (%s) with description (%s), has been done by %s from the Engineering team' % (
+                self.ticket_id, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            self.message_post(
+                body=_(msg),
+                subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
         return super(Ticket,self).btn_ticket_done()
 
     

@@ -11,5 +11,25 @@
 		    attachment_use="False"
         />
 
+		<report
+		    id="material_report"
+            model="kin.ticket"
+		    string="Material Report"
+		    report_type="xlsx"
+		    name="wifiber.material_report"
+			file="wifiber.material_report"
+		    attachment_use="False"
+        />
+
+		<report
+		    id="issued_report"
+            model="kin.ticket"
+		    string="Material Issued Report"
+		    report_type="xlsx"
+		    name="wifiber.issued_report"
+			file="wifiber.issued_report"
+		    attachment_use="False"
+        />
+
     </data>
 </odoo>

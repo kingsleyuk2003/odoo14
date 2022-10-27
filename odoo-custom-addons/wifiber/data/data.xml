@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <record model="crm.stage" id="stage_survey">
+            <field name="name">Survey</field>
+            <field name="sequence">4</field>
+        </record>
 
          <record model="kin.ticket.category" id="installation">
           <field name="name">Installation</field>

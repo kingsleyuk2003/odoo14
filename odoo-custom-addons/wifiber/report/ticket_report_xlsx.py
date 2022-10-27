@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-# Copyright 2021  Kinsolve Solutions
-# Copyright 2021 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
+# Copyright 2022  Kinsolve Solutions
+# Copyright 2022 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
 # License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
 
 
@@ -13,7 +13,7 @@ from xlsxwriter.utility import xl_range, xl_rowcol_to_cell
 
 
 class TicketReport(models.AbstractModel):
-    _name = 'report.fibernet.ticket_report'
+    _name = 'report.wifiber.ticket_report'
     _inherit = 'report.report_xlsx.abstract'
 
     def _get_data(self, form):
@@ -161,7 +161,8 @@ class TicketReport(models.AbstractModel):
         control_report_worksheet.set_row(2, 20)
         # control_report_worksheet.merge_range(2, 0, 2, 10, 'Report', title_format)
 
-        cat_name = objects.category_id.name
+        category_id = data['form']['category_id'][0]
+        cat_name = self.env['kin.ticket.category'].browse(category_id).name
         # Period
         control_report_worksheet.set_row(0, 20)
         if start_date and end_date:
