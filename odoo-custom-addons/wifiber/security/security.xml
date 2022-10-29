@@ -108,6 +108,11 @@
         <field name="category_id" ref="module_category_wifiber_modifications"/>
     </record>
 
+    <record id="group_helpdesk_show_skip_material_ticket" model="res.groups">
+        <field name="name">Show Skip Material Request on Ticket</field>
+        <field name="category_id" ref="module_category_wifiber_modifications"/>
+    </record>
+
 
 	
 	<record id="group_helpdesk_maint_ticket" model="res.groups">

@@ -194,7 +194,11 @@ class SaleOrderExtend(models.Model):
         ticket_obj = self.env['kin.ticket'].create(vals)
         self.partner_id.product_id = product
         ticket_obj.order_id = self.id
-
+        # populate the material requested from the survey
+        if self.opportunity_id and self.opportunity_id.ticket_ids :
+            material_request_ids =  self.opportunity_id.ticket_ids[0].material_request_ids
+            if material_request_ids:
+                ticket_obj.material_request_ids = material_request_ids
 
         grp_name = 'wifiber.group_receive_approve_sale_order_email'
         subject = 'The Sales Order Document %s has been Approved' % self.name

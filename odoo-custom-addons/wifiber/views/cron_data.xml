@@ -56,6 +56,19 @@
             <field name="doall" eval="False"/>
         </record>
 
+        <record forcecreate="True" id="ir_cron_run_unreserve_every_5mins_check" model="ir.cron">
+            <field name="name">5 min Unreserve Stock Check</field>
+            <field name="model_id" ref="model_stock_picking"/>
+            <field name="state">code</field>
+            <field name="code">model.run_check_unreserve_stock_wifiber()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
     </data>
 </odoo>
 

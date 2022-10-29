@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-# Copyright 2019  Kinsolve Solutions
-# Copyright 2019 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
+# Copyright 2022  Kinsolve Solutions
+# Copyright 2022 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
 # License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
 
 from datetime import datetime,date, timedelta
@@ -35,7 +35,7 @@ class MaterialRequest(models.Model):
     requested_by = fields.Many2one('res.users', string='Requested By')
     requested_datetime = fields.Datetime(string='Requested Date and Time')
     ticket_id = fields.Many2one('kin.ticket', string='Ticket')
-
+    picking_ids = fields.Many2many('stock.picking', 'picking_mat_rel', 'mat_id', 'picking_id', string='Stock Picking(s)')
 
 class Estate(models.Model):
     _name = "estate"
@@ -238,33 +238,22 @@ class Ticket(models.Model):
             rec.stock_picking_count = len(rec.picking_ids)
 
     def btn_ticket_installed(self):
-        if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') :
-            raise UserError('All Installations needs materials to be requested.')
         self.state = 'installed'
-        for picking_id in self.picking_ids :
-            if picking_id.state not in ('done','cancel') :
-                raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please contact the inventory personnel to validate materials that have been dispatched')
+        res = self._ticket_material_issued()
+        return res
 
 
-    def btn_ticket_material_request(self):
+    def _ticket_material_issued(self):
         if self.category_id != self.env.ref('wifiber.installation'):
             raise UserError('Sorry, you cannot request for material except for installation')
-        if len(self.material_request_ids) <= 0 :
-            raise UserError('There is no material to be requested. Please request materials for all installations')
-        if len(self.picking_ids) > 0  and any(picking_id.state != 'cancel' for picking_id in self.picking_ids) :
-            raise UserError('There have been  material(s) previously requested. Re-requesting for material is not allowed')
-
-        self.state = 'material_request'
+        if len(self.material_request_ids) <= 0  and not self.is_skip_material:
+            raise UserError("There is no material to be requested. Please request materials for all installations or tick the 'Skip Material Request' checkbox below to proceed")
 
         picking_id = self._stock_picking_ticket()
-        picking_id.action_assign()
-        picking_id.is_from_ticket = True
+        if picking_id:
+            picking_id.action_assign()
+            picking_id.is_from_ticket = True
         #picking_id.button_validate()
-        for rec in self.material_request_ids:
-            if not rec.is_requested:
-                rec.requested_by = self.env.user
-                rec.requested_datetime = datetime.today()
-                rec.is_requested = True
 
         #send email to the inventory material request users
         grp_name = 'wifiber.group_inventory_receive_material_request_email'
@@ -285,6 +274,13 @@ class Ticket(models.Model):
 
 
     def _stock_picking_ticket(self):
+        is_pick = False
+        for rec in self.material_request_ids:
+            if not rec.is_requested:
+                is_pick = True
+        if not is_pick :
+            return False
+
         pick_id = False
         if len(self.picking_ids) == 1 :
             picking_id = self.picking_ids[0]
@@ -306,6 +302,7 @@ class Ticket(models.Model):
 
         for rec in self.material_request_ids:
             if not rec.is_requested:
+                is_pick = True
                 #stock_move
                 stock_move_vals = {
                     'name': rec.product_id.name,
@@ -317,7 +314,10 @@ class Ticket(models.Model):
                     'location_dest_id': self.env.ref('stock.stock_location_customers').id,
                 }
                 stock_move = self.env['stock.move'].create(stock_move_vals)
-
+                pick_id.mater_ids += rec
+                rec.requested_by = self.env.user
+                rec.requested_datetime = datetime.today()
+                rec.is_requested = True
         return pick_id
 
 
@@ -389,16 +389,7 @@ class Ticket(models.Model):
 
 
     def btn_ticket_progress(self):
-        if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
-            raise UserError('There is no material to be requested')
-        if len(self.material_request_ids) > 0 and len(self.move_line_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
-            raise UserError('There is no issued material for this installation')
-        if len(self.picking_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') :
-            raise UserError('There is no stock pickings for this ticket. Request for materials before you can proceed')
-        if self.picking_ids and self.env.ref('wifiber.installation') :
-            for picking_id in self.picking_ids :
-                if picking_id.state not in ('done','cancel'):
-                    raise UserError('Sorry, you have to receive the total materials that have been requested or cancel the pickings that will not be used before you can proceed further')
+
         if self.category_id == self.env.ref('wifiber.maintenance') and self.state == 'new':
             raise UserError(_('CTO has to approve the maintenance ticket before it can commence work'))
         return super(Ticket,self).btn_ticket_progress()
@@ -518,10 +509,7 @@ class Ticket(models.Model):
             # set escalation expiry date
             self.expiry_date = self.date_by_adding_business_days(datetime.now(),5)
 
-            #populate the material requested from the survey
-            material_request_ids = self.order_id.opportunity_id.ticket_ids[0].material_request_ids
-            if material_request_ids :
-                self.material_request_ids
+
         elif partner_id and  self.category_id in [self.env.ref('wifiber.support'),self.env.ref('wifiber.updown_grade')]:
             msg = 'Dear %s (%s), <p>We acknowledge the receipt of your complaints dated - %s with ticket ID - %s </p><p>Thank you for bringing this issue to our attention and we sincerely apologize for any inconvenience this may have caused you.</p><p>Please be assured that your complaint is being taken seriously and as such, you will be contacted shortly on necessary action for resolution.</p><p>Thank you for your patience.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
@@ -650,9 +638,6 @@ class Ticket(models.Model):
     def btn_ticket_reset(self):
         for rec in self:
             rec.invoice_id.unlink()
-            for picking_id in rec.picking_ids:
-                if picking_id.state != 'cancel':
-                    picking_id.unlink()
             rec.expiry_date = False
             rec.is_escalation_email_sent = False
             rec.is_escalation_email_sent_date = False
@@ -665,11 +650,15 @@ class Ticket(models.Model):
             if rec.category_id == rec.env.ref('wifiber.survey') and rec.crm_id:
                 rec.crm_id.is_survey_ticket_close = False
 
-            if self.category_id == self.env.ref('wifiber.installation'):
-                for mat in rec.material_request_ids:
-                    mat.requested_by = False
-                    mat.requested_datetime = False
-                    mat.is_requested = False
+            if rec.category_id == rec.env.ref('wifiber.installation'):
+                for picking_id in rec.picking_ids:
+                    if picking_id.state not in ('cancel', 'done'):
+                        picking_id.mater_ids.requested_by = False
+                        picking_id.mater_ids.requested_datetime = False
+                        picking_id.mater_ids.is_requested = False
+                        picking_id.unlink()
+
+
 
 
         return super(Ticket, self).btn_ticket_reset()
@@ -678,14 +667,13 @@ class Ticket(models.Model):
     def btn_ticket_cancel(self):
         for rec in self:
             rec.invoice_id.unlink()
-            # for picking_id in rec.picking_ids :
-            #     if picking_id.state != 'cancel' :
-            #         picking_id.unlink()
-            if self.category_id == self.env.ref('wifiber.installation'):
-                for mat in rec.material_request_ids:
-                    mat.requested_by = False
-                    mat.requested_datetime = False
-                    mat.is_requested = False
+            if rec.category_id == rec.env.ref('wifiber.installation'):
+                for picking_id in rec.picking_ids:
+                    if picking_id.state not in ('cancel', 'done'):
+                        picking_id.mater_ids.requested_by = False
+                        picking_id.mater_ids.requested_datetime = False
+                        picking_id.mater_ids.is_requested = False
+                        picking_id.unlink()
         return super(Ticket, self).btn_ticket_cancel()
 
 
@@ -699,14 +687,35 @@ class Ticket(models.Model):
 
     def btn_ticket_done(self):
 
-        if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') :
-            raise UserError('All Installations needs materials to be requested.')
+        if self.category_id == self.env.ref('wifiber.installation') and self.state != 'installed' :
+            raise UserError('Sorry, you have to install, before you can mark it as done. Please click installed button first')
+
+        if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
+            raise UserError('There is no material to be requested')
+        if len(self.material_request_ids) > 0 and len(self.move_line_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
+            raise UserError("There is no issued/used material for this installation. Click the 'Transfers' button on the right of this page and then set the used items and their serial numbers, then click validate button to validate the used items, before you can mark this ticket as done")
+        if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
+            raise UserError('All Installations needs materials to be used.')
+        if self.picking_ids and self.env.ref('wifiber.installation') :
+            for picking_id in self.picking_ids :
+                if picking_id.state not in ('done','cancel'):
+                    raise UserError('Sorry, you have to receive the total materials that have been requested or cancel the pickings that will not be used before you can proceed further')
 
 
+        if self.category_id == self.env.ref('wifiber.survey') and not self.is_skip_material :
+            if not self.material_request_ids:
+                raise UserError('Please set the materials to be requested for this survey')
+            else:
+                for mat_req in self.material_request_ids:
+                    if mat_req.qty <= 0 :
+                        raise UserError('Please set a Qty > 0 for %s' % (mat_req.product_id.name))
         for picking_id in self.picking_ids :
             if picking_id.state not in ('done','cancel') :
-                raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please contact the inventory personnel to validate materials that have been dispatched')
+                raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please validate materials that have been used')
 
+        if self.category_id == self.env.ref('wifiber.installation'):
+            if not self.idu_serial_no or not self.installation_fse_id or not self.power_level_id or not self.vlan or not self.olt_id :
+                raise UserError('Please ensure you have set the IDU serial no., Installation FSE, Power Level, Vlan and OLT, in the Activation form tab below')
 
         if self.category_id in (self.env.ref('wifiber.survey'), self.env.ref('wifiber.maintenance')) :
             self.state = "finalized"
@@ -1048,7 +1057,7 @@ class Ticket(models.Model):
             if not self.gpon_level:
                 raise UserError(_('Please set the GPON Port in the Activation Form Tab below'))
 
-            if not self.activation_date_date :
+            if not self.activation_date :
                 raise UserError('Please set the activation date for this service in the activation form tab below')
 
             if not self.expiration_date :
@@ -1338,7 +1347,7 @@ class Ticket(models.Model):
 
     state = fields.Selection(
         [('draft', 'Draft'), ('new', 'Open'), ('new_call', 'Open Call Log'), ('maint_approve', 'Maint. Approved'),
-         ('material_request', 'Material Requested'),  ('progress', 'Work In Progress'), ('installed', 'Installed') ,('done', 'Completed'), ('qa', 'Quality Assured'),
+          ('progress', 'Work In Progress'), ('installed', 'Installed') ,('done', 'Completed'), ('qa', 'Quality Assured'),
          ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'),('major', 'Major')],
         default='draft', tracking=True)
 
@@ -1348,7 +1357,7 @@ class Ticket(models.Model):
     site_survey_form = fields.Binary(string='Site Survey Form', attachment=True)
     srf_form = fields.Binary(string='SRF Form', attachment=True)
     dist_fpop = fields.Char(string='Distance to FPOP')
-    fpop_box_jb = fields.Char(string='FPOP Box / JB')
+    fpop_box_jb = fields.Char(string='POP Box ID')
     comment_survey = fields.Text(string='Comment')
 
 
@@ -1397,7 +1406,7 @@ class Ticket(models.Model):
     comment_activation = fields.Char(string='Comment')
 
     #material request
-    is_request_material = fields.Boolean(string='Request for Material',tracking=True)
+    is_skip_material = fields.Boolean(string='Skip Material Request',tracking=True, default=True)
     material_request_ids = fields.One2many('material.request', 'ticket_id', string='Material Requests',tracking=True)
     stock_picking_count = fields.Integer(compute="_compute_stock_picking_count", string='# of Stock Pickings', copy=False, default=0)
     picking_ids = fields.One2many('stock.picking', 'ticket_id', string='Stock Picking(s)')
@@ -1494,33 +1503,29 @@ class Message(models.Model):
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
+    def run_check_unreserve_stock_wifiber(self):
+        target_recs = self.search([('state','in',['confirmed','partially_available','assigned']), ('picking_type_code','=','outgoing')])
+        for target_rec in target_recs:
+            target_rec.do_unreserve()
+        return True
+
     def button_validate(self):
         res = super(StockPicking, self).button_validate()
 
         #notify the requester of the ticket to proceed
         partn_ids = False
         user = False
-        if self.ticket_id and self.ticket_id.material_request_ids and not self.is_done_email_notification_sent:
+
+        if self.ticket_id and self.ticket_id.material_request_ids :
             ticket_id = self.ticket_id
             ticket_id.move_line_ids += self.move_line_ids_without_package
+            sn = ''
             for tml in ticket_id.move_line_ids:
                 tml.issued_by = self.env.user
                 tml.issued_datetime = datetime.today()
-            # user = ticket_id.material_request_ids[0].requested_by
-            # if user :
-            #     user_name = user.name
-            #     inv_user = self.env.user
-            #     partn_ids.append(user.partner_id.id)
-            #     msg = "This is to inform you that %s has issued and validated the material request that was requested by you (%s) for the ticket with id %s and subject as (%s). You may now proceed and mark the ticket as work in progress" % (inv_user.name,user_name, ticket_id.ticket_id, ticket_id.name)
-            #     if partn_ids:
-            #         ticket_id.message_follower_ids.unlink()
-            #         ticket_id.message_post(
-            #             body=msg,
-            #             subject='Material Dispatch Notification for the ticket with id %s and subject as (%s)' % (ticket_id.ticket_id, ticket_id.name), partner_ids=partn_ids,
-            #             subtype_xmlid='mail.mt_comment', force_send=False)
-            #         self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
-            #         self.is_done_email_notification_sent = True
-            # # add stock move line to the ticket
+                if tml.lot_id:
+                    sn += tml.lot_id.name + ' '
+            self.ticket_id.idu_serial_no = sn
 
         return res
 
@@ -1587,8 +1592,9 @@ class StockPicking(models.Model):
     expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
     is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
     is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')
-    is_done_email_notification_sent = fields.Boolean(string='Is Done Email Notification Sent', default=False, tracking=True)
     is_from_ticket = fields.Boolean(string='Is from ticket')
+    mater_ids = fields.Many2many('material.request','picking_mat_rel','picking_id' ,'mat_id' , string='Material Requests')
+
 
 class StockMoveLine(models.Model):
     _inherit = 'stock.move.line'
