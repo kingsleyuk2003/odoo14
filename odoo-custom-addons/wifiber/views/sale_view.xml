@@ -323,15 +323,6 @@
                                         <field name="value_changed_by" />
                                     </group>
                                 </form>
-                                <kanban>
-                                    <group>
-                                        <field name="field" />
-                                        <field name="curr_value" />
-                                        <field name="prev_value" />
-                                        <field name="date_value" />
-                                        <field name="value_changed_by" />
-                                    </group>
-                                </kanban>
                             </field>
                        </page>
                 </page>
