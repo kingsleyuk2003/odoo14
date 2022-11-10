@@ -21,19 +21,9 @@ class UserGroups(models.Model):
     is_intg_default = fields.Boolean(string='Is Finalized Default')
     is_survey_group_default_csc = fields.Boolean(string='Is Survey Group Default')
     is_installation_group_default_csc = fields.Boolean(string='Is Installation Group Default for CSC')
-    is_maint_default = fields.Boolean(string='Is Maintenance Close Team Default')
     is_csc_group = fields.Boolean(string='Is CSC Group')
-
-    is_bpsq_cto_manager = fields.Boolean(string='Is BPSQ/CTO')
-    is_bpsq_md_manager = fields.Boolean(string='Is MD/BPSQ')
-    is_regional_manager_hcx = fields.Boolean(string='Is Regional Manager/HCX')
-    is_cto_rm_hcx = fields.Boolean(string='Is CTO/RM/HCX')
-    is_hcx = fields.Boolean(string='Is HCX')
-    is_hcx_team_lead = fields.Boolean(string='Is HCX/Teamlead')
-    is_cx = fields.Boolean(string='Is CX')
-    is_team_lead = fields.Boolean(string='Is Teamlead')
-    is_bpsq_hcx = fields.Boolean(string='Is BPSQ/HCX')
     is_request_ticket_group = fields.Boolean(string='Is Request Ticket Group')
+
 
 
 
@@ -142,6 +132,12 @@ class ElapsedHoursThird(models.Model):
     elapsed_hours = fields.Integer(string="Elapsed Hours")
     ticket_id = fields.Many2one('kin.ticket',  string='Ticket')
 
+
+class TicketCategory(models.Model):
+    _inherit = 'kin.ticket.category'
+
+    user_ticket_group_id = fields.Many2one('user.ticket.group', string='Default User Ticket Group')
+
 class Ticket(models.Model):
     _inherit = 'kin.ticket'
     _rec_name = 'ticket_id'
@@ -178,6 +174,11 @@ class Ticket(models.Model):
                 record.is_escalation_email_sent_date = datetime.now()
         return True
 
+    @api.onchange('category_id')
+    def _set_assigned_user_group_from_category(self):
+        for rec in self:
+            if self.category_id.code in ('backend_support', 'request'):
+                self.user_ticket_group_id = self.category_id.user_ticket_group_id
 
     @api.onchange('area_customer_id')
     def _set_assigned_user_group_from_area(self):
@@ -190,6 +191,8 @@ class Ticket(models.Model):
             if user_ticket_group_id and category_code == 'request':
                 rec.user_ticket_group_id = request_ticket_group
                 rec.prospect_area_id = self.area_customer_id
+            if self.category_id.code in ('backend_support', 'request'):
+                self.user_ticket_group_id = self.category_id.user_ticket_group_id
 
 
     def send_email(self, grp_name, subject, msg):
@@ -207,337 +210,7 @@ class Ticket(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
-    def send_escalation_msg(self,partner_ids,subject,msg):
-        if partner_ids:
-            self.message_follower_ids.unlink()
-            self.message_post(body=msg, subject=subject, partner_ids=partner_ids, subtype_xmlid='mail.mt_comment', force_send=False)
-        return
 
-    def get_escalation_partners(self, user_type):
-        partner_ids = []
-        if user_type == "is_area_manager" :
-            area = self.area_change_request_id
-            if area :
-                area_manager = area.area_manager_id
-                if area_manager :
-                    self.message_follower_ids.unlink()
-                    partner_ids.append(area_manager.partner_id.id)
-        else :
-            user_ticket_group = self.env['user.ticket.group'].search([(user_type, '=', True)])
-            if user_ticket_group:
-                users = user_ticket_group[0].user_ids
-                self.message_follower_ids.unlink()
-                for user in users:
-                    partner_ids.append(user.partner_id.id)
-        return partner_ids
-
-
-    def escalate_first(self,user_type,esc_type, hours):
-        subject = False
-        msg = False
-        if self.open_date :
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            open_date_format = localize_tz(datetime.strptime(self.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which was opened on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                    self.ticket_id, self.name, open_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-    def escalate_second(self, user_type, esc_type, hours):
-        subject = False
-        msg = False
-        if self.done_date:
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            done_date_format = localize_tz(datetime.strptime(self.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Completed Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which has been completed on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                      self.ticket_id, self.name, done_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-    def escalate_third(self, user_type, esc_type, hours):
-        subject = False
-        msg = False
-        if self.finalized_date:
-            user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-            localize_tz = pytz.utc.localize
-            finalized_date_format = localize_tz(datetime.strptime(self.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                user_tz_obj).strftime('%d-%m-%Y %H:%M:%S')
-            subject = 'Finalized Service Relocation Ticket Alert (%s) for ticket with ID: %s' % (esc_type, self.ticket_id)
-            msg = _(
-                'The is to bring to your attention, that the service relocation ticket (%s) with subject (%s), which has been finalized on %s, has not been closed. Kindly attend to the Service relocation ticket and ensure it is closed, to avoid further escalation') % (
-                      self.ticket_id, self.name, finalized_date_format)
-
-            partner_ids = self.get_escalation_partners(user_type)
-            if subject and msg:
-                self.send_escalation_msg(partner_ids, subject, msg)
-        return subject, msg
-
-
-
-    def escalate_first_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('open_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_first
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 54:
-                user_type = 'is_bpsq_md_manager'
-                esc_type = 'EXTREMELY OVERDUE ESCALATION'
-                hours = 54
-            elif total_elapsed_hours == 41:
-                user_type = 'is_bpsq_cto_manager'
-                esc_type = 'OVERDUE ESCALATION'
-                hours = 41
-            elif total_elapsed_hours == 27:
-                user_type = 'is_bpsq_cto_manager'
-                esc_type = 'DUE ESCALATION'
-                hours = 27
-            elif total_elapsed_hours == 21:
-                user_type = 'is_cto_rm_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 21
-            elif total_elapsed_hours == 14:
-                user_type = 'is_regional_manager_hcx'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 14
-            elif total_elapsed_hours == 7:
-                user_type = 'is_area_manager'
-                esc_type = 'NORMAL'
-                hours = 7
-
-            if user_type and esc_type and hours :
-                ticket.escalate_first(user_type, esc_type, hours)
-
-
-
-    def escalate_second_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('done_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', '=', 'done')])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_second
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 6:
-                user_type = 'is_bpsq_md_manager'
-                esc_type = 'EXTREMELY OVERDUE ESCALATION'
-                hours = 6
-            elif total_elapsed_hours == 4:
-                user_type = 'is_hcx'
-                esc_type = 'DUE ESCALATION'
-                hours = 4
-            elif total_elapsed_hours == 3:
-                user_type = 'is_hcx_team_lead'
-                esc_type = 'HIGH ESCALATION'
-                hours = 3
-            elif total_elapsed_hours == 2:
-                user_type = 'is_hcx'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 2
-            elif total_elapsed_hours == 1:
-                user_type = 'is_hcx'
-                esc_type = 'NORMAL ESCALATION'
-                hours = 1
-
-            if user_type and esc_type and hours:
-                ticket.escalate_second(user_type, esc_type, hours)
-
-
-    def escalate_third_service_relocation(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('finalized_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', '=', 'done')])
-
-        for ticket in tickets:
-            total_elapsed_hours = ticket.total_elapsed_hours_third
-            user_type = ''
-            esc_type = ''
-            hours = 0
-            if total_elapsed_hours == 12:
-                user_type = 'is_bpsq_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 12
-            elif total_elapsed_hours == 9:
-                user_type = 'is_hcx'
-                esc_type = 'HIGH ESCALATION'
-                hours = 9
-            elif total_elapsed_hours == 6:
-                user_type = 'is_team_lead'
-                esc_type = 'MODERATE ESCALATION'
-                hours = 6
-            elif total_elapsed_hours == 3:
-                user_type = 'is_cx'
-                esc_type = 'NORMAL ESCALATION'
-                hours = 3
-
-            if user_type and esc_type and hours:
-                ticket.escalate_third(user_type, esc_type, hours)
-
-    @api.depends('elapsed_hours_first')
-    def _compute_total_elapsed_hours_first(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_first:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_first = total_elapsed_hours
-
-
-    @api.depends('elapsed_hours_second')
-    def _compute_total_elapsed_hours_second(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_second:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_second = total_elapsed_hours
-
-
-    @api.depends('elapsed_hours_third')
-    def _compute_total_elapsed_hours_third(self):
-        for rec in self:
-            total_elapsed_hours = 0
-            for elh in rec.elapsed_hours_third:
-                total_elapsed_hours += elh.elapsed_hours
-            rec.total_elapsed_hours_third = total_elapsed_hours
-
-
-    def update_elapsed_table_first(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_first.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_first.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-    def update_elapsed_table_second(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_second.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_second.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-    def update_elapsed_table_third(self, day_no, elapsed_hours):
-        the_elapsed_rec = self.elapsed_hours_third.search([('day_no', '=', day_no),('ticket_id', '=', self.id)])
-        if not the_elapsed_rec :
-            self.elapsed_hours_third.create({'day_no': day_no, 'elapsed_hours': elapsed_hours, 'ticket_id': self.id})
-        else :
-            the_elapsed_rec.write({'elapsed_hours': elapsed_hours})
-
-
-    def set_hours_elapsed(self,tickets,escalation_type):
-        dtoday = datetime.today()
-        tday = dtoday.day
-        user_tz_obj = pytz.timezone(self.env.context.get('tz') or 'Africa/Lagos')
-        localize_tz = pytz.utc.localize
-        for ticket in tickets:
-            start_day = False
-            start_hour = False
-            if escalation_type == 'first':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.open_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-            elif escalation_type == 'second':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.done_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-            elif escalation_type == 'third':
-                start_day = localize_tz(
-                    datetime.strptime(ticket.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).day
-                start_hour = localize_tz(
-                    datetime.strptime(ticket.finalized_date, '%Y-%m-%d %H:%M:%S')).astimezone(
-                    user_tz_obj).hour
-
-            day_no = tday - start_day + 1
-            current_hour = dtoday.hour + 1
-
-            is_sunday = False
-            if dtoday.weekday() == 6 :
-                is_sunday = True
-            if 8 < current_hour < 18 and not is_sunday:
-                current_hours_elapsed = current_hour - 8
-                if day_no == 1:
-                    if start_hour <= 8 :
-                        start_hour = 8
-                    current_hours_elapsed = current_hour - start_hour
-                if escalation_type == 'first' :
-                    ticket.update_elapsed_table_first(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_first()
-                elif escalation_type == 'second' :
-                    ticket.update_elapsed_table_second(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_second()
-                elif escalation_type == 'third' :
-                    ticket.update_elapsed_table_third(day_no, current_hours_elapsed)
-                    ticket._compute_total_elapsed_hours_third()
-
-
-
-    def set_hours_elapsed_first(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('open_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets,'first')
-
-    def set_hours_elapsed_second(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('done_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets, 'second')
-
-    def set_hours_elapsed_third(self):
-        today = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-        tickets = self.search(
-            [('finalized_date', '<', today), ('is_service_relocation', '=', 'yes'),
-             ('state', 'not in', ['draft', 'closed'])])
-        self.set_hours_elapsed(tickets, 'third')
-
-
-    
-    def run_check_service_relocation_escalation_ticket(self):
-        dtoday = datetime.today()
-        current_hour = dtoday.hour + 1
-        is_sunday = False
-        if dtoday.weekday() == 6:
-            is_sunday = True
-        if 8 < current_hour < 18 and not is_sunday:
-            self.set_hours_elapsed_first()
-            self.escalate_first_service_relocation()
-            self.set_hours_elapsed_second()
-            self.escalate_second_service_relocation()
-            self.set_hours_elapsed_third()
-            self.escalate_third_service_relocation()
-        return True
-
-
-    
     def run_check_expected_finished_date_ticket(self):
 
         is_send_email_expiry_finish = self.env['ir.config_parameter'].sudo().get_param('fibernet.is_send_email_expiry_finish',default=False)
@@ -582,8 +255,8 @@ class Ticket(models.Model):
 
 
     def btn_ticket_progress(self):
-        if self.category_id == self.env.ref('fibernet.maintenance') and self.state == 'new':
-            raise UserError(_('CTO has to approve the maintenance ticket before it can commence work'))
+        if self.category_id.code in ('backend_support', 'request'):
+            self.user_ticket_group_id = self.category_id.user_ticket_group_id
         return super(Ticket,self).btn_ticket_progress()
 
 
@@ -625,21 +298,19 @@ class Ticket(models.Model):
 
 
     def btn_ticket_open(self):
+
+        if self.category_id == self.env.ref('fibernet.installation') and not self.order_id:
+            raise UserError('Sorry, you cannot create an installation ticket from here. Contact the sales person to initiate the sales order')
+
         if not self.category_id or not self.user_intg_ticket_group_id :
             raise UserError(_('Contact the Admin to set the default Finalized group'))
 
         if self.category_id  in  (self.env.ref('fibernet.support'),self.env.ref('fibernet.updown_grade')) and not self.partner_id.ref:
             raise UserError(_('Set the Customer Client ID on the customers database for this ticket to be opened'))
-        elif self.category_id == self.env.ref('fibernet.maintenance'):
-            maint_close_group = self.env['user.ticket.group'].search([('is_maint_default', '=', True)], limit=1)
-            if not maint_close_group:
-                raise UserError(_(
-                    'Please contact the Admin to set the Maintenance Close Group '))
-            if not self.base_station_maint_id:
-                raise UserError(_('Please Select the Base Station to be maintained in the Maintenance Form below'))
-            self.user_maint_ticket_group_id = maint_close_group
-        else:
-            self.user_maint_ticket_group_id = False
+
+
+        if self.category_id.code in ('backend_support','request'):
+            self.user_ticket_group_id = self.category_id.user_ticket_group_id
 
         self.state = 'new'
         self.open_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
@@ -713,7 +384,7 @@ class Ticket(models.Model):
                     'Kindly set the email for the %s with client id %s, in the customers database, before this ticket can be opened' % (
                     partner_id.name, partner_id.ref or ''))
 
-            msg = 'Dear %s, <p>This is to acknowledge the receipt of your payment for (Package-%s) Broadband service. </p> An installation ticket with the ID: %s has been opened for your installation. <p> Your Service ID : %s (this will be required for future communication).</p> <p> Kindly note that installation takes 3 to 7 working days. </p> <p> For further enquiries and assistance, please feel free to contact us through any of the following channels:</p><p><ul class=o_timeline_tracking_value_list><li>Calls: +2349083301363</li><li>Email: csc@fibernet.ng</li></ul></p><p>Please visit our website <a href=https://fibernet.ng/ >https://fibernet.ng/</a> for other terms and conditions.</p><p>We appreciate your interest in Fibernet Broadband and we hope you will enjoy our partnership as we provide you a reliable and steady internet connectivity.</p><p> Regards,</p>Customer Service Center</p>' % \
+            msg = 'Dear %s, <p>This is to acknowledge the receipt of your payment for (Package-%s) Broadband service. </p> An installation ticket with the ID: %s has been opened for your installation. <p> Your Service ID : %s (this will be required for future communication).</p> <p> Kindly note that installation takes 3 to 7 working days. </p> <p> For further enquiries and assistance, please feel free to contact us through any of the following channels:</p><p><ul class=o_timeline_tracking_value_list><li>Calls: 018889028</li><li>Whatsapp: +234 907 101 1409</li><li>Email: csc@fibernet.ng</li></ul></p><p>Please visit our website <a href=https://fibernet.ng/ >https://fibernet.ng/</a> for other terms and conditions.</p><p>We appreciate your interest in Fibernet Broadband and we hope you will enjoy our partnership as we provide you a reliable and steady internet connectivity.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
                       partner_id.name, self.sudo().product_id.name, self.ticket_id, partner_id.ref)
             self.message_follower_ids.unlink()
@@ -739,7 +410,7 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'csc@fibernet.ng'
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
-        if self.category_id in [self.env.ref('fibernet.backend_support'), self.env.ref('fibernet.software_support'), self.env.ref('fibernet.account_support')]:
+        if self.category_id in [self.env.ref('fibernet.backend_support')]:
             self.expiry_date = datetime.now() + relativedelta(minutes=+30)
             # send carbon copy email to assigned group
             csc_users = []
@@ -759,13 +430,6 @@ class Ticket(models.Model):
         return
 
 
-    def _compute_duration_maint(self):
-        for ticket in self :
-            if ticket.start_time_maint and ticket.end_time_maint :
-                end_time_maint = datetime.strptime(ticket.end_time_maint , DEFAULT_SERVER_DATETIME_FORMAT)
-                start_time_maint = datetime.strptime(ticket.start_time_maint , DEFAULT_SERVER_DATETIME_FORMAT)
-                date_diff =  str(end_time_maint - start_time_maint)
-                ticket.duration_maint =  date_diff
 
     def _compute_close_duration(self):
         for ticket in self :
@@ -863,6 +527,17 @@ class Ticket(models.Model):
     def onchange_location(self):
         self.base_station_id = ''
 
+    @api.onchange('updown_grade_type','area_change_request_id')
+    def onchange_updown_grade_type(self):
+        if self.updown_grade_type != 'relocation' :
+            self.user_ticket_group_id = self.category_id.user_ticket_group_id
+        elif self.updown_grade_type == 'relocation' and self.area_change_request_id:
+            self.area_customer_id = self.area_change_request_id
+            self._set_assigned_user_group_from_area()
+        else:
+            self._set_assigned_user_group_from_area()
+
+
     
     def btn_ticket_reset(self):
         for rec in self:
@@ -892,14 +567,17 @@ class Ticket(models.Model):
     
     def btn_ticket_done(self):
 
-        if self.category_id in (self.env.ref('fibernet.support'), self.env.ref('fibernet.survey'), self.env.ref('fibernet.maintenance')) :
+        if self.category_id.code in ('backend_support', 'request'):
+            self.user_ticket_group_id = self.category_id.user_ticket_group_id
+
+        if (self.category_id in (self.env.ref('fibernet.support'), self.env.ref('fibernet.survey'),self.env.ref('fibernet.backend_support'))) or (self.env.ref('fibernet.updown_grade') and self.updown_grade_type != 'relocation') :
             self.state = "finalized"
             self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
             # email ticket opener users
             partn_ids = []
             user_names = ''
-            msg = 'The Ticket (%s) with description (%s), has been completed and  finalized by %s, you may now close the ticket' % (
+            msg = 'The Ticket (%s) with description (%s), has been completed and finalized by %s, you may now close the ticket' % (
                 self.ticket_id, self.name, self.env.user.name)
 
             ope_users = self.initiator_ticket_group_id.sudo().user_ids
@@ -916,33 +594,6 @@ class Ticket(models.Model):
                 self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
             return
 
-
-        #     if not self.root_cause or  not self.resolution :
-        #         raise UserError(_('Please Set the Root Cause and Resolution in the Other Information Tab'))
-
-        partn_ids = []
-        user_names = ''
-        if self.category_id == self.env.ref('fibernet.maintenance'):
-            if not self.backend_devices_type and not self.power_type and not self.backhaul_fibre_type and not self.backhaul_microwave_type and not self.access_fibre_type and not self.access_radio_type:
-                raise UserError(_('Please select at least a TYPE in the Maintenance TAB'))
-            init_users = self.initiator_ticket_group_id.sudo().user_ids
-            for user in init_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-
-        msg = 'The Ticket (%s) with description (%s), has been Done by %s' % (
-        self.ticket_id, self.name, self.env.user.name)
-
-        if partn_ids:
-            self.message_follower_ids.unlink()
-            self.message_post(
-               body= _(msg),
-                subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
-
-        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-        self.done_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         #send email to the NOC team
         partn_ids = []
@@ -1053,44 +704,6 @@ class Ticket(models.Model):
         return super(Ticket,self).btn_ticket_close()
 
 
-
-
-
-    #CTO approves maintenance ticket
-    def btn_ticket_maint_approve(self):
-        if self.category_id != self.env.ref('fibernet.maintenance') :
-            raise UserError(_('Sorry, you may rather Click the Done button. This is not a maintenance ticket'))
-
-        self.state = 'maint_approve'
-        if self.category_id == self.env.ref('fibernet.maintenance') :
-            # send email to the Integration Team (Backend)
-            partn_ids = []
-            user_names = ''
-            intg_users = self.user_intg_ticket_group_id.sudo().user_ids
-            msg = 'The Maintenance Ticket (%s) with description (%s), has been approved by %s from the CTO' % (
-                self.ticket_id, self.name, self.env.user.name)
-            for user in intg_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-            init_users = self.initiator_ticket_group_id.sudo().user_ids
-            for user in init_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-
-        grp_name = 'fibernet.group_helpdesk_receive_maint_ticket_email'
-        subject = 'The Maintenance Ticket (%s) with description (%s), has been approved by %s from the CTO' % (
-            self.ticket_id, self.name, self.env.user.name)
-        msg = subject
-        self.send_email(grp_name, subject, msg)
-
-    
-
-
-    
     def action_ticket_opener_reject(self, msg):
         self.state = 'progress'
         self.opener_disapprove_by = self.env.user
@@ -1122,45 +735,6 @@ class Ticket(models.Model):
                 self.message_post(
                     body=_(mesg),
                     subject='%s' % mesg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
-
-            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
-
-
-    
-    def action_ticket_maint_reject(self,msg):
-        if self.category_id != self.env.ref('fibernet.maintenance') :
-            raise UserError(_('Sorry, you may rather Click the Done button. This is not a maintenance ticket'))
-
-        self.state = 'draft'
-        self.maint_disapprove_by = self.env.user
-        self.maint_disapprove_date = datetime.today()
-        self.maint_disapprove_msg = msg
-
-        if self.category_id == self.env.ref('fibernet.maintenance'):
-
-            partn_ids = []
-            user_names = ''
-            mesg = 'The Maintenance Ticket (%s) with description (%s), has been Declined by %s from the CTO  with reason: (%s)' % (
-                self.ticket_id, self.name, self.env.user.name, msg)
-
-            init_users = self.initiator_ticket_group_id.sudo().user_ids
-            for user in init_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-            assign_users = self.user_ticket_group_id.sudo().user_ids
-            for user in assign_users:
-                if user.is_group_email:
-                    user_names += user.name + ", "
-                    partn_ids.append(user.partner_id.id)
-
-            if partn_ids:
-                self.message_follower_ids.unlink()
-                self.message_post(
-                    _(mesg),
-                    subject='%s' % mesg, partner_ids=partn_ids)
 
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
@@ -1245,6 +819,9 @@ class Ticket(models.Model):
                 user_names += self.partner_id.name + ", "
                 mail_obj.email_from = 'csc@fibernet.ng'
                 mail_obj.reply_to = 'csc@fibernet.ng'
+        elif self.partner_id and self.category_id == self.env.ref('fibernet.updown_grade'):
+            self.state = 'finalized'
+            self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
         # email ticket opener users
         partn_ids = []
@@ -1293,8 +870,6 @@ class Ticket(models.Model):
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
-
-
     def get_default_eng_group(self):
         res = self.env['user.ticket.group'].search([('is_eng_default','=',True)],limit=1)
         return res
@@ -1312,14 +887,18 @@ class Ticket(models.Model):
 
 
     def write(self,vals):
+
         if self.partner_id and self.category_id == self.env.ref('fibernet.installation') :
             area_id =  vals.get('area_customer_id', False)
-            if area_id and not self.partner_id.ref  :
-                sequence_id = self.env['area'].browse(area_id).sequence_id
-                if sequence_id:
-                    vals['ref'] = sequence_id.next_by_id()
+            if area_id and not self.partner_id.ref:
+                if self.order_id.client_type == 'corporate' :
+                    vals['ref'] = self.env['ir.sequence'].next_by_code('cust_cid_code')
                 else:
-                    vals['ref'] = ''
+                    sequence_id = self.env['area'].browse(area_id).sequence_id
+                    if sequence_id:
+                        vals['ref'] = sequence_id.next_by_id()
+                    else:
+                        vals['ref'] = ''
 
             cust_vals = {
                 'location_id' : vals.get('location_id',self.partner_id.location_id),
@@ -1359,6 +938,9 @@ class Ticket(models.Model):
             self.partner_id.bandwidth = self.bandwidth_new
             self.partner_id.street = self.address_new
             self.partner_id.ip_address = self.adddress_ip_new
+            self.partner_id.serial_no = self.serial_new
+            self.partner_id.gpon = self.gpon_new
+            self.partner_id.power_level_id = self.power_level_new_id
 
         #reassign ticket notification
         assigned_users = vals.get('user_ticket_group_id', False)
@@ -1413,9 +995,7 @@ class Ticket(models.Model):
 
 
     order_id = fields.Many2one('sale.order', string='Order')
-    order_count = fields.Integer(compute="_compute_order_count", string='# of CRMs', copy=False, default=0)
-    crm_id = fields.Many2one('crm.lead', string='CRM')
-    crm_count = fields.Integer(compute="_compute_crm_count", string='# of CRMs', copy=False, default=0)
+    order_count = fields.Integer(compute="_compute_order_count", string='# of Order(s)', copy=False, default=0)
     invoice_id = fields.Many2one('account.move', string='Invoice')
     invoice_count = fields.Integer(compute="_compute_invoice_count", string='# of Invoices', copy=False, default=0)
 
@@ -1436,11 +1016,8 @@ class Ticket(models.Model):
     #survey_ticket_id = fields.Many2one('kin.ticket',string='Site Survey Ticket')
     product_id = fields.Many2one(related='partner_id.product_id',string='Package')
     installation_form = fields.Binary(string='Installation Picture', attachment=True)
-
     rejection_evidence = fields.Binary(string='Rejection Evidence')
-    access_confirmation = fields.Char(string="Confirmation of access to the location")
-    installation_constraint = fields.Text(string="Constraints that could delay the installation")
-    survey_attachment = fields.Binary(string="Survey Attachment Picture/FIle")
+
 
     root_cause = fields.Text(string='Root Cause')
     resolution = fields.Text(string='Resolution')
@@ -1450,11 +1027,9 @@ class Ticket(models.Model):
         [('call', 'Call'), ('email', 'Email'),
          ('chat', 'Chat'),('web', 'Web')], string='Source')
     complaint_type_support_id = fields.Many2one('complaint.type', string='Complaint Type')
+    amt_support_expenses = fields.Integer(string="Engr. Amount Expenses")
     done_ticket_date = fields.Datetime(string='Resolved Ticket Date')
 
-    maint_disapprove_msg = fields.Text(string='Declined Reason')
-    maint_disapprove_by = fields.Many2one('res.users', string='Declined By')
-    maint_disapprove_date = fields.Datetime(string='Declined Date and Time')
 
     opener_disapprove_msg = fields.Text(string='Ticket Opener Rejection Reason')
     opener_disapprove_by = fields.Many2one('res.users', string='Rejected By')
@@ -1466,43 +1041,20 @@ class Ticket(models.Model):
     user_intg_ticket_group_id = fields.Many2one('user.ticket.group',default=get_default_intg_group, string='Finalized User Group',ondelete='restrict')
     initiator_ticket_group_id = fields.Many2one('user.ticket.group',default=get_initiator_group,string='Ticket Opener Group')
     user_ticket_group_id = fields.Many2one('user.ticket.group', default=get_default_eng_group, string='Assigned User Group')
-    user_maint_ticket_group_id = fields.Many2one('user.ticket.group',string='Maintenance Ticket Close Group' )
 
 
     state = fields.Selection(
-        [('draft', 'Draft'), ('new', 'Open'), ('maint_approve', 'Maint. Approved'), ('progress', 'Work In Progress'),('done', 'Completed'), ('finalized','Finalized'),('closed', 'Closed'),('cancel', 'Cancelled'),('archived', 'Archived')],
+        [('draft', 'Draft'), ('new', 'Open'),  ('progress', 'Work In Progress'),('done', 'Completed'), ('finalized','Finalized'),('closed', 'Closed'),('cancel', 'Cancelled'),('archived', 'Archived')],
         default='draft', tracking=True)
 
     description = fields.Text(string='Incident Details')
 
-    #SUrvey Form fields
-    site_survey_form = fields.Binary(string='Site Survey Form', attachment=True)
-    srf_form = fields.Binary(string='SRF Form', attachment=True)
-    dist_fpop = fields.Char(string='Distance to FPOP')
+    #Survey Form fields
+    feasibility = fields.Selection([('feasible','Feasible'),('not_feasible','Not Feasible')], string='Feasibility')
+    dist_fpop = fields.Char(string='Distance to FPOP / JB')
     fpop_box_jb = fields.Char(string='FPOP Box / JB')
-    equipment_required = fields.Char(string='Equipment Required')
     comment_survey = fields.Text(string='Comment')
 
-
-    #Maintenance form fields
-    base_station_maint_id = fields.Many2one('base.station', string='Base Station')
-    rfs_in_charge = fields.Many2one('res.users',string='RFS IN CHARGE')
-    rf_contact_maint = fields.Char(string='RF Contact')
-    purpose_maint = fields.Char(string='PURPOSE')
-    date_maint = fields.Date(string='MAINTENANCE DATE')
-    start_time_maint = fields.Datetime(string='START TIME')
-    end_time_maint = fields.Datetime(string='END TIME')
-    duration_maint = fields.Char(string='DURATION',compute=_compute_duration_maint, store=True)
-    pop = fields.Char(string='POP')
-    backend_devices_type = fields.Boolean(string='BACKEND DEVICES')
-    power_type = fields.Boolean(string='POWER')
-    backhaul_fibre_type = fields.Boolean(string='BACKHAUL FIBER')
-    backhaul_microwave_type = fields.Boolean(string='BACKHAUL MICROWAVE')
-    access_fibre_type = fields.Boolean(string='ACCESS FIBER')
-    access_radio_type = fields.Boolean(string='ACCESS RADIO')
-    service_impact = fields.Char(string='SERVICE IMPACT')
-    services = fields.Char(string='SERVICES')
-    pop_affected = fields.Char(string='POPS AFFECTED')
     duration_close = fields.Char(string='Duration', compute=_compute_close_duration,store=True)
 
     #activation form
@@ -1524,7 +1076,7 @@ class Ticket(models.Model):
     comment_activation = fields.Char(string='Comment')
 
 
-    #Call Log and Request
+    # Request
     prospect_name = fields.Char(string='Prospect Name')
     prospect_address = fields.Char(string='Prospect Address')
     prospect_area_id = fields.Many2one('area',string='Prospect Area')
@@ -1535,48 +1087,31 @@ class Ticket(models.Model):
     is_others = fields.Boolean(related='prospect_area_id.is_others',string="Is Others")
 
     #Change Request
-    is_service_relocation = fields.Selection([('yes', 'Yes'),('no', 'No')], string='Is Service Relocation',  tracking=True)
-    elapsed_hours_first = fields.One2many('elapsed.hour.first','ticket_id', string='First Escalation Elapsed Hours')
-    elapsed_hours_second = fields.One2many('elapsed.hour.second', 'ticket_id', string='Second Escalation Elapsed Hours')
-    elapsed_hours_third = fields.One2many('elapsed.hour.third', 'ticket_id', string='Third Escalation Elapsed Hours')
-    total_elapsed_hours_first = fields.Integer(compute=_compute_total_elapsed_hours_first, string="First Escalation Total Elapsed Hours", store=True)
-    total_elapsed_hours_second = fields.Integer(compute=_compute_total_elapsed_hours_second, string="Second Escalation Total Elapsed Hours", store=True)
-    total_elapsed_hours_third = fields.Integer(compute=_compute_total_elapsed_hours_third, string="Third Escalation Total Elapsed Hours", store=True)
-    area_change_request_id = fields.Many2one('area', string="Area", tracking=True)
-    updown_grade_type = fields.Selection([('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('disconnect', 'Disconnect'),('reconnection', 'Reconnection'),('relocation', 'Relocation'),('voip', 'Voip')], string='Change Request Type')
-    product_curr_id = fields.Many2one('product.product',string='Current Package')
-    product_new_id = fields.Many2one('product.product', string='New Package')
-    bandwidth_current = fields.Char(string='Current Bandwidth')
-    bandwidth_new = fields.Char(string='New Bandwidth')
-    address_old = fields.Char(string='Old Address')
-    address_new = fields.Char(string='New Address')
-    address_ip_current = fields.Char(string='Current IP Address')
-    adddress_ip_new = fields.Char(string='New IP Address')
+    # is_service_relocation = fields.Selection([('yes', 'Yes'),('no', 'No')], string='Relocation',  tracking=True)
+    area_change_request_id = fields.Many2one('area', string="New Area", tracking=True)
+    updown_grade_type = fields.Selection([('relocation', 'Relocation'), ('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('hold', 'Hold Subscription'),('reconnect', 'Reconnect'),('change_password', 'Change Password')], string='Change Request Type', tracking=True)
+    product_curr_id = fields.Many2one('product.product',string='Current Package', tracking=True)
+    product_new_id = fields.Many2one('product.product', string='New Package', tracking=True)
+    bandwidth_current = fields.Char(string='Current Bandwidth', tracking=True)
+    bandwidth_new = fields.Char(string='New Bandwidth', tracking=True)
+    address_old = fields.Char(string='Old Address', tracking=True)
+    address_new = fields.Char(string='New Address', tracking=True)
+    address_ip_current = fields.Char(string='Current IP Address', tracking=True)
+    adddress_ip_new = fields.Char(string='New IP Address', tracking=True)
+    password_new = fields.Char(string='New Password', tracking=True)
+    serial_new = fields.Char(string='New Serial No.', tracking=True)
+    gpon_new = fields.Char(string='New GPON', tracking=True)
+    power_level_new_id = fields.Many2one('pl', string='New Power Level', tracking=True)
+    date_held = fields.Date(string='Date held', tracking=True)
+
     done_date = fields.Datetime(string='Completed Date')
     finalized_date = fields.Datetime(string='Finalized Date')
+
 
     last_log_datetime = fields.Datetime(string='Last Logged datetime')
     last_log_user_id = fields.Many2one('res.users',string='Last Logged User')
     last_log_message = fields.Html(string='Last Log Message')
     category_code = fields.Char(related='category_id.code', string='Category Code')
-
-    is_area_manager_email_sent = fields.Boolean(string='Is Area Manager Email Sent')
-    is_regional_manager_hcx_email_sent = fields.Boolean(string='Is Regional Manager/HCX Email Sent')
-    is_cto_rm_hcx_email_sent = fields.Boolean(string='Is CTO/RM/HCX Email Sent')
-    is_bpsq_cto_manager_email_sent = fields.Boolean(string='Is BPSQ/CTO Email Sent')
-    is_bpsq_cto_manager1_email_sent = fields.Boolean(string='Is BPSQ/CTO 1 Email Sent')
-    is_bpsq_md_manager_email_sent = fields.Boolean(string='Is MD/BPSQ Email Sent')
-
-    is_hcx_email_sent = fields.Boolean(string='Is HCX Email Sent')
-    is_hcx1_email_sent = fields.Boolean(string='Is HCX 1 Email Sent')
-    is_hcx_team_lead_email_sent = fields.Boolean(string='Is HCX/Teamlead')
-    is_hcx2_email_sent = fields.Boolean(string='Is HCX 2 Email Sent')
-    is_bpsq_md_manager1_email_sent = fields.Boolean(string='Is MD/BPSQ 1 Email Sent')
-
-    is_cx_email_sent = fields.Boolean(string='Is CX')
-    is_team_lead_email_sent = fields.Boolean(string='Is Teamlead')
-    is_hcx3_email_sent = fields.Boolean(string='Is HCX 3 Email Sent')
-    is_bpsq_hcx_email_sent = fields.Boolean(string='Is BPSQ/HCX')
 
     assigned_eng_user_ids = fields.Many2many(related='user_ticket_group_id.user_ids', string='Engineers')
     show_alert_box = fields.Boolean(string="Show Alert Box")

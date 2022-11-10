@@ -441,18 +441,27 @@
                 </xpath>
 
                 <field name="payment_term_id" position="after"  >
-                      <field name="is_special_other_sme" invisible="1" />
+                      <field name="is_editable_on_sales" invisible="1" />
                  </field>
 
                 <field name="order_line" position="attributes" >
                     <attribute name="force_save" >1</attribute>
-                    <attribute name="attrs" >{'readonly': [('is_special_other_sme', '=', False)]}</attribute>
+                    <attribute name="attrs" >{'readonly': [('is_editable_on_sales', '=', False)]}</attribute>
                 </field>
                  <xpath expr="//field[@name='order_line']/form"  position="replace" />
                  <xpath expr="//field[@name='order_line']/kanban"  position="replace" />
 
                 <field name="sale_order_template_id"  position="attributes" >
                     <attribute name="required" >True</attribute>
+                     <attribute name="domain" >[('client_type','=',client_type)]</attribute>
+                </field>
+
+                <field name="sale_order_template_id" position="before" >
+                    <field name="client_type" position="required" />
+                </field>
+
+                <field name="sale_order_template_id" position="after" >
+                    <field name="cust_acct_name" required="1" />
                 </field>
 
             </field>
@@ -524,6 +533,7 @@
                 <form string="Prospect">
                     <header>
                         <button name="btn_contacted" type="object" states="new" string="Contacted" class="oe_highlight"  groups="fibernet.group_show_prospect_contacted_btn" />
+                        <button name="btn_close" states="contacted" type="object" string="Close" class="oe_highlight"   />
                          <button name="btn_reset" states="contacted" type="object" string="Reset to Draft"  groups="fibernet.group_show_prospect_reset_btn" />
                         <field name="state" widget="statusbar"  />
                     </header>
@@ -638,7 +648,8 @@
         <field name="inherit_id" ref="sale_management.sale_order_template_view_form" />
         <field name="arch" type="xml">
              <field name="company_id" position="after">
-                    <field name="is_special_other_sme" />
+                    <field name="is_editable_on_sales" />
+                    <field name="client_type" required="1" />
             </field>
             <xpath expr="//tree/field[@name='product_uom_qty']"  position="after">
                     <field name="amount" required="1" />

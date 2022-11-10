@@ -111,6 +111,10 @@ class SaleOrderExtend(models.Model):
         if template.note:
             self.note = template.note
 
+    @api.onchange('client_type')
+    def onchange_client_type(self):
+        self.sale_order_template_id = False
+
     def unlink(self):
         for order in self:
             if order.state not in ['draft','to_accept']:
@@ -478,13 +482,20 @@ class SaleOrderExtend(models.Model):
     show_alert_box = fields.Boolean(string="Show Alert Box")
     alert_msg = fields.Char(string='Alert Message')
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
-    is_special_other_sme = fields.Boolean(related='sale_order_template_id.is_special_other_sme',string='Is Special Home/Other SME Packages')
+    is_editable_on_sales = fields.Boolean(related='sale_order_template_id.is_editable_on_sales',string='Is Editable on Sales')
+    cust_acct_name = fields.Char(string="Customer's Acct.")
+    client_type = fields.Selection([
+        ('home', 'Home Use'),
+        ('corporate', 'Corporate Use')],string='Client Type')
 
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"
 
-    is_special_other_sme = fields.Boolean(string='Is Special Home / Other SME Packages')
+    is_editable_on_sales = fields.Boolean(string='Is Editable on Sales Order')
+    client_type = fields.Selection([
+        ('home', 'Home Use'),
+        ('corporate', 'Corporate Use')], string='Client Type')
 
 class SaleOrderTemplateLine(models.Model):
     _inherit = "sale.order.template.line"
@@ -782,9 +793,6 @@ class ProductTemplateExtend(models.Model):
     selfcare_package_id = fields.Integer(string='Selfcare Package ID', track_visibility='always')
 
 
-
-
-
 class Prospect(models.Model):
     _name = "prospect"
     _inherit = ['mail.thread', 'mail.activity.mixin']
@@ -825,7 +833,6 @@ class Prospect(models.Model):
         return True
 
 
-
     def btn_contacted(self):
 
         if not self.comment :
@@ -854,7 +861,28 @@ class Prospect(models.Model):
     def btn_reset(self):
         self.state = 'new'
 
-    @api.model
+    def btn_close(self):
+        self.state = 'close'
+        self.request_ticket_id.sudo().btn_ticket_close()
+        # send email
+        partn_ids = []
+        group_obj = self.env.ref('fibernet.group_prospect_request_ticket_close_notify')
+        user_names = ''
+        for user in group_obj.sudo().users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+
+            if partn_ids:
+                user = self.env.user.name
+                msg = 'The Prospect and Request Ticket (%s) for %s has been sealed by %s' % (self.request_ticket_id.ticket_id,self.name,user)
+                subject = 'Closure/Sealed notification for the request ticket (%s) by %s' % (self.request_ticket_id.ticket_id,user)
+                self.message_follower_ids.unlink()
+                self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                                  force_send=False)
+                self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+
     def create(self,vals):
         request_ticket_id = vals.get('request_ticket_id', False)
         if not request_ticket_id :
@@ -873,7 +901,7 @@ class Prospect(models.Model):
     expiry_date = fields.Datetime(string='Expiry Date', tracking=True)
     contacted_date = fields.Datetime(string='Contacted Date',tracking=True)
     state = fields.Selection(
-        [('new', 'New'), ('contacted', 'Contacted')],
+        [('new', 'New'), ('contacted', 'Contacted'),('close','Closed')],
         default='new', tracking=True)
     is_non_compliance_email_sent = fields.Boolean(string='Is Non-Compliance Email Sent', default=False,tracking=True)
     is_non_compliance_email_sent_date = fields.Datetime(string='Non-Compliance Email Sent Date')

@@ -25,7 +25,6 @@ Fibernet Modifications
         'wizard/create_payment_entry.xml',
         'wizard/sales_order_disapprove.xml',
         'wizard/finalized_disapprove.xml',
-        'wizard/maint_disapprove.xml',
         'wizard/ticket_report_wizard_view.xml',
         'views/sequence.xml',
         'views/sale_view.xml',
