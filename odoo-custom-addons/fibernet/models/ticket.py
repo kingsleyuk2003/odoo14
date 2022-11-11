@@ -884,14 +884,11 @@ class Ticket(models.Model):
         return res
 
 
-
-
     def write(self,vals):
-
         if self.partner_id and self.category_id == self.env.ref('fibernet.installation') :
-            area_id =  vals.get('area_customer_id', False)
+            area_id = vals.get('area_customer_id', False)
             if area_id and not self.partner_id.ref:
-                if self.order_id.client_type == 'corporate' :
+                if self.order_id.client_type == 'corporate':
                     vals['ref'] = self.env['ir.sequence'].next_by_code('cust_cid_code')
                 else:
                     sequence_id = self.env['area'].browse(area_id).sequence_id
@@ -932,7 +929,7 @@ class Ticket(models.Model):
            }
             self.partner_id.write(cust_vals)
 
-         #update the change request new values
+        #  #update the change request new values
         if self.state == 'closed' and self.category_id == self.env.ref('fibernet.updown_grade'):
             self.partner_id.product_id = self.product_new_id
             self.partner_id.bandwidth = self.bandwidth_new
@@ -1087,7 +1084,6 @@ class Ticket(models.Model):
     is_others = fields.Boolean(related='prospect_area_id.is_others',string="Is Others")
 
     #Change Request
-    # is_service_relocation = fields.Selection([('yes', 'Yes'),('no', 'No')], string='Relocation',  tracking=True)
     area_change_request_id = fields.Many2one('area', string="New Area", tracking=True)
     updown_grade_type = fields.Selection([('relocation', 'Relocation'), ('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('hold', 'Hold Subscription'),('reconnect', 'Reconnect'),('change_password', 'Change Password')], string='Change Request Type', tracking=True)
     product_curr_id = fields.Many2one('product.product',string='Current Package', tracking=True)

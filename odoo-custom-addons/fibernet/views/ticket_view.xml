@@ -165,9 +165,7 @@
                     </page>
                     <page  string="Change Request Form" attrs="{'invisible': [('category_code', '!=', 'change_request' )]}" >
                             <group col="4" >
-<!--                                <field name="is_service_relocation" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />-->
-
-                                <field name="updown_grade_type" attrs="{'readonly': [('state', 'in', ('closed'))]}"  required="1"  />
+                                <field name="updown_grade_type" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                 <field name="area_change_request_id"  domain="[('area_manager_id','!=',False)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('updown_grade_type', '=', 'relocation' )], 'invisible': [('updown_grade_type', '!=', 'relocation')]}"   />
 <!--                                <field name="product_curr_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))]}"    options="{'no_open': True, 'no_create': True}"  />-->
                                  <field name="product_new_id" domain="[('is_sub','=',True)]" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('updown_grade_type', 'in', ('upgrade','downgrade') )]}"   options="{'no_open': True, 'no_create': True}"   />
