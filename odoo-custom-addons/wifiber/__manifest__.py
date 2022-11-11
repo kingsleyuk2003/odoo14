@@ -14,7 +14,7 @@ wifiber Modifications
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-     'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others','sale_management','crm','kin_crm'],
+     'depends': ['base','sale','sale_management','mail','report_xlsx','kin_helpdesk','web_notify','kin_sales','kin_others','sale_management','crm','kin_crm','hr_expense'],
     'data': [
         'data/data.xml',
         'report/report_invoice.xml',
@@ -30,10 +30,12 @@ wifiber Modifications
         'wizard/material_report_wizard_view.xml',
         'wizard/issued_report_wizard_view.xml',
         'wizard/survey_ticket.xml',
+        'wizard/expense_disapprove.xml',
         'views/sequence.xml',
         'views/sale_view.xml',
         'views/crm_view.xml',
         'views/ticket_view.xml',
+        'views/hr_expense_view.xml',
         'views/contract.xml',
         'views/cron_data.xml',
 
