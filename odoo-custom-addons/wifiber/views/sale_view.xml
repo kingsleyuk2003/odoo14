@@ -15,7 +15,6 @@
         </record>
 
 
-
         <!-- Location -->
         <record id="view_location_form" model="ir.ui.view">
             <field name="name">location</field>
@@ -208,6 +207,7 @@
                          <button name="btn_push_update_selfcare" class="btn-primary"  type="object"  string="Update Customer Data to Selfcare" confirm="ERP will update selfcare with changes. Do you want to continue?"   groups="wifiber.group_update_selfcare_customer" />
                     </header>
                  </xpath>
+
                 <field name="parent_id" position="attributes" >
                     <attribute name="invisible" >1</attribute>
                 </field>

@@ -113,8 +113,6 @@
         <field name="category_id" ref="module_category_wifiber_modifications"/>
     </record>
 
-
-	
 	<record id="group_helpdesk_maint_ticket" model="res.groups">
         <field name="name">Show Maintenance Ticket Button</field>
         <field name="category_id" ref="module_category_wifiber_modifications"/>
@@ -126,12 +124,32 @@
         <field name="category_id" ref="module_category_wifiber_modifications"/>
     </record>
 
-
-
-     <record id="group_show_crm_menu_wifiber" model="res.groups">
+    <record id="group_show_crm_menu_wifiber" model="res.groups">
         <field name="name">Show CRM menu</field>
         <field name="category_id" ref="module_category_wifiber_modifications"/>
     </record>
+
+    <record id="group_show_crm_customer_wifiber" model="res.groups">
+        <field name="name">Show CRM Customers menu</field>
+        <field name="category_id" ref="module_category_wifiber_modifications"/>
+    </record>
+
+    <record id="group_enforce_customer_create_crm_wifiber" model="res.groups">
+        <field name="name">Enforce Customer Creation Contraint from CRM</field>
+        <field name="category_id" ref="module_category_wifiber_modifications"/>
+    </record>
+
+    <record id="group_show_expense_application_wifiber" model="res.groups">
+			<field name="name">Show Expense Application</field>
+            <field name="category_id" ref="module_category_wifiber_modifications"/>
+    </record>
+
+    <record id="group_expense_account_application_wifiber" model="res.groups">
+			<field name="name">Expense Accountant</field>
+            <field name="category_id" ref="module_category_wifiber_modifications"/>
+    </record>
+
+
 
 
 		<record id="user_ticket_intg_user_rule" model="ir.rule">

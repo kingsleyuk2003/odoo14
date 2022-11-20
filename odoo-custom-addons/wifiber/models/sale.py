@@ -275,7 +275,7 @@ class SaleOrderExtend(models.Model):
         #
         # if company_email and sales_person_email and confirm_person_email and  (sales_person_email != confirm_person_email ):
         #     # Custom Email Template
-        #     mail_template = self.env.ref('kkon_modifications.mail_templ_sale_canceled')
+        #     mail_template = self.env.ref('wifiber.mail_templ_sale_canceled')
         #     ctx = {}
         #     ctx.update({'sale_id':self.id})
         #     the_url = self._get_sale_order_url('sale','menu_sale_order','action_orders',ctx)
@@ -618,6 +618,14 @@ class ResPartnerExtend(models.Model):
             #self.action_update_customer_selfcare()
         else:
             raise UserError('There is no initial customer created from ERP to selfcare from the installation ticket')
+
+    @api.model
+    def create(self,vals):
+        default_type = self.env.context.get('default_type',False)
+        if default_type != 'opportunity' and self.env.user.has_group('wifiber.group_enforce_customer_create_crm_wifiber'):
+            raise UserError('Sorry, you have to create this customer from the CRM module')
+        res = super(ResPartnerExtend,self).create(vals)
+        return res
 
     def write(self,vals):
         gpon = vals.get('gpon', False)

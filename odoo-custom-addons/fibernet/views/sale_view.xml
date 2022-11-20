@@ -457,11 +457,11 @@
                 </field>
 
                 <field name="sale_order_template_id" position="before" >
-                    <field name="client_type" position="required" />
+                    <field name="client_type" required="1" attrs="{'readonly': [('state', 'not in', ('draft','sent'))]}"   />
                 </field>
 
                 <field name="sale_order_template_id" position="after" >
-                    <field name="cust_acct_name" required="1" />
+                    <field name="cust_acct_name" required="1" attrs="{'readonly': [('state', 'not in', ('draft','sent'))]}"  />
                 </field>
 
             </field>

@@ -570,7 +570,7 @@ class Ticket(models.Model):
         if self.category_id.code in ('backend_support', 'request'):
             self.user_ticket_group_id = self.category_id.user_ticket_group_id
 
-        if (self.category_id in (self.env.ref('fibernet.support'), self.env.ref('fibernet.survey'),self.env.ref('fibernet.backend_support'))) or (self.env.ref('fibernet.updown_grade') and self.updown_grade_type != 'relocation') :
+        if (self.category_id in (self.env.ref('fibernet.support'), self.env.ref('fibernet.survey'),self.env.ref('fibernet.backend_support'))) or (self.category_id == self.env.ref('fibernet.updown_grade') and self.updown_grade_type != 'relocation') :
             self.state = "finalized"
             self.finalized_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
 
