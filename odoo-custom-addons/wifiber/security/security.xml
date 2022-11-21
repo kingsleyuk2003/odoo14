@@ -152,6 +152,8 @@
 
 
 
+
+
 		<record id="user_ticket_intg_user_rule" model="ir.rule">
             <field name="name" >Ticket Helpdesk User finalized</field>
             <field name="model_id" ref="model_kin_ticket"/>
