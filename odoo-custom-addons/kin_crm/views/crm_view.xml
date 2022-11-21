@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+ <menuitem  id="menu_root_target_analysis" name="Target" parent="crm.crm_menu_root" sequence="6" />
+
+
+        <record model="ir.ui.view" id="crm_case_form_view_leads_extend">
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form" />
+            <field name="arch" type="xml">
+
+                 <xpath expr="//form" position="attributes" >
+                    <attribute name="duplicate">0</attribute>
+                </xpath>
+
+                <button name="action_sale_quotations_new" position="before" >
+                     <button name="action_quotation_send" string="Send by Email" type="object" class="btn-primary" groups="kin_crm.group_show_send_email_crm_btn"/>
+                </button>
+                <field name="partner_id" position="attributes" >
+                    <attribute name="options">{'no_open':True,'no_create':True}</attribute>
+                </field>
+                <field name="user_id" position="attributes" >
+                    <attribute name="options">{'no_open':True,'no_create':True}</attribute>
+                </field>
+
+                <field name="user_id" position="before" >
+                    <field name="sale_order_template_id" context="{'company_id': company_id}"
+                        options="{'no_create': True, 'no_open': True}"
+                        groups="sale_management.group_sale_order_template"
+                    />
+                </field>
+
+                 <field name="partner_id" position="attributes" >
+                    <attribute name="string" >Existing Client</attribute>
+                     <attribute name="invisible" >1</attribute>
+                </field>
+
+                <xpath expr="//group[@name='opportunity_partner']/field[@name='partner_id']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+
+                <field name="street" position="attributes" >
+                     <attribute name="placeholder" ></attribute>
+                 </field>
+
+                 <xpath expr="//page[@name='lead']//field[@name='street']" position="attributes" >
+                       <attribute name="placeholder" ></attribute>
+                </xpath>
+
+                <field name="street2" position="attributes" >
+                     <attribute name="invisible">1</attribute>
+                 </field>
+                <xpath expr="//page[@name='lead']//field[@name='street2']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+                <field name="city" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+                </field>
+                <xpath expr="//page[@name='lead']//field[@name='city']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+                <field name="state_id" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+                </field>
+                <xpath expr="//page[@name='lead']//field[@name='state_id']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+                <field name="zip" position="attributes" >
+                     <attribute name="invisible">1</attribute>
+                </field>
+                <xpath expr="//page[@name='lead']//field[@name='zip']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+                 <field name="country_id" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+                 </field>
+                <xpath expr="//page[@name='lead']//field[@name='country_id']" position="attributes" >
+                       <attribute name="invisible" >1</attribute>
+                </xpath>
+                <field name="date_deadline" position="after" >
+                    <field name="date_won" />
+                </field>
+
+                 <page name="lead"  position="after">
+                        <page string="Product Lines">
+                            <field name="product_line_ids"    >
+                                <tree string="Product Lines" editable="bottom"  >
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="product_id"  options="{'no_open': True, 'no_create': True}"  />
+                                    <field name="name"/>
+                                    <field name="product_uom_qty"  string="Qty" />
+                                    <field name="product_uom" />
+                                    <field name="price_unit" />
+                                    <field name="tax_id"  options="{'no_open': True, 'no_create': True}" widget="many2many_tags" domain="[('type_tax_use','=','sale'),('company_id','=',parent.company_id)]" />
+                                    <field name="discount" groups="product.group_discount_per_so_line" />
+                                    <field name="price_subtotal" />
+                                    <field name="price_tax" />
+                                    <field name="price_total" string="Line Total"/>
+                                    <!--<field name="state" invisible="1"/>-->
+                                </tree>
+                                <kanban class="o_kanban_mobile">
+                                    <field name="product_id"/>
+                                    <field name="product_uom_qty"/>
+                                    <field name="product_uom" groups="product.group_uom"/>
+                                    <field name="price_unit" />
+                                    <field name="tax_id"  options="{'no_open': True, 'no_create': True}" widget="many2many_tags" domain="[('type_tax_use','=','sale'),('company_id','=',parent.company_id)]" />
+                                    <field name="discount" groups="product.group_discount_per_so_line" />
+                                    <field name="price_subtotal"/>
+                                     <field name="price_tax" />
+                                    <field name="price_total" string="Line Total"/>
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div t-attf-class="oe_kanban_card oe_kanban_global_click">
+                                                <div class="row">
+                                                    <div class="col-xs-12">
+                                                        <strong><span><t t-esc="record.product_id.value"/></span></strong>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-xs-8 text-muted">
+                                                        <span><t t-esc="record.product_uom_qty.value"/> <t t-esc="record.product_uom.value"/></span>
+                                                    </div>
+                                                    <div class="col-xs-4 text-muted">
+                                                        <span class="pull-right text-right"><t t-esc="record.price_subtotal.value"/></span>
+                                                    </div>
+                                                </div>
+
+
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                            </field>
+                             <group class="oe_subtotal_footer oe_right" colspan="2" name="sale_total">
+                                 <field name="company_id"  options="{'no_open': True, 'no_create': True}"  />
+                                 <field name="currency_id" />
+                                <field name="amount_untaxed" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                                <field name="amount_tax" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                                <div class="oe_subtotal_footer_separator oe_inline o_td_label">
+                                    <label for="amount_total" />
+                                    <button name="button_dummy"
+                                         string="(update)" type="object" class="oe_edit_only oe_link"/>
+                                </div>
+                                <field name="amount_total" nolabel="1" class="oe_subtotal_footer_separator" widget='monetary' options="{'currency_field': 'currency_id'}"/>
+                            </group>
+                            <field name="note" class="oe_inline" placeholder="Setup default terms and conditions in your company settings."/>
+                            <div class="oe_clear"/>
+
+                        </page>
+                    </page>
+            </field>
+    </record>
+
+          <record id="quick_create_opportunity_form_extend" model="ir.ui.view">
+            <field name="name">crm.lead.form.quick_create_extend</field>
+            <field name="model">crm.lead</field>
+            <field name="priority">1000</field>
+              <field name="inherit_id" ref="crm.quick_create_opportunity_form" />
+            <field name="arch" type="xml">
+                <field name="partner_id" position="attributes" >
+                    <attribute name="invisible">1</attribute>
+                </field>
+            </field>
+          </record>
+
+         <record model="ir.ui.view" id="crm_stage_form_extend">
+            <field name="name">crm.stage.form</field>
+            <field name="model">crm.stage</field>
+            <field name="priority" eval="1"/>
+            <field name="inherit_id" ref="crm.crm_stage_form" />
+            <field name="arch" type="xml">
+                <field name="is_won" position="after" >
+                    <field name="is_create_customer" />
+                </field>
+            </field>
+         </record>
+
+
+
+         <record id="crm_target_opportunity_form" model="ir.ui.view">
+            <field name="name">crm.target.opportunity</field>
+            <field name="model">crm.target.opportunity</field>
+            <field name="arch" type="xml">
+                <form string="CRM Target Opportunity">
+                <header>
+                  <button name="btn_target_compute" type="object"  string="Re-Compute Target Lines" class="oe_highlight"  />
+                </header>
+                <sheet>
+                        <group col="4">
+                            <field name="start_date" required="1"  />
+                            <field name="end_date"  required="1"/>
+                            <field name="sales_team"  required="1" options="{'no_open': True, 'no_create': True}"  />
+                        </group>
+                    <notebook>
+                        <page string="Target Lines" name="target_lines" >
+                            <field name="target_lines_ids" readonly="1" >
+                                <tree>
+                                    <field name="user_id" />
+                                    <field name="opportunity_target" />
+                                    <field name="actual_won_opportunity_revenue" />
+                                    <field name="perc_opportunity_target_won" />
+                                </tree>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right" colspan="2" >
+                                    <field name="total_opportunity_target" readonly="1" />
+                                    <field name="total_actual_won_opportunity_revenue" readonly="1" />
+                                <field name="total_perc_opportunity_target_won"  readonly="1" />
+                     </group>
+                        </page>
+
+                    </notebook>
+
+                </sheet>
+                </form>
+            </field>
+         </record>
+
+         <record model="ir.ui.view" id="crm_target_opportunity_tree">
+            <field name="name">Target Analysis Tree</field>
+            <field name="model">crm.target.opportunity</field>
+            <field name="arch" type="xml">
+                <tree string="Target Analysis Tree" >
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                    <field name="sales_team"/>
+                      <field name="total_opportunity_target" />
+                      <field name="total_actual_won_opportunity_revenue"  />
+                      <field name="total_perc_opportunity_target_won" />
+                </tree>
+            </field>
+        </record>
+
+         <record id="action_view_crm_target_opportunity" model="ir.actions.act_window">
+            <field name="res_model">crm.target.opportunity</field>
+            <field name="name">Target Analysis</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+         <menuitem id="menu_target_analysis" name="Target Analysis" parent="menu_root_target_analysis" action="action_view_crm_target_opportunity" sequence="1" groups="sales_team.group_sale_salesman_all_leads"/>
+
+
+<!-- User Target Settings -->
+
+         <record model="ir.ui.view" id="crm_user_target_tree">
+            <field name="name">CRM User Target Tree</field>
+            <field name="model">crm.user.target</field>
+            <field name="arch" type="xml">
+                <tree string="User Target Tree" editable="bottom" >
+                    <field name="start_date" required="1" sum="Total" />
+                    <field name="end_date" required="1" />
+                    <field name="user_id"  options="{'no_open': True, 'no_create': True}" required="1" />
+                    <field name="target_opportunity" required="1" sum="Total" />
+                    <field name="actual_won_opportunity_revenue" sum="Total" />
+                    <field name="perc_opportunity_target_won"   />
+                    <field name="company_id"  options="{'no_open': True, 'no_create': True}" required="1" />
+                </tree>
+            </field>
+        </record>
+
+         <record id="view_crm_user_target_filter" model="ir.ui.view">
+            <field name="name">crm.user.target.filter</field>
+            <field name="model">crm.user.target</field>
+            <field name="arch" type="xml">
+                 <search string="User Target">
+                    <field name="user_id" filter_domain="[('user_id','ilike',self)]" string="User"/>
+                    <field name="company_id" string="Company" groups="base.group_light_multi_company"/>
+                    <group expand="0" string="Group By">
+                        <filter name="grp_month"  string="Month" domain="[]" context="{'group_by':'start_date:month'}"/>
+                        <filter name="grp_year"  string="Year" domain="[]" context="{'group_by':'start_date:year'}"/>
+                         <filter name="grp_user" string="User" domain="[]" context="{'group_by':'user_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+
+         <record id="action_view_crm_user_target" model="ir.actions.act_window">
+            <field name="res_model">crm.user.target</field>
+            <field name="name">User Target</field>
+            <field name="view_mode">tree</field>
+             <field name="search_view_id" ref="view_crm_user_target_filter"/>
+        </record>
+
+        <menuitem id="menu_user_target" name="User Target" parent="menu_root_target_analysis" action="action_view_crm_user_target" sequence="2" groups="sales_team.group_sale_salesman_all_leads"/>
+
+
+        <record model="ir.ui.view" id="crm_user_target_readonly_tree">
+            <field name="name">CRM User Target Tree Readonly</field>
+            <field name="model">crm.user.target</field>
+            <field name="arch" type="xml">
+                <tree string="User Target Tree" delete="false" >
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                    <field name="user_id"  options="{'no_open': True, 'no_create': True}" />
+                    <field name="target_opportunity" sum="Total" />
+                     <field name="actual_won_opportunity_revenue" sum="Total"/>
+                    <field name="perc_opportunity_target_won"  />
+                    <field name="company_id"  options="{'no_open': True, 'no_create': True}" />
+                </tree>
+            </field>
+        </record>
+
+         <record id="action_view_your_crm_user_target" model="ir.actions.act_window">
+            <field name="res_model">crm.user.target</field>
+            <field name="name">Your User Target</field>
+            <field name="view_mode">tree</field>
+             <field name="context">{"search_default_grp_year":1}</field>
+             <field name="search_view_id" ref="view_crm_user_target_filter"/>
+        </record>
+
+        <record id="action_view_your_crm_user_target_tree_view" model="ir.actions.act_window.view">
+            <field name="sequence">3</field>
+            <field name="view_mode">tree</field>
+             <field name="view_id" ref="crm_user_target_readonly_tree" />
+            <field name="act_window_id" ref="action_view_your_crm_user_target"/>
+        </record>
+
+        <menuitem id="menu_your_user_target" name="Your User Target" parent="menu_root_target_analysis" action="action_view_your_crm_user_target" sequence="3" />
+
+
+
+
+    </data>
+</odoo>

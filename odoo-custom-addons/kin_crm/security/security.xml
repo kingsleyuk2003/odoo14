@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+<data>
+
+	<record model="ir.module.category" id="module_category_crm">
+            <field name="name">CRM</field>
+            <field name="description">CRM Rights</field>
+            <!--<field name="sequence">7</field>-->
+        </record>
+
+
+<!--		<record id="group_show_crm_done_link" model="res.groups">-->
+<!--			<field name="name">Show "CRM Done" button link</field>-->
+<!--			<field name="category_id" ref="module_category_crm"/>-->
+<!--		</record>-->
+
+<!--		<record id="group_show_crm_cancel_link" model="res.groups">-->
+<!--			<field name="name">Show "CRM Cancel" button</field>-->
+<!--			<field name="category_id" ref="module_category_crm"/>-->
+<!--		</record>-->
+
+<!--		<record id="group_show_quotation_btn" model="res.groups">-->
+<!--			<field name="name">Show "Quotation" button</field>-->
+<!--			<field name="category_id" ref="module_category_crm"/>-->
+<!--		</record>-->
+
+		<record id="group_show_send_email_crm_btn" model="res.groups">
+			<field name="name">Show "Send by Email" button</field>
+			<field name="category_id" ref="module_category_crm"/>
+		</record>
+
+		<record id="group_receive_new_customer_from_lead" model="res.groups">
+			<field name="name">Receive New Customer Email from Lead</field>
+			<field name="category_id" ref="module_category_crm"/>
+		</record>
+
+		<record id="group_notify_new_quote_opportunity" model="res.groups">
+			<field name="name">Receive New Quotation from Opportunity Email</field>
+		<field name="category_id" ref="module_category_crm"/>
+	</record>
+
+	<record id="group_show_user_target_crm_menu" model="res.groups">
+			<field name="name">Show User Target CRM Menu</field>
+			<field name="category_id" ref="module_category_crm"/>
+		</record>
+
+
+<!--<delete model="ir.rule" id="crm.crm_rule_all_lead"/>-->
+<!--	 <record id="crm.crm_rule_all_lead" model="ir.rule">-->
+<!--        <field name="name">All Leads Extends</field>-->
+<!--        <field ref="crm.model_crm_lead" name="model_id"/>-->
+<!--        <field name="domain_force">['&amp;',(1,'=',1),('company_id','=',user.company_id.id)]</field>-->
+<!--        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>-->
+<!--    </record>-->
+
+
+<!--<delete model="ir.rule" id="crm.crm_rule_all_lead_report"/>-->
+<!--    <record id="crm.crm_rule_all_lead_report" model="ir.rule">-->
+<!--        <field name="name">All Leads Analysis Extends</field>-->
+<!--        <field ref="crm.model_crm_opportunity_report" name="model_id"/>-->
+<!--        <field name="domain_force">['&amp;',(1,'=',1),('company_id','=',user.company_id.id)]</field>-->
+<!--        <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman_all_leads'))]"/>-->
+<!--    </record>-->
+
+	 <record id="target_comp_rule" model="ir.rule">
+            <field name="name" >Target Multi-company</field>
+            <field name="model_id" ref="model_crm_target_opportunity"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|',('company_id','=',False),('company_id','child_of',[user.company_id.id])]</field>
+            <!--<field name="domain_force"> ['|',('company_id','=',user.company_id.id),('company_id','=',False)]</field> #this still works too-->
+            <field name="active" eval="True"/>
+        </record>
+
+	 <record id="target_crm_user_target_comp_rule" model="ir.rule">
+            <field name="name" >All CRM User Target Multi-company</field>
+            <field name="model_id" ref="model_crm_user_target"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|',('company_id','=',False),('company_id','child_of',[user.company_id.id])]</field>
+<!--		   <field name="groups" eval="[(4, ref('base.group_sale_salesman_all_leads'))]"/>  &lt;!&ndash; It interrupted the expense app from refusing expense &ndash;&gt;-->
+           <field name="groups" eval="[(4, ref('group_show_user_target_crm_menu'))]"/>
+            <!--<field name="domain_force"> ['|',('company_id','=',user.company_id.id),('company_id','=',False)]</field> #this still works too-->
+            <field name="active" eval="True"/>
+        </record>
+
+	 <record id="target_your_crm_user_target_comp_rule" model="ir.rule">
+            <field name="name" >Your CRM User Target Multi-company</field>
+            <field name="model_id" ref="model_crm_user_target"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">[('user_id','=',user.id)]</field>
+         <field name="groups" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+            <field name="active" eval="True"/>
+        </record>
+
+
+</data>
+</openerp>

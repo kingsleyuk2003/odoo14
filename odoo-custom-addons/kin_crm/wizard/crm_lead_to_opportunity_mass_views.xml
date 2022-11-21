@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<odoo>
+    <record id="view_crm_lead2opportunity_partner_mass" model="ir.ui.view">
+        <field name="name">crm.lead2opportunity.partner.mass.form</field>
+        <field name="model">crm.lead2opportunity.partner.mass</field>
+        <field name="inherit_id" ref="crm.view_crm_lead2opportunity_partner_mass" />
+        <field name="arch" type="xml">
+
+                <field name="deduplicate"  position="replace" />
+               <field name="force_assignment" position="replace" />
+                <label for="duplicated_lead_ids" position="replace" />
+
+                <group attrs="{'invisible': [('deduplicate', '=', False)]}" position="replace" />
+                <group attrs="{'invisible': [('name', '!=', 'convert')]}" position="replace" />
+
+
+        </field>
+    </record>
+
+
+</odoo>

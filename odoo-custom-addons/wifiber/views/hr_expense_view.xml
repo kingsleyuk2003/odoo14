@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_root">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_show_expense_application_wifiber')])]"/>
+
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_my_expenses_to_submit">
+		 <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_my_expenses_all">
+		 <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_pay">
+		 <field name="groups_id" eval="[(6, 0, [ref('base.group_no_one')])]"/>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_post">
+		 <field name="groups_id" eval="[(6, 0, [ref('group_expense_account_application_wifiber')])]"/>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all">
+		 <field name="groups_id" eval="[(6, 0, [ref('hr_expense.group_hr_expense_manager')])]"/>
+     </record>
+
+
+     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_my_reports">
+         <field name="name" >My Expenses</field>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_approve">
+         <field name="name" >Expenses to Approve</field>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_post">
+         <field name="name" >Expenses to Post</field>
+     </record>
+
+    <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all">
+         <field name="name" >All Expenses</field>
+     </record>
+
+
+ <record id="view_hr_expense_sheet_form" model="ir.ui.view">
+            <field name="name">hr.expense.sheet.form</field>
+            <field name="model">hr.expense.sheet</field>
+            <field eval="25" name="priority"/>
+            <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form" />
+            <field name="arch" type="xml">
+
+                <button name="action_sheet_move_create" position="attributes" >
+                     <attribute name="groups" >wifiber.group_expense_account_application_wifiber</attribute>
+                </button>
+
+                <field name="name" position="attributes" >
+                     <attribute name="attrs" >{'readonly': [('state', '!=', 'draft')]}</attribute>
+                 </field>
+
+                 <field name="expense_line_ids" position="attributes" >
+                     <attribute name="widget" ></attribute>
+                     <attribute name="attrs" >{'readonly': [('state', '!=', 'draft')]}</attribute>
+                 </field>
+
+                <field name="analytic_account_id" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                <field name="account_id" position="replace" />
+                <field name="unit_amount" position="replace" />
+
+                <xpath expr="//tree/field[@name='attachment_number']"  position="attributes">
+                     <attribute name="invisible" >1</attribute>
+                </xpath>
+                 <xpath expr="//notebook/page/field[@name='expense_line_ids']/tree/button[@name='action_get_attachment_view']"  position="replace" />
+
+                 <field name="currency_id" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                 <field name="quantity" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                 <field name="company_id" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                <field name="tax_ids" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                <field name="reference" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                <field name="tax_ids" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+                <field name="total_amount" position="attributes" >
+                     <attribute name="invisible" >1</attribute>
+                 </field>
+
+                <field name="date" position="after" >
+                     <field name="product_id" string="Expense" options="{'no_open': True, 'no_create': True}" />
+<!--                     <field name="account_id" optional="show" options="{'no_open': True, 'no_create': True}" />-->
+                </field>
+
+                <field name="total_amount" position="before" >
+                    <field name="unit_amount"  widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                </field>
+
+<!--                <field name="account_id" position="attributes" >-->
+<!--                    <attribute name="domain" >[('user_type_id','=',15)]</attribute>-->
+<!--                </field>-->
+
+                <field name="bank_journal_id" position="attributes" >
+                     <attribute name="domain" >[('is_expense','=',True)]</attribute>
+                 </field>
+
+                <field name="employee_id" position="attributes" >
+                     <attribute name="readonly" >1</attribute>
+                 </field>
+
+                 <field name="user_id" position="attributes" >
+                      <attribute name="groups" >hr_expense.group_hr_expense_team_approver,wifiber.group_expense_account_application_wifiber</attribute>
+                 </field>
+
+                <field name="accounting_date" position="attributes" >
+                     <attribute name="readonly" >1</attribute>
+                 </field>
+
+                <page name="other_info" position="attributes" >
+                    <attribute name="string" >Accounting Info</attribute>
+                    <attribute name="groups" >wifiber.group_expense_account_application_wifiber</attribute>
+                </page>
+
+            </field>
+ </record>
+
+
+</odoo>

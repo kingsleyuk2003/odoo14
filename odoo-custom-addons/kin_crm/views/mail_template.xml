@@ -1,0 +1,118 @@
+<odoo>
+    <data>
+
+
+		<record id="mail_templ_next_activity_created" model="mail.template">
+			<field name="name" >A New Task has been Assigned</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">A New ${ctx.get('next_activity_type')} Task has been assigned to you for the ${ctx.get('opp_name')}  </field>
+			<field name="email_to">${ctx.get('sales_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'crm.lead')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('sales_person_name')},</p>
+				<p>A New ${ctx.get('next_activity_type')} with the title ${ctx.get('task_title')} for the ${ctx.get('opp_name')}  has been assigned to you. With expected done date as ${ctx.get('task_date')}</p>
+				<p><a href="${ctx.get('url')}">Follow the link to see the next activity to perform</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto-generated message</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_cancel_activity_created" model="mail.template">
+			<field name="name" >A New Task has been Cancelled</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">The ${ctx.get('next_activity_type')} Task assigned to you has been cancelled for the ${ctx.get('opp_name')}  </field>
+			<field name="email_to">${ctx.get('sales_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'crm.lead')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('sales_person_name')},</p>
+				<p>The ${ctx.get('next_activity_type')} Task assigned to you has been cancelled with title ${ctx.get('task_title')} for the ${ctx.get('opp_name')}. With expected done date as ${ctx.get('task_date')}</p>
+				<p><a href="${ctx.get('url')}">Follow the link to see the cancelled task</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto-generated message</p>
+				]]>
+			</field>
+		</record>
+
+		<record id="mail_templ_done_activity_created" model="mail.template">
+			<field name="name" > The Task has been completed</field>
+			<field name="email_from">${ctx.get('system_email')}</field>
+			<field name="reply_to">${ctx.get('system_email')}</field>
+			<field name="subject">The ${ctx.get('next_activity_type')} Task for the ${ctx.get('opp_name')} has been marked as DONE, belonging to ${ctx.get('sales_person_name')} </field>
+			<field name="email_to">${ctx.get('sales_person_email')}</field>
+			<field name="model_id"   model="ir.model"  search="[('model', '=', 'crm.lead')]" />
+		    <field name="auto_delete" eval="True"/>
+			<field name="body_html"  >
+				<![CDATA[
+				<p>Dear ${ctx.get('sales_person_name')},</p>
+				<p>The ${ctx.get('next_activity_type')} Task with the title ${ctx.get('task_title')} for the ${ctx.get('opp_name')}  has been marked as DONE, belonging to ${ctx.get('sales_person_name')}. With expected done date as ${ctx.get('task_date')}</p>
+				<p><a href="${ctx.get('url')}">Follow the link to see the completed task</a></p>
+				<p>Regards and Thanks</p>
+				<p>This is an auto-generated message</p>
+				]]>
+			</field>
+		</record>
+
+		<!-- Send Quote by Email on CRM Module-->
+	<record id="email_template_crm" model="mail.template">
+            <field name="name">CRM - Send by Email</field>
+              <field name="subject">${object.company_id.name} Quotation (Ref ${object.name or 'n/a'})</field>
+            <field name="partner_to">${object.partner_id.id}</field>
+        <field name="email_to">${object.email_from}</field>
+            <field name="model_id" ref="kin_crm.model_crm_lead"/>
+            <field name="body_html" type="html">
+                <div style="margin: 0px; padding: 0px;">
+                    <p style="margin: 0px; padding: 0px; font-size: 13px;">
+
+                         <p>Hello ${object.partner_id.name},</p>
+                        <br />
+                        <p>Kindly see attached for your Quotation </p>
+                        <br />
+
+                         <br/>
+                        <p>If you have any question, do not hesitate to contact us.</p>
+                        <p>Thank you for choosing ${object.company_id.name or 'us'}!</p>
+                        <br/>
+                        <br/>
+
+                        <div style="width: 375px; margin: 0px; padding: 0px; background-color: #3f51b5; border-top-left-radius: 5px 5px; border-top-right-radius: 5px 5px; background-repeat: repeat no-repeat;">
+                            <h3 style="margin: 0px; padding: 2px 14px; font-size: 12px; color: #DDD;">
+                                <strong style="text-transform:uppercase;">${object.company_id.name}</strong></h3>
+                        </div>
+                        <div style="width: 347px; margin: 0px; padding: 5px 14px; line-height: 16px; background-color: #F2F2F2;">
+                            <span style="color: #222; margin-bottom: 5px; display: block; ">
+                                ${object.company_id.partner_id.sudo().with_context(show_address=True, html_format=True).name_get()[0][1] | safe}
+                            </span>
+                            % if object.company_id.phone:
+                                <div style="margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; ">
+                                    Phone: ${object.company_id.phone}
+                                </div>
+                            % endif
+                            % if object.company_id.website:
+                                <div>
+                                    Web :<a href="${object.company_id.website}">${object.company_id.website}</a>
+                                </div>
+                            %endif
+                            <p></p>
+                        </div>
+
+                    </p>
+                </div>
+           </field>
+            <field name="report_template" ref="action_report_crm"/>
+
+            <field name="report_name">CRM_${(object.name or '').replace('/','_')}_${'Quote' or ''}</field>
+            <field name="lang">${object.partner_id.lang}</field>
+             <field name="auto_delete" eval="True"/>
+        </record>
+
+
+		
+	</data>
+</odoo>

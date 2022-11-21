@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record  id="view_issued_report_wizard" model="ir.ui.view" >
+                <field name="name">Material Issued Report Wizard</field>
+                <field name="model">issued.wizard</field>
+                <field name="arch" type="xml" >
+                <form>
+                  <span string="This wizard will help you generate a Helpdesk Material Issued Ticket Report" />
+                         <group col="4" colspan="4" >
+                             <field name="start_date" />
+                             <field name="end_date" />
+                             <field name="company_id" readonly="1" />
+                         </group>
+                        <footer>
+                            <button default_focus="1"  name="issued_excel_report" string="Export as Excel" type="object"  colspan="2" class="oe_highlight" />
+                            or <button special="cancel" class="oe_link"  string="Cancel"  />
+                        </footer>
+                </form>
+             </field>
+        </record>
+
+		<record id="action_issued_report_wizard" model="ir.actions.act_window">
+            <field name="name">Generate Material Issued Ticket Report</field>
+            <field name="res_model">issued.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_issued_report_wizard"/>
+            <field name="context">{}</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="target">new</field>
+        </record>
+
+   </data>
+</odoo>

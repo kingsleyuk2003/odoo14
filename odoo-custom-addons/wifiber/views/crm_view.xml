@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+	<data>
+
+        <record model="ir.ui.menu" id="crm.res_partner_menu_customer">
+		  <field name="groups_id" eval="[(6, 0, [ref('group_show_crm_customer_wifiber')])]"/>
+        </record>
+
+		  <record model="ir.ui.view" id="crm_case_form_view_leads_wifiber">
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form" />
+            <field name="arch" type="xml">
+
+                <button name="action_sale_quotations_new" position="before" >
+                      <button name="%(action_survey_ticket)d" class="oe_highlight"  string="Create Survey Ticket"   type="action"  attrs="{'invisible':['|',('is_survey_ticket_close', '!=', False),('ticket_count', '!=', 0)]}"   />
+                </button>
+
+                 <div class="oe_button_box" name="button_box" position="inside" >
+                            <button name="action_view_ticket"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('ticket_count', '=', 0)]}" >
+                                <field  name="ticket_count" widget="statinfo" string="Ticket" />
+                            </button>
+                    </div>
+                <field name="tag_ids" position="after" >
+                    <field name="is_survey_ticket_close" readonly="1" />
+                </field>
+                <field name="team_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+                 <field name="user_id" position="attributes" >
+                    <attribute name="readonly" >1</attribute>
+                </field>
+
+                 <field name="contact_name" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="phone" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <xpath expr="//group[@name='lead_info']//field[@name='phone']" position="attributes" >
+                       <attribute name="required" >1</attribute>
+                </xpath>
+
+
+                <field name="email_from" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <xpath expr="//group[@name='lead_info']//field[@name='email_from']" position="attributes" >
+                       <attribute name="required" >1</attribute>
+                </xpath>
+
+                <field name="street" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <xpath expr="//page[@name='lead']//field[@name='street']" position="attributes" >
+                       <attribute name="required" >1</attribute>
+                </xpath>
+
+                <field name="partner_id" position="after" >
+                    <field name="is_company"    />
+                </field>
+
+                <field name="partner_name"  position="attributes" >
+                    <attribute name="attrs" >{'required' : [('is_company', '=', True)], 'invisible': [('is_company', '=', False)]}</attribute>
+                </field>
+
+                <field name="sale_order_template_id" position="attributes" >
+                    <attribute name="required" >1</attribute>
+                </field>
+
+                 <button name="action_sale_quotations_new" position="attributes" >
+                    <attribute name="invisible" >1</attribute>
+                </button>
+
+                <field name="phone_state" position="after" >
+                    <field name="contact_name" />
+                     <field name="partner_name" />
+                    <field name="street" string="Address" />
+                </field>
+
+
+
+            </field>
+    </record>
+
+         <record id="quick_create_opportunity_form_wifiber" model="ir.ui.view">
+            <field name="name">crm.lead.form.quick_create_wifiber</field>
+            <field name="model">crm.lead</field>
+            <field name="priority">1000</field>
+            <field name="inherit_id" ref="crm.quick_create_opportunity_form" />
+            <field name="arch" type="xml">
+                <field name="email_from" position="attributes" >
+                    <attribute name="required">1</attribute>
+                </field>
+                <field name="phone" position="attributes" >
+                    <attribute name="required">1</attribute>
+                </field>
+                <field name="street" position="attributes" >
+                    <attribute name="invisible">0</attribute>
+                    <attribute name="string" >Address</attribute>
+                    <attribute name="required">1</attribute>
+                </field>
+
+            </field>
+          </record>
+
+
+
+     <record id="mail_activity_view_form_popup_wifiber" model="ir.ui.view">
+        <field name="name">mail.activity.view.form.popup</field>
+        <field name="model">mail.activity</field>
+        <field name="priority">20</field>
+         <field name="inherit_id" ref="mail.mail_activity_view_form_popup" />
+        <field name="arch" type="xml">
+            <field name="date_deadline" position="before" >
+                <field name="datetime_wifiber" required="1"  />
+            </field>
+        </field>
+     </record>
+
+        <record id="crm_case_tree_view_oppor_wifiber" model="ir.ui.view">
+            <field name="name">crm.lead.tree.opportunity</field>
+            <field name="model">crm.lead</field>
+            <field name="priority">1</field>
+            <field name="inherit_id" ref="crm.crm_case_tree_view_oppor" />
+            <field name="arch" type="xml">
+                  <field name="activity_date_deadline_my" position="after" >
+                      <field name="activity_datetime_wifiber" />
+                  </field>
+
+            </field>
+        </record>
+
+
+
+
+
+
+	</data>
+</odoo>

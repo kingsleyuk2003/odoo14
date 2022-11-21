@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <record id="purchase_lines_report" model="ir.actions.report">
+            <field name="name">Purchase Lines Report</field>
+            <field name="model">purchase.lines.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_purchase.report_purchase_lines_report</field>
+            <field name="report_file">Purchase Report</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+        <record id="res_config_settings_view_form_kin_crm" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.kin_crm</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="40"/>
+            <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+            <field name="arch" type="xml">
+
+                     <div  name="generate_lead_setting_container"  position="after">
+                        <h2>Other CRM Settings</h2>
+                        <div class="row mt16 o_settings_container" id="kin_crm_setting_container">
+                            <div class="col-12 col-lg-6 o_setting_box">
+                                <div class="o_setting_left_pane"/>
+                                <div class="o_setting_right_pane">
+                                    <span class="o_form_label">Create Quote on Won Stage</span>
+                                    <div class="text-muted content-group mt16">
+                                         <field name="is_create_quote_on_won" class="text-center oe_inline" />
+                                        <span>Create Quote on Won Stage</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+            </field>
+        </record>
+
+
+
+
+    </data>
+</odoo>

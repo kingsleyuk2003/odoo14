@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+
+
+         <record id="sales_lines_report" model="ir.actions.report">
+            <field name="name">Sales Lines Report</field>
+            <field name="model">sales.lines.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_sales.report_sales_lines_report</field>
+            <field name="report_file">Sales Report</field>
+        </record>
+
+
+
+
+    </data>
+</odoo>

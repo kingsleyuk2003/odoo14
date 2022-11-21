@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_kin_crm_product_line_manager,kin.crm.product.line manager,model_crm_product_line,sales_team.group_sale_manager,1,1,1,1
+access_kin_crm_product_line_lead,kin.crm.product.line sales person,model_crm_product_line,sales_team.group_sale_salesman,1,1,1,1
+access_crm_target_opportunity_all_leads,crm.target.opportunity all leads,model_crm_target_opportunity,sales_team.group_sale_salesman_all_leads,1,1,1,1
+access_crm_target_opportunity_lines_all_leads,crm.target.opportunity.lines all leads,model_crm_target_opportunity_lines,sales_team.group_sale_salesman_all_leads,1,1,1,1
+access_crm_user_target,crm.user.target all,model_crm_user_target,sales_team.group_sale_salesman,1,1,1,1
