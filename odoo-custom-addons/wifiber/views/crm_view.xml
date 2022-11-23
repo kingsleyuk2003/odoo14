@@ -6,7 +6,8 @@
 		  <field name="groups_id" eval="[(6, 0, [ref('group_show_crm_customer_wifiber')])]"/>
         </record>
 
-		  <record model="ir.ui.view" id="crm_case_form_view_leads_wifiber">
+
+		<record model="ir.ui.view" id="crm_case_form_view_leads_wifiber">
             <field name="model">crm.lead</field>
             <field name="inherit_id" ref="crm.crm_lead_view_form" />
             <field name="arch" type="xml">
@@ -24,7 +25,15 @@
                                 <field  name="ticket_count" widget="statinfo" string="Ticket" />
                             </button>
                     </div>
+
+                <h2 class="o_row no-gutters align-items-end" position="attributes">
+                        <attribute name="invisible" >1</attribute>
+                </h2>
+
                 <field name="tag_ids" position="after" >
+                    <field name="is_survey_ticket_created" readonly="1" />
+                     <field name="survey_ticket_created_date" readonly="1" />
+                    <field name="survey_ticket_id" readonly="1" />
                     <field name="is_survey_ticket_close" readonly="1" />
                 </field>
                 <field name="team_id" position="attributes" >
@@ -34,9 +43,6 @@
                     <attribute name="readonly" >1</attribute>
                 </field>
 
-                 <field name="contact_name" position="attributes" >
-                    <attribute name="required" >True</attribute>
-                </field>
 
                 <field name="phone" position="attributes" >
                     <attribute name="required" >True</attribute>
@@ -63,13 +69,19 @@
                        <attribute name="required" >1</attribute>
                 </xpath>
 
-                <field name="partner_id" position="after" >
-                    <field name="is_company"    />
-                </field>
+<!--                <field name="partner_id" position="after" >-->
+<!--                    <field name="is_company"    />-->
+<!--                </field>-->
+
+<!--                <field name="partner_name"  position="attributes" >-->
+<!--                    <attribute name="attrs" >{'required' : [('is_company', '=', True)], 'invisible': [('is_company', '=', False)]}</attribute>-->
+<!--                </field>-->
+
 
                 <field name="partner_name"  position="attributes" >
-                    <attribute name="attrs" >{'required' : [('is_company', '=', True)], 'invisible': [('is_company', '=', False)]}</attribute>
-                </field>
+                     <attribute name="required" >1</attribute>
+               </field>
+
 
                 <field name="sale_order_template_id" position="attributes" >
                     <attribute name="required" >1</attribute>
@@ -80,11 +92,33 @@
                 </button>
 
                 <field name="phone_state" position="after" >
-                    <field name="contact_name" />
                      <field name="partner_name" />
                     <field name="street" string="Address" />
                 </field>
 
+                  <field name="date_deadline" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </field>
+
+                <field name="date_won" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </field>
+
+                <field name="priority" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </field>
+
+                <field name="tag_ids" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </field>
+
+                <page name="lead" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </page>
+
+                <page name="internal_notes" position="attributes" >
+                      <attribute name="invisible" >1</attribute>
+                  </page>
 
 
             </field>

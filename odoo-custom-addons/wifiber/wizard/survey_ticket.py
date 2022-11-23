@@ -11,8 +11,8 @@ class survey_ticket_wizard(models.TransientModel):
         opp = self.env['crm.lead'].browse(opp_id)
         cmp_name = ''
         if opp.partner_name :
-            cmp_name = "Company Name: " + opp.partner_name
-        details = opp.name + "\n" + cmp_name +  "\n" + "Contact Name: " + opp.contact_name +  "\n" +  "Address: " + opp.street + "\n" + "Phone: " + opp.phone + "\n" + "Email:" + opp.email_from
+            cmp_name = "Customer: " + opp.partner_name
+        details = opp.name + "\n" + cmp_name +  "\n" + "\n" +  "Address: " + opp.street + "\n" + "Phone: " + opp.phone + "\n" + "Email:" + opp.email_from
         msg = self.msg or ''
         opp.action_create_survey_ticket(details,msg)
         return

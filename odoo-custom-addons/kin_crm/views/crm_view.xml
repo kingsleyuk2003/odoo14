@@ -83,15 +83,29 @@
                     <field name="date_won" />
                 </field>
 
-                 <page name="lead"  position="after">
+                 <page name="internal_notes"  position="before">
                         <page string="Product Lines">
                             <field name="product_line_ids"    >
+                                <form>
+                                    <group>
+                                        <field name="product_id"  options="{'no_open': True, 'no_create': True}"  />
+                                        <field name="name"/>
+                                        <field name="product_uom_qty"  string="Qty" />
+                                        <field name="product_uom"  groups="uom.group_uom" />
+                                        <field name="price_unit" />
+                                        <field name="tax_id"  options="{'no_open': True, 'no_create': True}" widget="many2many_tags" domain="[('type_tax_use','=','sale'),('company_id','=',parent.company_id)]" />
+                                        <field name="discount" groups="product.group_discount_per_so_line" />
+                                        <field name="price_subtotal" />
+                                        <field name="price_tax" />
+                                        <field name="price_total" string="Line Total"/>
+                                    </group>
+                                </form>
                                 <tree string="Product Lines" editable="bottom"  >
                                     <field name="sequence" widget="handle"/>
                                     <field name="product_id"  options="{'no_open': True, 'no_create': True}"  />
                                     <field name="name"/>
                                     <field name="product_uom_qty"  string="Qty" />
-                                    <field name="product_uom" />
+                                    <field name="product_uom"  groups="uom.group_uom" />
                                     <field name="price_unit" />
                                     <field name="tax_id"  options="{'no_open': True, 'no_create': True}" widget="many2many_tags" domain="[('type_tax_use','=','sale'),('company_id','=',parent.company_id)]" />
                                     <field name="discount" groups="product.group_discount_per_so_line" />
@@ -103,13 +117,14 @@
                                 <kanban class="o_kanban_mobile">
                                     <field name="product_id"/>
                                     <field name="product_uom_qty"/>
-                                    <field name="product_uom" groups="product.group_uom"/>
+                                    <field name="product_uom" groups="uom.group_uom"/>
                                     <field name="price_unit" />
                                     <field name="tax_id"  options="{'no_open': True, 'no_create': True}" widget="many2many_tags" domain="[('type_tax_use','=','sale'),('company_id','=',parent.company_id)]" />
                                     <field name="discount" groups="product.group_discount_per_so_line" />
                                     <field name="price_subtotal"/>
                                      <field name="price_tax" />
                                     <field name="price_total" string="Line Total"/>
+                                    <field name="lead_id" required="1" />
                                     <templates>
                                         <t t-name="kanban-box">
                                             <div t-attf-class="oe_kanban_card oe_kanban_global_click">
@@ -126,8 +141,6 @@
                                                         <span class="pull-right text-right"><t t-esc="record.price_subtotal.value"/></span>
                                                     </div>
                                                 </div>
-
-
                                             </div>
                                         </t>
                                     </templates>
@@ -152,6 +165,19 @@
                     </page>
             </field>
     </record>
+
+         <record id="crm_case_kanban_view_leads_extend" model="ir.ui.view">
+            <field name="name">crm.lead.kanban.lead.extend</field>
+            <field name="model">crm.lead</field>
+            <field name="priority" eval="1"/>
+             <field name="inherit_id" ref="crm.crm_case_kanban_view_leads" />
+            <field name="arch" type="xml">
+                <kanban position="attributes" >
+<!--                    Removes the Quick create and allows full form opportunity creation -->
+                    <attribute name="on_create"></attribute>
+                </kanban>
+            </field>
+         </record>
 
           <record id="quick_create_opportunity_form_extend" model="ir.ui.view">
             <field name="name">crm.lead.form.quick_create_extend</field>
@@ -265,7 +291,7 @@
             <field name="arch" type="xml">
                  <search string="User Target">
                     <field name="user_id" filter_domain="[('user_id','ilike',self)]" string="User"/>
-                    <field name="company_id" string="Company" groups="base.group_light_multi_company"/>
+                    <field name="company_id" string="Company" />
                     <group expand="0" string="Group By">
                         <filter name="grp_month"  string="Month" domain="[]" context="{'group_by':'start_date:month'}"/>
                         <filter name="grp_year"  string="Year" domain="[]" context="{'group_by':'start_date:year'}"/>

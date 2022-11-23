@@ -7,7 +7,7 @@
             <field name="model">survey.ticket.wizard</field>
             <field name="arch" type="xml">
                 <form string="Survey Ticket">
-                    <b>Be aware that the subject, company name, contact name, address, email, phone will be submitted automatically, along side with the following other notes field to the CSC helpdesk team. You may add other information that are not part of the stated fields</b>
+                    <b>Be aware that the subject, customer,  address, email, phone will be submitted automatically, along side with the following other notes field to the CSC helpdesk team. You may add other information that are not part of the stated fields</b>
                     <group>
                         <field name="msg"/>
                     </group>

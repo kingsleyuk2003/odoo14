@@ -79,12 +79,18 @@ class CrmLeadExtend(models.Model):
         return True
 
     def create_quotation(self):
-        if self.ticket_ids and not self.is_survey_ticket_close :
-            raise UserError('The survey ticket attached to this opportunity is not closed yet. Contact the CSC team to close the survey ticket for this opportunity before you can mark this opportunity as won')
+        if not self.is_survey_ticket_created :
+            raise UserError('Sorry, you have to create survey ticket. Please click create survey ticket button')
+
+        if self.is_survey_ticket_created  and not self.is_survey_ticket_close :
+            raise UserError('The survey ticket (%s) attached for this opportunity is not closed yet. Contact the CSC team to close the survey ticket for this opportunity before you can mark this opportunity as won' % (self.survey_ticket_id))
         return super(CrmLeadExtend, self).create_quotation()
 
     def unlink(self):
         for rec in self:
+            if not self.is_survey_ticket_created:
+                raise UserError('Sorry, you have to create survey ticket. Please click create survey ticket button')
+
             if rec.is_survey_ticket_close :
                 raise UserError('Sorry, you cannot delete this opportunity, because a survey ticket has been closed for this opportunity')
         return super(CrmLeadExtend,self).unlink()
@@ -156,6 +162,9 @@ class CrmLeadExtend(models.Model):
         }
         ticket_obj = self.env['kin.ticket'].create(vals)
         ticket_obj.crm_id = self.id
+        self.is_survey_ticket_created = True
+        self.survey_ticket_created_date = datetime.today()
+        self.survey_ticket_id = ticket_obj.ticket_id
 
         partn_ids = []
         user_names = ''
@@ -201,7 +210,14 @@ class CrmLeadExtend(models.Model):
                                   copy=False,
                                   default=0)
     is_survey_ticket_close = fields.Boolean(string='Survey Ticket Closed')
-    is_company = fields.Boolean(string='Is a Company')
+    is_survey_ticket_created = fields.Boolean(string='Survey Ticket Created')
+    survey_ticket_created_date = fields.Datetime(string='Survey Ticket Created Date')
+    survey_ticket_id = fields.Char(string='Survey Ticket ID')
+    partner_name = fields.Char(
+        'Customer', tracking=20, index=True,
+        compute='_compute_partner_name', readonly=False, store=True,
+        help='The name of the future partner company that will be created while converting the lead into opportunity')
+    #is_company = fields.Boolean(string='Is a Company')
     activity_datetime_wifiber = fields.Datetime(
         'Date and Time', compute='_compute_activity_datetime_wifiber',
         search='_search_activity_date_deadline_my', compute_sudo=False,
