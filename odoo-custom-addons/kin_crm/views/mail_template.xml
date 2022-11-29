@@ -70,7 +70,7 @@
                 <div style="margin: 0px; padding: 0px;">
                     <p style="margin: 0px; padding: 0px; font-size: 13px;">
 
-                         <p>Hello ${object.partner_id.name},</p>
+                         <p>Hello ${object.partner_name or object.contact_name},</p>
                         <br />
                         <p>Kindly see attached for your Quotation </p>
                         <br />

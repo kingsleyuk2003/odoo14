@@ -433,15 +433,13 @@
                  </button>
 
 
-
-
                 <div  name="button_box" position="inside">
                      <button type="object"  name="btn_view_payment" class="oe_stat_button" icon="fa-bars" attrs="{'invisible': [('payment_count', '=', 0)]}" >
                             <field name="payment_count" widget="statinfo" string="Payments"/>
                     </button>
                  </div>
 
-                <field  position="attributes"  name="date_order" nolabel="1" groups="base.group_no_one" attrs="{'invisible': [('state', 'in', ['sale', 'done', 'cancel'])]}" >
+                <field  position="attributes"  name="date_order" nolabel="1" groups="wifiber.group_show_settings_app" attrs="{'invisible': [('state', 'in', ['sale', 'done', 'cancel'])]}" >
                     <attribute name="invisible" >1</attribute>
                 </field>
 
@@ -606,6 +604,9 @@
                     <field name="categ_id" position="before"  >
                         <field name="selfcare_package_id"/>
                     </field>
+<!--                    <field name="property_account_expense_id" position="after" >-->
+<!--                        <field name="expense_limit" />-->
+<!--                    </field>-->
                 </field>
         </record>
 

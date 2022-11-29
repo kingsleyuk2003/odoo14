@@ -19,6 +19,179 @@ from odoo import tools, api
 class HrExpenseSheet(models.Model):
     _inherit = 'hr.expense.sheet'
 
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+    def activity_update(self):
+        return
+
+    def reset_expense_sheets(self):
+        if self.state == 'done':
+            raise UserError('This Expense Sheet has been paid')
+        return super(HrExpenseSheet, self).reset_expense_sheets()
+    def refuse_sheet(self, reason):
+        # check if payment has been made before
+        if self.state == 'done':
+            raise UserError('This Expense Sheet has been paid')
+
+        # send email to requester
+        user_id = self.employee_id.user_id
+        partner_id = user_id.partner_id
+        user_names = ''
+        if partner_id:
+            user_names += partner_id.name
+            msg = 'Dear %s, <p>The expense (%s) has been  refused by %s, with reason: <br/> %s </p>' % (
+                user_names, self.name, self.env.user.name,reason)
+            self.message_follower_ids.unlink()
+            mail_obj = self.message_post(
+                body=_(msg),
+                subject='Paid Expense Notification from %s' % (self.env.user.name),
+                partner_ids=[partner_id.id],
+                subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+        return super(HrExpenseSheet, self).refuse_sheet(reason)
+    def paid_expense_sheets(self):
+        #check if payment has been made before
+        if self.state == 'done' :
+            raise UserError('This Expense Sheet has been paid')
+
+        # send email to requester
+        user_id = self.employee_id.user_id
+        partner_id = user_id.partner_id
+        user_names = ''
+        if partner_id:
+            user_names += partner_id.name
+            msg = 'Dear %s, <p>The expense (%s) has been paid by %s, to you</p>' % (
+                user_names, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            mail_obj = self.message_post(
+                body=_(msg),
+                subject='Paid Expense Notification from %s' % (self.env.user.name),
+                partner_ids=[partner_id.id],
+                subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+        return super(HrExpenseSheet, self).paid_expense_sheets()
+    def audit_expense_sheets(self):
+        # check if payment has been made before
+        if self.state == 'done':
+            raise UserError('This Expense Sheet has been paid')
+
+        self.state = 'audited'
+
+        # send email to Expense Accountants
+        grp_name = 'wifiber.group_expense_account_application_wifiber'
+        msg = 'The expense (%s) has been audited and approved by %s.  ' \
+              'You can post entries and make payment </p>' % (
+            self.name, self.env.user.name)
+        subject = 'Audited and Approved Expense Notification to Post and Pay from %s' % (self.env.user.name)
+        self.send_email(grp_name, subject, msg)
+
+        # send email to requester
+        user_id = self.employee_id.user_id
+        partner_id = user_id.partner_id
+        user_names = ''
+        if partner_id:
+            user_names += partner_id.name
+            msg = 'Dear %s, <p>The expense (%s) has been audited by %s , and is awaiting payment to you.</p>' % (
+                user_names, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            mail_obj = self.message_post(
+                body=_(msg),
+                subject='Audited and Approved Expense Notification from %s' % (self.env.user.name),
+                partner_ids=[partner_id.id],
+                subtype_xmlid='mail.mt_comment', force_send=False)
+
+
+    def approve_expense_sheets(self):
+        #send email to Auditors
+        grp_name = 'wifiber.group_expense_auditor_wifiber'
+        msg = 'The expense (%s) that has been approved by  %s, requires audit and approval </p>' % (
+             self.name, self.env.user.name)
+        subject = 'Expense Notification to Audit from %s' % (self.env.user.name)
+        self.send_email(grp_name, subject, msg)
+
+        #send email to requester
+        user_id = self.employee_id.user_id
+        partner_id = user_id.partner_id
+        user_names = ''
+        if partner_id:
+            user_names += partner_id.name
+            msg = 'Dear %s, <p>The expense (%s) has been approved by %s </p>' % (
+                user_names, self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            mail_obj = self.message_post(
+                body=_(msg),
+                subject='Approved Expense Notification from %s' % (self.env.user.name),
+                partner_ids=[partner_id.id],
+                subtype_xmlid='mail.mt_comment', force_send=False)
+
+        return super(HrExpenseSheet,self).approve_expense_sheets()
+    def action_submit_sheet(self):
+        # check if payment has been made before
+        if self.state == 'done':
+            raise UserError('This Expense Sheet has been paid')
+
+        #send email to the manager
+        user_id = self.sudo()._get_responsible_for_approval()
+        partner_id = user_id.partner_id
+        user_names = ''
+        if partner_id:
+            user_names += partner_id.name
+            msg = 'Dear %s, <p>There is a new expense (%s) from  %s to approve </p>' % (
+                user_names,self.name, self.env.user.name)
+            self.message_follower_ids.unlink()
+            mail_obj = self.message_post(
+                body=_(msg),
+                subject='New Expense Notification to Approve from %s' % (self.env.user.name), partner_ids=[partner_id.id],
+                subtype_xmlid='mail.mt_comment', force_send=False)
+
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+        return super(HrExpenseSheet,self).action_submit_sheet()
+
+
+    def action_sheet_move_create(self):
+        samples = self.mapped('expense_line_ids.sample')
+        if samples.count(True):
+            if samples.count(False):
+                raise UserError(_("You can't mix sample expenses and regular ones"))
+            self.write({'state': 'post'})
+            return
+
+        if any(sheet.state not in ('audited','approve') for sheet in self):
+            raise UserError(_("You can only generate accounting entry for approved expense(s)."))
+
+        if any(not sheet.journal_id for sheet in self):
+            raise UserError(_("Expenses must have an expense journal specified to generate accounting entries."))
+
+        expense_line_ids = self.mapped('expense_line_ids')\
+            .filtered(lambda r: not float_is_zero(r.total_amount, precision_rounding=(r.currency_id or self.env.company.currency_id).rounding))
+        res = expense_line_ids.action_move_create()
+        for sheet in self.filtered(lambda s: not s.accounting_date):
+            sheet.accounting_date = sheet.account_move_id.date
+        to_post = self.filtered(lambda sheet: sheet.payment_mode == 'own_account' and sheet.expense_line_ids)
+        to_post.write({'state': 'post'})
+        (self - to_post).write({'state': 'done'})
+        self.activity_update()
+        return res
+
+
+
     def _default_wifiber_bank_journal_id(self):
         default_company_id = self.default_get(['company_id'])['company_id']
         return self.env['account.journal'].search([('type', 'in', ['cash', 'bank']),('company_id', '=', default_company_id), ('is_expense', '=', True) ], limit=1)
@@ -31,6 +204,16 @@ class HrExpenseSheet(models.Model):
                                       default=_default_wifiber_bank_journal_id,
                                       help="The payment method used when the expense is paid by the company.")
 
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('submit', 'Submitted'),
+        ('approve', 'Approved'),
+        ('audited','Audited'),
+        ('post', 'Posted'),
+        ('done', 'Paid'),
+        ('cancel', 'Refused')
+    ], string='Status', index=True, readonly=True, tracking=True, copy=False, default='draft', required=True,
+        help='Expense Sheet Status')
 class HrExpense(models.Model):
     _inherit = 'hr.expense'
 

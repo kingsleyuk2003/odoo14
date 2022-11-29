@@ -265,7 +265,7 @@
 
 
                                  <field name="dist_fpop" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                                 <field name="fpop_box_jb" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="fpop_box_jb" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                 <field name="installation_constraint" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                    <field name="access_confirmation" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                    <field name="comment_survey" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />

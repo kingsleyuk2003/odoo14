@@ -102,8 +102,8 @@ class CrmLeadExtend(models.Model):
         self.ensure_one()
         if not self.email_from:
             raise UserError('Please set the Email on the form')
-        if not self.contact_name :
-            raise UserError('Please set the Contact Name on the form')
+        if not self.partner_name and not self.contact_name :
+            raise UserError('Please set the Customer Name on the form')
         template = self.env.ref('kin_crm.email_template_crm', False)
         lang = self.env.context.get('lang')
         if template.lang:
