@@ -21,8 +21,8 @@ class TicketReportWizard(models.TransientModel):
         return self.env.ref('wifiber.ticket_report').report_action(self,data)
 
 
-    start_date = fields.Datetime('Assigned Start Date and Time', default=time.strftime('%Y-%m-01'))
-    end_date = fields.Datetime('Assigned End Date and Time', default=fields.Datetime.now())
+    start_date = fields.Datetime('Start Date and Time', default=time.strftime('%Y-%m-01'))
+    end_date = fields.Datetime('End Date and Time', default=fields.Datetime.now())
     category_id = fields.Many2one('kin.ticket.category',string='Ticket Category')
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.user.company_id)
 

@@ -133,6 +133,8 @@ class CrmLeadExtend(models.Model):
             rec.ticket_count = len(rec.ticket_ids)
 
     def action_create_survey_ticket(self, details,msg):
+        if self.is_survey_ticket_created :
+            raise UserError('Survey Ticket (%s) has been created already before now' % (self.survey_ticket_id))
         if len(self.ticket_ids) > 0:
             raise UserError(
                 _('Sorry, you can only generate a survey ticket once.'))

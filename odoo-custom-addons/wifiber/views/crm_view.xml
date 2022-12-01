@@ -2,6 +2,9 @@
 <odoo>
 	<data>
 
+         <menuitem name="Survey Ticket Report" id="menu_crm_ticket_report" action="action_ticket_crm_report_wizard"
+          parent="crm.crm_menu_root" sequence="7"    />
+
         <record model="ir.ui.menu" id="crm.res_partner_menu_customer">
 		  <field name="groups_id" eval="[(6, 0, [ref('group_show_crm_customer_wifiber')])]"/>
         </record>

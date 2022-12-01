@@ -11,6 +11,16 @@
 		    attachment_use="False"
         />
 
+		 <report
+		    id="ticket_crm_report"
+            model="kin.ticket"
+		    string="Ticket CRM Report"
+		    report_type="xlsx"
+		    name="wifiber.ticket_crm_report"
+			file="wifiber.ticket_crm_report"
+		    attachment_use="False"
+        />
+
 		<report
 		    id="material_report"
             model="kin.ticket"

@@ -6,3 +6,4 @@ from . import ticket_report_wizard
 from . import survey_ticket
 from . import material_report_wizard
 from . import issued_report_wizard
+from . import ticket_crm_report_wizard

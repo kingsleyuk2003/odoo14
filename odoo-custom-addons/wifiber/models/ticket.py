@@ -108,7 +108,7 @@ class Ticket(models.Model):
 
     def escalation_installation_ticket(self):
         records = self.search([('expiry_date', '<', datetime.now()), ('state', 'not in', ('draft', 'closed')),
-                               ('is_escalation_email_sent', '=', False),('is_pause_escalation','=',False),('category_id', '=', self.env.ref('wifiber.installation').id)])
+                               ('is_escalation_email_sent', '=', True),('is_pause_escalation','=',False),('category_id', '=', self.env.ref('wifiber.installation').id)])
 
         for record in records:
             odate = record.open_date
@@ -119,7 +119,7 @@ class Ticket(models.Model):
             msg = 'The is to inform you that the ticket (%s) with id: (%s) which was opened on %s, for the category (%s) has not be closed within the stipulated time of 5 working days' % (
             record.name, record.ticket_id,open_date, record.category_id.name)
 
-            record.send_email('wifiber.group_receive_ticket_escalation_email',subject,msg)
+            record.send_nogrp_email('wifiber.group_receive_ticket_escalation_email',subject,msg)
             record.is_escalation_email_sent = True
             record.is_escalation_email_sent_date = datetime.now()
 
@@ -137,7 +137,7 @@ class Ticket(models.Model):
             msg = 'The is to inform you that the ticket (%s) with id: (%s) which was created on %s, for the category (%s), is still in draft state, against the stipulated time of 6 hours' % (
                 record.name, record.ticket_id, create_date, record.category_id.name)
 
-            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+            record.send_nogrp_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
             record.is_draft_escalation_email_sent = True
             record.is_draft_escalation_email_sent_date = datetime.now()
 
@@ -155,7 +155,7 @@ class Ticket(models.Model):
             msg = 'The is to inform you that the ticket (%s) with id: (%s) which was opened on %s, for the category (%s) is still in open state, against the stipulated time of 12 hours' % (
                 record.name, record.ticket_id, open_date, record.category_id.name)
 
-            record.send_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
+            record.send_nogrp_email('wifiber.group_receive_ticket_escalation_email', subject, msg)
             record.is_open_escalation_email_sent = True
             record.is_open_escalation_email_sent_date = datetime.now()
 
@@ -330,6 +330,18 @@ class Ticket(models.Model):
                 rec.user_ticket_group_id = user_ticket_group_id
 
 
+    def send_nogrp_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            user_names += user.name + ", "
+            partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
     def send_email(self, grp_name, subject, msg):
         partn_ids = []

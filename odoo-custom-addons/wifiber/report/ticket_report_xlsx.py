@@ -214,8 +214,8 @@ class TicketReport(models.AbstractModel):
         control_report_worksheet.set_column(27, 27, 15)
 
         control_report_worksheet.write_row(row, col, (
-            'Assigned Date and Time', 'Title', 'Ticket Opener', 'User Ticket Group',
-            'Opened Date and Time', 'Done Date and Time', 'Closed Date and Time', 'Time Spent', 'Stage',
+            'DateTime', 'Title', 'Ticket Opener', 'User Ticket Group',
+            'Opened DateTime', 'Done DateTime', 'Closed DateTime', 'Time Spent', 'Stage',
             'Incident Details',
             'Package', 'Customer', 'Client ID', 'Address', 'Phone', 'Mobile', 'Email', 'Prospect Name', 'Prospect Area',
             'Prospect Address', 'Prospect Phone', 'Prospect Email', 'Root Cause', 'Support Complaint Type',

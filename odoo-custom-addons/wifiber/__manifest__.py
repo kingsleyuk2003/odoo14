@@ -30,6 +30,7 @@ wifiber Modifications
         'wizard/material_report_wizard_view.xml',
         'wizard/issued_report_wizard_view.xml',
         'wizard/survey_ticket.xml',
+        'wizard/ticket_crm_report_wizard_view.xml',
         'views/sequence.xml',
         'views/sale_view.xml',
         'views/crm_view.xml',

@@ -10,15 +10,15 @@
      </record>
 
     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_my_expenses_to_submit">
-		 <field name="groups_id" eval="[(6, 0, [ref('kin_others.group_show_settings_app')])]"/>
+		 <field name="groups_id" eval="[(6, 0, [ref('group_expense_other_menus_wifiber')])]"/>
      </record>
 
     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_my_expenses_all">
-		 <field name="groups_id" eval="[(6, 0, [ref('kin_others.group_show_settings_app')])]"/>
+		 <field name="groups_id" eval="[(6, 0, [ref('group_expense_other_menus_wifiber')])]"/>
      </record>
 
     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_pay">
-		 <field name="groups_id" eval="[(6, 0, [ref('kin_others.group_show_settings_app')])]"/>
+		 <field name="groups_id" eval="[(6, 0, [ref('group_expense_other_menus_wifiber')])]"/>
      </record>
 
     <record model="ir.ui.menu" id="hr_expense.menu_hr_expense_sheet_all_to_post">
@@ -68,7 +68,6 @@
                     <attribute name="groups" >hr_expense.group_hr_expense_team_approver,wifiber.group_expense_auditor_wifiber</attribute>
                 </button>
 
-
                 <button name="approve_expense_sheets" position="after" >
                      <button name="audit_expense_sheets" states="approve" string="Audit Approve" type="object" groups="wifiber.group_expense_auditor_wifiber" class="oe_highlight o_expense_sheet_approve"/>
                 </button>
@@ -87,7 +86,7 @@
 
                  <field name="expense_line_ids" position="attributes" >
                      <attribute name="widget" ></attribute>
-                     <attribute name="attrs" >{'readonly': [('state', '!=', 'draft')]}</attribute>
+                     <attribute name="attrs" >{'readonly': [('state', 'not in', ('draft','audited'))]}</attribute>
                  </field>
 
                 <field name="analytic_account_id" position="attributes" >
@@ -137,9 +136,9 @@
                 </field>
 
 
-
                 <field name="bank_journal_id" position="attributes" >
                      <attribute name="domain" >[('is_expense','=',True)]</attribute>
+                    <attribute name="attrs" >{'required': [('state', '=', 'audited')]}</attribute>
                  </field>
 
                 <field name="employee_id" position="attributes" >

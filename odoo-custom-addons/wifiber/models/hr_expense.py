@@ -64,9 +64,9 @@ class HrExpenseSheet(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
         return super(HrExpenseSheet, self).refuse_sheet(reason)
     def paid_expense_sheets(self):
-        #check if payment has been made before
-        if self.state == 'done' :
-            raise UserError('This Expense Sheet has been paid')
+        # Not required, because it is called each time an expense line is approved, which raises an unwanted error
+        # if self.state == 'done' :
+        #     raise UserError('This Expense Sheet has been paid')
 
         # send email to requester
         user_id = self.employee_id.user_id
@@ -193,8 +193,9 @@ class HrExpenseSheet(models.Model):
 
 
     def _default_wifiber_bank_journal_id(self):
-        default_company_id = self.default_get(['company_id'])['company_id']
-        return self.env['account.journal'].search([('type', 'in', ['cash', 'bank']),('company_id', '=', default_company_id), ('is_expense', '=', True) ], limit=1)
+        return
+        # default_company_id = self.default_get(['company_id'])['company_id']
+        # return self.env['account.journal'].search([('type', 'in', ['cash', 'bank']),('company_id', '=', default_company_id), ('is_expense', '=', True) ], limit=1)
 
     payment_mode = fields.Selection(default='company_account')
     bank_journal_id = fields.Many2one('account.journal', string='Bank Journal',
@@ -216,5 +217,28 @@ class HrExpenseSheet(models.Model):
         help='Expense Sheet Status')
 class HrExpense(models.Model):
     _inherit = 'hr.expense'
+
+    def unlink(self):
+        for rec in self:
+            if rec.sheet_id and rec.sheet_id.state == 'audited':
+                raise UserError('You are not allowed to delete an audited expense')
+        return super(HrExpense, self).unlink()
+
+
+    def write(self, vals):
+        vals['is_editable']=False
+        if self.sheet_id and self.sheet_id.state == 'audited' and not self.env.user.has_group('wifiber.group_expense_auditor_wifiber'):
+            raise UserError('You are not allowed to edit this expense')
+        elif self.sheet_id and self.sheet_id.state == 'audited' and self.env.user.has_group('wifiber.group_expense_auditor_wifiber'):
+            unit_amount = vals.get('unit_amount',False)
+            name = vals.get('name', False)
+            date = vals.get('date', False)
+            if unit_amount:
+                raise UserError('Sorry, you not allowed to edit the Unit Price')
+            if name:
+                raise UserError('Sorry, you not allowed to edit the Description')
+            if date:
+                raise UserError('Sorry, you not allowed to edit the Expense Date')
+        return super(HrExpense, self).write(vals)
 
     payment_mode = fields.Selection(default='company_account')
