@@ -1418,7 +1418,7 @@ class Ticket(models.Model):
     comment_activation = fields.Char(string='Comment')
 
     #material request
-    is_skip_material = fields.Boolean(string='Skip Material Request',tracking=True, default=True)
+    is_skip_material = fields.Boolean(string='Skip Material Request',tracking=True)
     material_request_ids = fields.One2many('material.request', 'ticket_id', string='Material Requests',tracking=True)
     stock_picking_count = fields.Integer(compute="_compute_stock_picking_count", string='# of Stock Pickings', copy=False, default=0)
     picking_ids = fields.One2many('stock.picking', 'ticket_id', string='Stock Picking(s)')

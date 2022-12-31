@@ -293,7 +293,7 @@
                     <page string="Material Request" attrs="{'invisible': [('category_code', 'not in', ('installation','survey'))]}" >
 
                         <group string="Requested Materials" >
-                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey'))]}"  >
+                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey','installation'))]}"  >
                                 <tree editable="bottom" >
                                     <field name="product_id" domain="[('is_material', '=', True)]"    options="{'no_open': True, 'no_create': True}"   />
                                     <field name="qty" sum="Total" />
