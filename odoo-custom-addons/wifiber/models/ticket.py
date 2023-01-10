@@ -217,7 +217,7 @@ class Ticket(models.Model):
         action = self.env["ir.actions.actions"]._for_xml_id("stock.action_picking_tree_all")
         action['views'] = [
             (self.env.ref('stock.vpicktree').id, 'tree'),
-             (self.env.ref('stock.view_picking_form').id, 'form')
+             (self.env.ref('wifiber.view_stock_picking_form_wifiber_extend').id, 'form')
         ]
         action['context'] = self.env.context
         picking_ids = self.mapped('picking_ids')
@@ -225,7 +225,7 @@ class Ticket(models.Model):
         if len(picking_ids) > 1:
             action['domain'] = [('id', 'in', picking_ids.ids)]
         elif len(picking_ids) == 1:
-            action['views'] = [(self.env.ref('stock.view_picking_form').id, 'form'),]
+            action['views'] = [(self.env.ref('wifiber.view_stock_picking_form_wifiber_extend').id, 'form'),]
             action['res_id'] = picking_ids.ids[0]
         else:
             action = {'type': 'ir.actions.act_window_close'}
@@ -252,6 +252,7 @@ class Ticket(models.Model):
         picking_id = self._stock_picking_ticket()
         if picking_id:
             picking_id.action_assign()
+            picking_id.immediate_transfer = True
             picking_id.is_from_ticket = True
         #picking_id.button_validate()
 
