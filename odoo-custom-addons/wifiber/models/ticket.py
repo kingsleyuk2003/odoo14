@@ -261,10 +261,10 @@ class Ticket(models.Model):
 
 
     def _ticket_material_issued(self):
-        if self.category_id != self.env.ref('wifiber.installation'):
-            raise UserError('Sorry, you cannot request for material except for installation')
+        # if self.category_id != self.env.ref('wifiber.installation'):
+        #     raise UserError('Sorry, you cannot request for material except for installation')
         if len(self.material_request_ids) <= 0  and not self.is_skip_material:
-            raise UserError("There is no material to be requested. Please request materials for all installations or tick the 'Skip Material Request' checkbox below to proceed")
+            raise UserError("Please request materials in the Material Request Tab below")
 
         picking_id = self._stock_picking_ticket()
         if picking_id:

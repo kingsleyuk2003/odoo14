@@ -42,7 +42,7 @@
                 </button>
 
                 <button name="btn_ticket_progress" position="after" >
-                     <button name="btn_ticket_installed" type="object"  string="Installed"  class="oe_highlight" attrs="{'invisible': ['|',('category_code', '!=', 'installation' ),('state', 'not in', ('progress') )]}"    />
+                     <button name="btn_ticket_installed" type="object"  string="Installed"  class="oe_highlight" attrs="{'invisible': ['|',('category_code', 'not in', ('installation','support')),('state', 'not in', ('progress') )]}"    />
 
                 </button>
                  <button name="btn_ticket_progress" position="attributes" >
@@ -290,10 +290,10 @@
                          </group>
                     </page>
 
-                    <page string="Material Request" attrs="{'invisible': [('category_code', 'not in', ('installation','survey'))]}" >
+                    <page string="Material Request" attrs="{'invisible': [('category_code', 'not in', ('installation','survey','support'))]}" >
 
                         <group string="Requested Materials" >
-                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey','installation'))]}"  >
+                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey','installation','support'))]}"  >
                                 <tree editable="bottom" >
                                     <field name="product_id" domain="[('is_material', '=', True)]"    options="{'no_open': True, 'no_create': True}"   />
                                     <field name="qty" sum="Total" />
