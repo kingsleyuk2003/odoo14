@@ -600,9 +600,12 @@
                             <field name="is_material" />
                            <label for="is_material" />
                         </div>
+
                     </div>
                     <field name="categ_id" position="before"  >
                         <field name="selfcare_package_id"/>
+                        <field name="is_pick_default" />
+                        <field name="is_pick_default_qty" />
                     </field>
 <!--                    <field name="property_account_expense_id" position="after" >-->
 <!--                        <field name="expense_limit" />-->

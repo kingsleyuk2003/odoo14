@@ -238,9 +238,26 @@ class Ticket(models.Model):
             rec.stock_picking_count = len(rec.picking_ids)
 
     def btn_ticket_installed(self):
-        self.state = 'installed'
+        #self.state = 'installed'
         res = self._ticket_material_issued()
         return res
+
+    def _get_stock_move_lines(self):
+        ml_list = []
+        for mr in self.material_request_ids:
+            ml_list += [(0, 0,{
+                'product_id': mr.product_id.id,
+                'qty_done': mr.qty,
+                'product_uom_id': mr.product_id.uom_id.id,
+                'location_id': self.env.user.partner_id.partn_location_id.id,
+                'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+            })]
+        return ml_list
+
+    def _check_qty_material_request(self):
+        for mr in self.material_request_ids:
+            if mr.qty < 1 :
+                raise UserError('Please Requested Qty. for %s, should be more than 0' % (mr.product_id.name))
 
 
     def _ticket_material_issued(self):
@@ -254,6 +271,7 @@ class Ticket(models.Model):
             picking_id.action_assign()
             picking_id.immediate_transfer = True
             picking_id.is_from_ticket = True
+
         #picking_id.button_validate()
 
         #send email to the inventory material request users
@@ -269,12 +287,9 @@ class Ticket(models.Model):
         return action
 
 
-
-
-
-
-
     def _stock_picking_ticket(self):
+
+        self._check_qty_material_request()
         is_pick = False
         for rec in self.material_request_ids:
             if not rec.is_requested:
@@ -288,33 +303,24 @@ class Ticket(models.Model):
             if picking_id.state not in ('done','cancel') :
                 pick_id = picking_id
 
+
         if not pick_id :
             stock_picking_obj = self.env['stock.picking']
-
+            #create the stock move lines
+            sml_list = self._get_stock_move_lines()
             vals = {
                 'partner_id': self.partner_id.id,
                 'picking_type_id':self.env.ref('stock.picking_type_out').id,
                 'origin': self.name,
                 'location_id': self.env.user.partner_id.partn_location_id.id,
                 'location_dest_id' : self.env.ref('stock.stock_location_customers').id,
+                'move_line_ids_without_package' : sml_list
             }
             pick_id = stock_picking_obj.create(vals)
             pick_id.ticket_id = self
 
         for rec in self.material_request_ids:
             if not rec.is_requested:
-                is_pick = True
-                #stock_move
-                stock_move_vals = {
-                    'name': rec.product_id.name,
-                    'product_id': rec.product_id.id,
-                    'product_uom_qty': rec.qty,
-                    'product_uom': rec.product_id.uom_id.id,
-                    'picking_id': pick_id.id,
-                    'location_id': self.env.user.partner_id.partn_location_id.id,
-                    'location_dest_id': self.env.ref('stock.stock_location_customers').id,
-                }
-                stock_move = self.env['stock.move'].create(stock_move_vals)
                 pick_id.mater_ids += rec
                 rec.requested_by = self.env.user
                 rec.requested_datetime = datetime.today()
@@ -408,8 +414,22 @@ class Ticket(models.Model):
         return super(Ticket,self).btn_ticket_progress()
 
 
+    def _get_default_material_survey(self):
+        pr_list = []
+        prod_mats = self.env['product.product'].search([('is_pick_default','=',True)])
+        for prod in prod_mats:
+            pr_list += [(0, 0, {
+                'product_id': prod.id,
+                'qty' : prod.is_pick_default_qty,
+            })]
+        return pr_list
+
+
 
     def btn_ticket_open(self):
+        if self.category_id == self.env.ref('wifiber.installation') and not self.order_id:
+            raise UserError('Sorry, you cannot create an installation ticket from here. Contact the sales person to initiate the sales order')
+
         if not self.category_id or not self.user_intg_ticket_group_id :
             raise UserError(_('Contact the Admin to set the default Finalized group'))
 
@@ -423,6 +443,9 @@ class Ticket(models.Model):
             if not self.base_station_maint_id:
                 raise UserError(_('Please Select the Base Station to be maintained in the Maintenance Form below'))
             self.user_maint_ticket_group_id = maint_close_group
+        elif self.category_id == self.env.ref('wifiber.survey'):
+            materials = self._get_default_material_survey()
+            self.material_request_ids = materials
         else:
             self.user_maint_ticket_group_id = False
 
@@ -670,9 +693,8 @@ class Ticket(models.Model):
                         picking_id.mater_ids.requested_datetime = False
                         picking_id.mater_ids.is_requested = False
                         picking_id.unlink()
-
-
-
+            elif rec.category_id == self.env.ref('wifiber.survey'):
+                rec.material_request_ids.unlink()
 
         return super(Ticket, self).btn_ticket_reset()
 
@@ -716,12 +738,16 @@ class Ticket(models.Model):
 
 
         if self.category_id == self.env.ref('wifiber.survey') and not self.is_skip_material :
+
             if not self.material_request_ids:
                 raise UserError('Please set the materials to be requested for this survey')
             else:
-                for mat_req in self.material_request_ids:
-                    if mat_req.qty <= 0 :
-                        raise UserError('Please set a Qty > 0 for %s' % (mat_req.product_id.name))
+                self._check_qty_material_request()
+                for rec in self.material_request_ids:
+                    if not rec.is_requested:
+                        rec.requested_by = self.env.user
+                        rec.requested_datetime = datetime.today()
+                        rec.is_requested = True
         for picking_id in self.picking_ids :
             if picking_id.state not in ('done','cancel') :
                 raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please validate materials that have been used')
@@ -1539,6 +1565,7 @@ class StockPicking(models.Model):
                 if tml.lot_id:
                     sn += tml.lot_id.name + ' '
             self.ticket_id.idu_serial_no = sn
+            self.ticket_id.state = 'installed'
 
         return res
 

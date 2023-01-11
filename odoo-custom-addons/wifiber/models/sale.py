@@ -825,6 +825,8 @@ class ProductTemplateExtend(models.Model):
     is_sub = fields.Boolean(string='Is Subscription Package', track_visibility='always')
     selfcare_package_id = fields.Integer(string='Selfcare Package ID', track_visibility='always')
     is_material = fields.Boolean(string='Is Material', track_visibility='always')
+    is_pick_default = fields.Boolean(string='Pick by Default for Survey', track_visibility='always')
+    is_pick_default_qty = fields.Float(string='Pick by Default Qty.', track_visibility='always')
     # expense_limit = fields.Integer(string="Expense Limit")
 
 
