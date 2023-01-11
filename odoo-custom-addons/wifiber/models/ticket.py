@@ -264,7 +264,7 @@ class Ticket(models.Model):
         # if self.category_id != self.env.ref('wifiber.installation'):
         #     raise UserError('Sorry, you cannot request for material except for installation')
         if len(self.material_request_ids) <= 0  and not self.is_skip_material:
-            raise UserError("Please request materials in the Material Request Tab below")
+            raise UserError("Please request materials in the Material Tab below")
 
         picking_id = self._stock_picking_ticket()
         if picking_id:
@@ -728,7 +728,7 @@ class Ticket(models.Model):
         if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
             raise UserError('There is no material to be requested')
         if len(self.material_request_ids) > 0 and len(self.move_line_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
-            raise UserError("There is no issued/used material for this installation. Click the 'Transfers' button on the right of this page and then set the used items and their serial numbers, then click validate button to validate the used items, before you can mark this ticket as done")
+            raise UserError("There is no material used for this installation. Click the 'Transfers' button on the right of this page and then set the used items and their serial numbers, then click validate button to validate the used items, before you can mark this ticket as done")
         if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
             raise UserError('All Installations needs materials to be used.')
         if self.picking_ids and self.env.ref('wifiber.installation') :
@@ -1307,7 +1307,7 @@ class Ticket(models.Model):
     ref = fields.Char(related='partner_id.ref', string='Client ID', readonly=True, states={'done': [('readonly', False)]})
     location_id = fields.Many2one(related='partner_id.location_id', string='Location')
     region_cust_id = fields.Many2one(related='partner_id.region_id', string='Region')
-    area_customer_id = fields.Many2one(related='partner_id.area_id', string='Area')
+    area_customer_id = fields.Many2one(related='partner_id.area_id', string='Area', store=True)
     base_station_id = fields.Many2one(related='partner_id.base_station_id', string='Base Station')
     bandwidth = fields.Char(related='partner_id.bandwidth', string='Bandwidth')
     vlan = fields.Char(related='partner_id.vlan', string='Vlan')
