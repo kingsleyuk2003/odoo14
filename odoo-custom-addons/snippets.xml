@@ -22,6 +22,20 @@
             <field name="key2">client_action_multi</field>
         </record>
 
+<!--Menu View Action + server CODE by using server action to dynamically execute run a server code when a menu is clicked -->
+ <!-- helps us connect view action to code , can be -->
+        <!-- odoo-custom-addons/wifiber/views/ticket_view.xml:13 -->
+<record model="ir.actions.server" id="action_view_quants_wifiber"> <!-- Menu + python -->
+        <field name="name">Inventory Wifiber Server Action</field>
+        <field name="model_id" ref="model_stock_quant"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="code">
+            action = model.with_context(
+                search_default_productgroup=1
+            ).action_view_quants_wifiber()
+        </field>
+    </record>
 
 
 <!--../addons/crm/crm_lead_view.xml:161-->

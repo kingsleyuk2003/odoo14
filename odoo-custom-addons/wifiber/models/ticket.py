@@ -238,9 +238,25 @@ class Ticket(models.Model):
             rec.stock_picking_count = len(rec.picking_ids)
 
     def btn_ticket_installed(self):
-        #self.state = 'installed'
-        res = self._ticket_material_issued()
-        return res
+        if self.is_skip_material:
+            self.state = 'installed'
+        else:
+            return self._ticket_material_issued()
+
+
+    def _get_stock_moves(self):
+        m_list = []
+        for m in self.material_request_ids:
+            m_list += [(0, 0,{
+                'name': m.product_id.name,
+                'product_id': m.product_id.id,
+                'product_uom_qty': m.qty,
+                 'product_uom': m.product_id.uom_id.id,
+                'location_id': self.env.user.partner_id.partn_location_id.id,
+                'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+            })]
+        return m_list
+
 
     def _get_stock_move_lines(self):
         ml_list = []
@@ -269,10 +285,8 @@ class Ticket(models.Model):
         picking_id = self._stock_picking_ticket()
         if picking_id:
             picking_id.action_assign()
-            picking_id.immediate_transfer = True
-            picking_id.is_from_ticket = True
-
-        #picking_id.button_validate()
+        # else:
+        #     raise UserError('Please remove all Requested Materials from the Materials Tab below and re-request afresh')
 
         #send email to the inventory material request users
         grp_name = 'wifiber.group_inventory_receive_material_request_email'
@@ -303,10 +317,10 @@ class Ticket(models.Model):
             if picking_id.state not in ('done','cancel') :
                 pick_id = picking_id
 
-
         if not pick_id :
             stock_picking_obj = self.env['stock.picking']
-            #create the stock move lines
+
+            sm_list = self._get_stock_moves()
             sml_list = self._get_stock_move_lines()
             vals = {
                 'partner_id': self.partner_id.id,
@@ -314,10 +328,14 @@ class Ticket(models.Model):
                 'origin': self.name,
                 'location_id': self.env.user.partner_id.partn_location_id.id,
                 'location_dest_id' : self.env.ref('stock.stock_location_customers').id,
-                'move_line_ids_without_package' : sml_list
+                # 'move_ids_without_package' : sm_list, # this adds another line for items with serial numbers, so no need to add this line
+                # 'move_type': 'one',
+                # 'immediate_transfer' : True,
+                'move_line_ids_without_package' : sml_list,
+                'is_from_ticket' : True,
+                'ticket_id': self.id,
             }
             pick_id = stock_picking_obj.create(vals)
-            pick_id.ticket_id = self
 
         for rec in self.material_request_ids:
             if not rec.is_requested:
@@ -723,6 +741,10 @@ class Ticket(models.Model):
     def btn_ticket_done(self):
 
         if self.category_id == self.env.ref('wifiber.installation') and self.state != 'installed' :
+            for picking_id in self.picking_ids :
+                if picking_id.state in ('done'):
+                    self._send_notification()
+                    return super(Ticket,self).btn_ticket_done()
             raise UserError('Sorry, you have to install, before you can mark it as done. Please click installed button first')
 
         if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
@@ -734,7 +756,7 @@ class Ticket(models.Model):
         if self.picking_ids and self.env.ref('wifiber.installation') :
             for picking_id in self.picking_ids :
                 if picking_id.state not in ('done','cancel'):
-                    raise UserError('Sorry, you have to receive the total materials that have been requested or cancel the pickings that will not be used before you can proceed further')
+                    raise UserError('Sorry, you have to receive to validate/cancel/delete the transfer before you can proceed')
 
 
         if self.category_id == self.env.ref('wifiber.survey') and not self.is_skip_material :
@@ -752,9 +774,6 @@ class Ticket(models.Model):
             if picking_id.state not in ('done','cancel') :
                 raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please validate materials that have been used')
 
-        if self.category_id == self.env.ref('wifiber.installation'):
-            if not self.idu_serial_no or not self.installation_fse_id or not self.power_level_id or not self.vlan or not self.olt_id :
-                raise UserError('Please ensure you have set the IDU serial no., Installation FSE, Power Level, Vlan and OLT, in the Activation form tab below')
 
         if self.category_id in (self.env.ref('wifiber.survey'), self.env.ref('wifiber.maintenance')) :
             self.state = "finalized"
@@ -784,6 +803,14 @@ class Ticket(models.Model):
         #     if not self.root_cause or  not self.resolution :
         #         raise UserError(_('Please Set the Root Cause and Resolution in the Other Information Tab'))
 
+        self._send_notification()
+        return super(Ticket,self).btn_ticket_done()
+
+    def _send_notification(self):
+        if self.category_id == self.env.ref('wifiber.installation'):
+            if not self.idu_serial_no or not self.installation_fse_id or not self.power_level_id or not self.vlan or not self.olt_id:
+                raise UserError(
+                    'Please ensure you have set the IDU serial no., Installation FSE, Power Level, Vlan and OLT, in the Activation form tab below')
         partn_ids = []
         user_names = ''
         if self.category_id == self.env.ref('wifiber.maintenance'):
@@ -794,36 +821,28 @@ class Ticket(models.Model):
                 if user.is_group_email:
                     user_names += user.name + ", "
                     partn_ids.append(user.partner_id.id)
-
-
         msg = 'The Ticket (%s) with description (%s), has been Done by %s' % (
-        self.ticket_id, self.name, self.env.user.name)
-
+            self.ticket_id, self.name, self.env.user.name)
         intg_users = self.user_intg_ticket_group_id.sudo().user_ids
         for user in intg_users:
             if user.is_group_email:
                 user_names += user.name + ", "
                 partn_ids.append(user.partner_id.id)
-
         if partn_ids:
             self.message_follower_ids.unlink()
             self.message_post(
-               body= _(msg),
-                subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
-
+                body=_(msg),
+                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
         self.done_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
-
-        #send email to the NOC team
+        # send email to the NOC team
         partn_ids = []
         user_names = ''
         intg_users = self.user_intg_ticket_group_id.sudo().user_ids
-
         for user in intg_users:
             if user.is_group_email:
                 user_names += user.name + ", "
                 partn_ids.append(user.partner_id.id)
-
         if partn_ids:
             msg = 'The Ticket (%s) with description (%s), has been done by %s from the Engineering team' % (
                 self.ticket_id, self.name, self.env.user.name)
@@ -832,9 +851,6 @@ class Ticket(models.Model):
                 body=_(msg),
                 subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
-
-        return super(Ticket,self).btn_ticket_done()
-
 
     def btn_ticket_close(self):
 
@@ -1548,7 +1564,51 @@ class StockPicking(models.Model):
             target_rec.do_unreserve()
         return True
 
+    def unlink(self):
+        if self.ticket_id and self.ticket_id.material_request_ids :
+            self.ticket_id.state = 'progress'
+            for mr in self.ticket_id.material_request_ids:
+                mr.is_requested = False
+                mr.requested_by = False
+                mr.requested_datetime = False
+        return super(StockPicking,self).unlink()
+    def action_cancel(self):
+        if self.ticket_id and self.ticket_id.material_request_ids :
+            self.ticket_id.state = 'progress'
+            for mr in self.ticket_id.material_request_ids:
+                mr.is_requested = False
+                mr.requested_by = False
+                mr.requested_datetime = False
+        return super().action_cancel()
+
+
+    def _check_qty_demand_done(self, quantity_demanded, quantity_done):
+        return
+
+    def _check_validation_material(self):
+        if self.ticket_id and self.ticket_id.material_request_ids:
+            prod_list_ticket = []
+            prod_list_picking = []
+            prod_list_picking_filtered = []
+            prod_list_ticket_filtered = []
+            for rec in self.move_line_ids_without_package:
+                prod_list_picking.append(dict(prod_id=rec.product_id.id,qty=rec.qty_done))
+            unique_dicts_list = list(set(tuple(d.items()) for d in prod_list_picking)) #from chatgpt
+            product_qty_sum = sum(map(lambda x: x['qty'] ,list(filter(lambda line: line['prod_id'] == rec.product_id.id, unique_dicts_list))))
+            prod_list_picking_filtered.append(dict(product=rec.product_id.id,qty_sum=product_qty_sum))
+
+            for rec in self.ticket_id.material_request_ids:
+                prod_list_ticket.append(dict(prod_id=rec.product_id.id, qty=rec.qty))
+            product_qty_sum = sum(map(lambda x: x['qty'], list(filter(lambda line: line['prod_id'] == rec.product_id.id, prod_list_picking))))
+            prod_list_ticket_filtered.append(dict(product=rec.product_id.id, qty_sum=product_qty_sum))
+
+
+
+
+
+
     def button_validate(self):
+        self._check_validation_material()
         res = super(StockPicking, self).button_validate()
 
         #notify the requester of the ticket to proceed
@@ -1556,6 +1616,18 @@ class StockPicking(models.Model):
         user = False
 
         if self.ticket_id and self.ticket_id.material_request_ids :
+
+            for rec in self.move_line_ids_without_package:
+
+                is_exist = self.ticket_id.material_request_ids.filtered(lambda line: line.product_id == rec.product_id)
+                if is_exist:
+                    product_qty_sum = sum(self.ticket_id.material_request_ids.filtered(
+                        lambda line: line.product_id == rec.product_id).mapped('qty'))
+
+                else:
+                    raise UserError('%s is not part of the material requested in the ticket' % (rec.product_id.name))
+
+
             ticket_id = self.ticket_id
             ticket_id.move_line_ids += self.move_line_ids_without_package
             sn = ''
@@ -1673,3 +1745,29 @@ class StockMoveLine(models.Model):
 #             raise UserError('Sorry, you cannot add new stock move')
 #         return res
 #
+
+
+class StockQuant(models.Model):
+    _inherit = 'stock.quant'
+
+    @api.model
+    def action_view_quants_wifiber(self):
+        domain = []
+        #get the engineers location for the current logged in user
+        user_location = self.env.user.partner_id.partn_location_id
+        if user_location :
+            domain = [('location_id','=',user_location.id)]
+        else:
+            raise UserError('Sorry, only Engineers can access this information ')
+
+        self = self.with_context(search_default_internal_loc=1)
+        if not self.user_has_groups('stock.group_stock_multi_locations'):
+            company_user = self.env.company
+            warehouse = self.env['stock.warehouse'].search([('company_id', '=', company_user.id)], limit=1)
+            if warehouse:
+                self = self.with_context(default_location_id=warehouse.lot_stock_id.id)
+
+        # If user have rights to write on quant, we set quants in inventory mode.
+        if self.user_has_groups('stock.group_stock_manager'):
+            self = self.with_context(inventory_mode=True)
+        return self._get_quants_action(extend=True,domain=domain)

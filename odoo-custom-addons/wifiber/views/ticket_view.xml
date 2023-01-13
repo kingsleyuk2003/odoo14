@@ -10,6 +10,23 @@
         <menuitem name="Material Issued (Used) Report" id="menu_issued_report" action="action_issued_report_wizard"
           parent="menu_wifiber_report" sequence="3"    />
 
+        <!-- helps us to execute a server code when a menu is clicked-->
+        <record model="ir.actions.server" id="action_view_quants_wifiber"> <!-- Menu + python -->
+        <field name="name">Inventory Wifiber Server Action</field>
+        <field name="model_id" ref="model_stock_quant"/>
+        <field name="state">code</field>
+        <field name="groups_id" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="code">
+            action = model.with_context(
+                search_default_productgroup=1
+            ).action_view_quants_wifiber()
+        </field>
+    </record>
+
+        <menuitem id="menu_valuation_wifiber" name="Inventory Report"
+              parent="menu_wifiber_report" sequence="100"
+              action="action_view_quants_wifiber"/>
+
 
         <!-- Ticket  -->
             <record id="ticket_form" model="ir.ui.view">

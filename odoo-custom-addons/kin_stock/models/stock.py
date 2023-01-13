@@ -61,15 +61,19 @@ class StockPicking(models.Model):
         res = super(StockPicking, self).write(vals)
         return res
 
+    def _check_qty_demand_done(self, quantity_demanded, quantity_done):
+        allow_over_transfer = self.env['ir.config_parameter'].sudo().get_param('allow_over_transfer', default=False)
+        if quantity_done > quantity_demanded and not allow_over_transfer:
+            raise UserError(
+                'Quantity done (%s) is higher than Quantity Demanded (%s)' % (quantity_done, quantity_demanded))
+
     def button_validate(self):
         #check if the quantity done is more than the qty demanded
         for move in self.move_ids_without_package : # dont use move_line_ids. it fails for internal transfer
             quantity_done = round(move.quantity_done,2)
             quantity_demanded = round(move.product_uom_qty,2)
 
-            allow_over_transfer = self.env['ir.config_parameter'].sudo().get_param('allow_over_transfer',default=False)
-            if quantity_done > quantity_demanded and not allow_over_transfer :
-                raise UserError('Quantity done (%s) is higher than Quantity Demanded (%s)' % (quantity_done,quantity_demanded))
+            self._check_qty_demand_done(quantity_demanded, quantity_done)
 
         res = super(StockPicking, self).button_validate()
         if res != True and res.get('name') == 'Immediate Transfer?':
@@ -81,6 +85,7 @@ class StockPicking(models.Model):
         self.create_purchase_bill()
 
         return res
+
 
     def create_purchase_bill(self):
         # create purchase bill
