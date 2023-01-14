@@ -261,13 +261,23 @@ class Ticket(models.Model):
     def _get_stock_move_lines(self):
         ml_list = []
         for mr in self.material_request_ids:
-            ml_list += [(0, 0,{
-                'product_id': mr.product_id.id,
-                'qty_done': mr.qty,
-                'product_uom_id': mr.product_id.uom_id.id,
-                'location_id': self.env.user.partner_id.partn_location_id.id,
-                'location_dest_id': self.env.ref('stock.stock_location_customers').id,
-            })]
+            if mr.product_id.tracking == 'serial':
+                for i in range(int(mr.qty)):
+                    ml_list += [(0, 0, {
+                        'product_id': mr.product_id.id,
+                        'qty_done': 1,
+                        'product_uom_id': mr.product_id.uom_id.id,
+                        'location_id': self.env.user.partner_id.partn_location_id.id,
+                        'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+                    })]
+            else:
+                ml_list += [(0, 0,{
+                    'product_id': mr.product_id.id,
+                    'qty_done': mr.qty,
+                    'product_uom_id': mr.product_id.uom_id.id,
+                    'location_id': self.env.user.partner_id.partn_location_id.id,
+                    'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+                })]
         return ml_list
 
     def _check_qty_material_request(self):
