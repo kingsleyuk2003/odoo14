@@ -1587,47 +1587,40 @@ class StockPicking(models.Model):
 
     def _check_validation_material(self):
         if self.ticket_id and self.ticket_id.material_request_ids:
+            for rec in self.move_line_ids_without_package:
+                is_exist = self.ticket_id.material_request_ids.filtered(lambda line: line.product_id == rec.product_id)
+                if not is_exist:
+                    raise UserError('%s is not part of the material requested in the ticket' % (rec.product_id.name))
+
             prod_list_ticket = []
             prod_list_picking = []
             prod_list_picking_filtered = []
             prod_list_ticket_filtered = []
             for rec in self.move_line_ids_without_package:
                 prod_list_picking.append(dict(prod_id=rec.product_id.id,qty=rec.qty_done))
-            unique_dicts_list = list(set(tuple(d.items()) for d in prod_list_picking)) #from chatgpt
-            product_qty_sum = sum(map(lambda x: x['qty'] ,list(filter(lambda line: line['prod_id'] == rec.product_id.id, unique_dicts_list))))
-            prod_list_picking_filtered.append(dict(product=rec.product_id.id,qty_sum=product_qty_sum))
+            for rec in self.move_line_ids_without_package:
+                product_qty_sum = sum(map(lambda x: x['qty'], list(filter(lambda line: line['prod_id'] == rec.product_id.id, prod_list_picking))))
+                prod_list_picking_filtered.append(dict(product=rec.product_id, qty_sum=product_qty_sum))
+            unique_dicts_picking = [d for i, d in enumerate(prod_list_picking_filtered) if d not in prod_list_picking_filtered[:i]] #reference: chatgpt
 
             for rec in self.ticket_id.material_request_ids:
                 prod_list_ticket.append(dict(prod_id=rec.product_id.id, qty=rec.qty))
-            product_qty_sum = sum(map(lambda x: x['qty'], list(filter(lambda line: line['prod_id'] == rec.product_id.id, prod_list_picking))))
-            prod_list_ticket_filtered.append(dict(product=rec.product_id.id, qty_sum=product_qty_sum))
+            for rec in self.ticket_id.material_request_ids:
+                product_qty_sum = sum(map(lambda x: x['qty'], list(filter(lambda line: line['prod_id'] == rec.product_id.id, prod_list_ticket))))
+                prod_list_ticket_filtered.append(dict(product=rec.product_id, qty_sum=product_qty_sum))
+            unique_dicts_ticket = [d for i, d in enumerate(prod_list_ticket_filtered) if d not in prod_list_picking_filtered[:i]] #reference: chatgpt
 
-
-
-
-
+            for sline in unique_dicts_picking :
+                for mline in unique_dicts_ticket:
+                    if sline['product'] == mline['product'] :
+                        if sline['qty_sum'] > mline['qty_sum']:
+                            raise UserError('%s Material Used Qty (%s) is greater than the Material Requested Qty (%s) ' % (sline['product'].name,sline['qty_sum'],mline['qty_sum']))
 
     def button_validate(self):
         self._check_validation_material()
         res = super(StockPicking, self).button_validate()
 
-        #notify the requester of the ticket to proceed
-        partn_ids = False
-        user = False
-
         if self.ticket_id and self.ticket_id.material_request_ids :
-
-            for rec in self.move_line_ids_without_package:
-
-                is_exist = self.ticket_id.material_request_ids.filtered(lambda line: line.product_id == rec.product_id)
-                if is_exist:
-                    product_qty_sum = sum(self.ticket_id.material_request_ids.filtered(
-                        lambda line: line.product_id == rec.product_id).mapped('qty'))
-
-                else:
-                    raise UserError('%s is not part of the material requested in the ticket' % (rec.product_id.name))
-
-
             ticket_id = self.ticket_id
             ticket_id.move_line_ids += self.move_line_ids_without_package
             sn = ''
