@@ -760,7 +760,7 @@ class Ticket(models.Model):
         if len(self.material_request_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
             raise UserError('There is no material to be requested')
         if len(self.material_request_ids) > 0 and len(self.move_line_ids) <= 0 and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
-            raise UserError("There is no material used for this installation. Click the 'Transfers' button on the right of this page and then set the used items and their serial numbers, then click validate button to validate the used items, before you can mark this ticket as done")
+            raise UserError("There is no material used for this installation.")
         if not self.picking_ids and self.category_id == self.env.ref('wifiber.installation') and not self.is_skip_material:
             raise UserError('All Installations needs materials to be used.')
         if self.picking_ids and self.env.ref('wifiber.installation') :
@@ -779,7 +779,6 @@ class Ticket(models.Model):
                     if not rec.is_requested:
                         rec.requested_by = self.env.user
                         rec.requested_datetime = datetime.today()
-                        rec.is_requested = True
         for picking_id in self.picking_ids :
             if picking_id.state not in ('done','cancel') :
                 raise UserError('Sorry, all stock pickings for the material request must be done or cancelled, before you can proceed. Please validate materials that have been used')
@@ -1627,7 +1626,8 @@ class StockPicking(models.Model):
                             raise UserError('%s Material Used Qty (%s) is greater than the Material Requested Qty (%s) ' % (sline['product'].name,sline['qty_sum'],mline['qty_sum']))
 
     def button_validate(self):
-        self._check_validation_material()
+        if not self.env.user.has_group('wifiber.group_bypass_check_validation_material'):
+            self._check_validation_material()
         res = super(StockPicking, self).button_validate()
 
         if self.ticket_id and self.ticket_id.material_request_ids :

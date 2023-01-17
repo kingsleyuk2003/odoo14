@@ -141,7 +141,7 @@ class CrmLeadExtend(models.Model):
         res = {}
 
         self.stage_id = self.env.ref('wifiber.stage_survey')
-        name = 'Survey Ticket for ' + self.name
+        name = self.name
 
         csc = False
         is_default_survey_group = False

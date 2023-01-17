@@ -183,7 +183,7 @@ class SaleOrderExtend(models.Model):
             product_name = product_order_line.product_id.name
 
         vals = {
-            'name': '%s Installation Ticket for %s with sales order reference (%s)' %  (product_name or '', self.partner_id.name ,  self.name),
+            'name': '%s %s with sales order reference (%s)' %  (self.partner_id.name ,  product_name or '', self.name),
             'category_id': category_id.id,
             'partner_id': self.partner_id.id,
             'ticket_company_id' : self.company_id.id,

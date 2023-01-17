@@ -12,6 +12,16 @@
 			<field name="category_id" ref="module_category_stock"/>
 		</record>
 
+	<record id="group_show_stock_operations" model="res.groups">
+			<field name="name">Show Operations Menu</field>
+			<field name="category_id" ref="module_category_stock"/>
+		</record>
+
+	<record id="group_show_stock_reporting" model="res.groups">
+			<field name="name">Show Reporting Menu</field>
+			<field name="category_id" ref="module_category_stock"/>
+		</record>
+
 	<record id="group_show_stock_configuration" model="res.groups">
 			<field name="name">Show Inventory Configuration</field>
 			<field name="category_id" ref="module_category_stock"/>
