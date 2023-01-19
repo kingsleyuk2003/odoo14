@@ -225,20 +225,48 @@ class HrExpense(models.Model):
         return super(HrExpense, self).unlink()
 
 
+    @api.depends('employee_id')
+    def _compute_is_editable(self):
+        is_account_manager = self.env.user.has_group('account.group_account_user') or self.env.user.has_group('account.group_account_manager') or self.env.user.has_group('wifiber.group_expense_account_application_wifiber')
+        for expense in self:
+            if expense.state == 'draft' or expense.sheet_id.state in ['draft', 'submit']:
+                expense.is_editable = True
+            elif expense.sheet_id.state in ('approve','audited'):
+                expense.is_editable = is_account_manager
+            else:
+                expense.is_editable = False
+
+    @api.depends('employee_id')
+    def _compute_is_ref_editable(self):
+        is_account_manager = self.env.user.has_group('account.group_account_user') or self.env.user.has_group('account.group_account_manager') or self.env.user.has_group('wifiber.group_expense_account_application_wifiber')
+        for expense in self:
+            if expense.state == 'draft' or expense.sheet_id.state in ['draft', 'submit']:
+                expense.is_ref_editable = True
+            else:
+                expense.is_ref_editable = is_account_manager
+
+    @api.depends('product_id', 'company_id')
+    def _compute_from_product_id_company_id(self):
+        for expense in self.filtered('product_id'):
+            expense = expense.with_company(expense.company_id)
+            expense.name = expense.name or expense.product_id.display_name
+            expense.product_uom_id = expense.product_id.uom_id
+            expense.tax_ids = expense.product_id.supplier_taxes_id.filtered(lambda tax: tax.company_id == expense.company_id)  # taxes only from the same company
+            account = expense.product_id.product_tmpl_id._get_product_accounts()['expense']
+            if account:
+                expense.account_id = account
+
     def write(self, vals):
-        vals['is_editable']=False
-        if self.sheet_id and self.sheet_id.state == 'audited' and not self.env.user.has_group('wifiber.group_expense_auditor_wifiber'):
-            raise UserError('You are not allowed to edit this expense')
-        elif self.sheet_id and self.sheet_id.state == 'audited' and self.env.user.has_group('wifiber.group_expense_auditor_wifiber'):
+        if self.sheet_id and self.sheet_id.state == 'audited' and self.env.user.has_group('wifiber.group_expense_account_application_wifiber'):
+
             unit_amount = vals.get('unit_amount',False)
-            name = vals.get('name', False)
             date = vals.get('date', False)
             if unit_amount:
                 raise UserError('Sorry, you not allowed to edit the Unit Price')
-            if name:
-                raise UserError('Sorry, you not allowed to edit the Description')
             if date:
                 raise UserError('Sorry, you not allowed to edit the Expense Date')
+        elif self.sheet_id and self.sheet_id.state == 'audited' and not self.env.user.has_group('wifiber.group_expense_auditor_wifiber'):
+            raise UserError('You are not allowed to edit this expense')
         return super(HrExpense, self).write(vals)
 
     payment_mode = fields.Selection(default='company_account')
