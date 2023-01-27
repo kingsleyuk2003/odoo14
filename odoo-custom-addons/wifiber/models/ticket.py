@@ -925,6 +925,10 @@ class Ticket(models.Model):
         elif self.category_id == self.env.ref('wifiber.survey') :
             if self.crm_id:
                 self.crm_id.is_survey_ticket_close = True
+                mrt = ''
+                for mr in self.material_request_ids :
+                    mrt += str(mr.qty) + " " + mr.product_id.uom_id.name + " of " + mr.product_id.name  + "\n"
+                self.crm_id.material_requested = mrt
             # send email
             user_ids = []
             group_obj = self.env.ref('wifiber.group_ticket_survey_close_notify')
@@ -1115,6 +1119,8 @@ class Ticket(models.Model):
     def btn_ticket_finalized(self):
 
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation'):
+            if self.noc_router_number.strip().upper() != self.idu_serial_no.strip().upper() :
+                raise UserError('Sorry, there is discrepancy in the router installed. Please Contact the Admin')
             if not self.ip_address:
                 raise UserError(_('Please set the Customer IP Address in the Activation Form Tab below'))
 
@@ -1468,6 +1474,7 @@ class Ticket(models.Model):
     ap_ip_address = fields.Char(string='AP IP Address')
     radio_model = fields.Char(string='Radio Model(microwave,MK,UB,Vjjt etc)')
     comment_activation = fields.Char(string='Comment')
+    noc_router_number = fields.Char(string='NOC Router Number')
 
     #material request
     is_skip_material = fields.Boolean(string='Skip Material Request',tracking=True)

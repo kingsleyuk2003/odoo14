@@ -123,6 +123,14 @@
                       <attribute name="invisible" >1</attribute>
                   </page>
 
+                <page name="internal_notes" position="after" >
+                     <page string="Material Requested"  >
+                         <group col="4"  >
+                               <field name="material_requested" readonly="1" />
+                         </group>
+                     </page>
+                </page>
+
 
             </field>
     </record>

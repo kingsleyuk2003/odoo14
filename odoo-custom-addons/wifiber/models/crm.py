@@ -167,6 +167,7 @@ class CrmLeadExtend(models.Model):
         self.is_survey_ticket_created = True
         self.survey_ticket_created_date = datetime.today()
         self.survey_ticket_id = ticket_obj.ticket_id
+        self.ticket_id = ticket_obj
 
         partn_ids = []
         user_names = ''
@@ -207,6 +208,7 @@ class CrmLeadExtend(models.Model):
             )
 
     ticket_ids = fields.One2many('kin.ticket', 'crm_id', string='Tickets')
+    material_requested = fields.Text(string='Material Requested')
     ticket_count = fields.Integer(compute="_compute_ticket_count",
                                   string='# of Ticket',
                                   copy=False,

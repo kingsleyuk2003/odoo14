@@ -198,6 +198,7 @@ class HrExpenseSheet(models.Model):
         # return self.env['account.journal'].search([('type', 'in', ['cash', 'bank']),('company_id', '=', default_company_id), ('is_expense', '=', True) ], limit=1)
 
     payment_mode = fields.Selection(default='company_account')
+    account_details = fields.Text(String='Account details')
     bank_journal_id = fields.Many2one('account.journal', string='Bank Journal',
                                       states={'done': [('readonly', True)], 'post': [('readonly', True)]},
                                       check_company=True,
@@ -215,6 +216,7 @@ class HrExpenseSheet(models.Model):
         ('cancel', 'Refused')
     ], string='Status', index=True, readonly=True, tracking=True, copy=False, default='draft', required=True,
         help='Expense Sheet Status')
+
 class HrExpense(models.Model):
     _inherit = 'hr.expense'
 
