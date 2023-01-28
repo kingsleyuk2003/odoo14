@@ -167,7 +167,6 @@ class CrmLeadExtend(models.Model):
         self.is_survey_ticket_created = True
         self.survey_ticket_created_date = datetime.today()
         self.survey_ticket_id = ticket_obj.ticket_id
-        self.ticket_id = ticket_obj
 
         partn_ids = []
         user_names = ''
