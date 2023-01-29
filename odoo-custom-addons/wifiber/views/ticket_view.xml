@@ -213,7 +213,7 @@
                             <field name="description" />
                             <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))]}" />
-                            <field name="noc_router_number"  attrs="{'invisible': [('state', 'not in', ('done','finalized', 'closed'))], 'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('state', '=', 'done')]}" />
+                            <field name="noc_router_number"  attrs="{'invisible': [('state', 'not in', ('done','finalized', 'closed'))], 'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('state', '=', 'done'),('category_code', '=', 'installation' )]}" />
                             <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))]}" />
                             <field name="vlan"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))]}" />

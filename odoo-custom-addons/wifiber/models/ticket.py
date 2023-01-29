@@ -1119,6 +1119,8 @@ class Ticket(models.Model):
     def btn_ticket_finalized(self):
 
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation'):
+            if not self.noc_router_number:
+                raise UserError('Please enter the NOC Router Number in the Activation Tab below')
             if self.noc_router_number.strip().upper() != self.idu_serial_no.strip().upper() :
                 raise UserError('Sorry, there is discrepancy in the router installed. Please Contact the Admin')
             if not self.ip_address:
