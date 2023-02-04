@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <menuitem id="menu_sales_atl" name="Sales/ATL Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
+        <menuitem id="menu_sales_atl_report" name="Sales/ATL Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
+        <menuitem id="kin_loading.menu_sale_order_other"
+            name="Retail Sales Orders"
+            action="kin_loading.action_orders_other"
+            parent="sale.sale_order_menu"
+            sequence="2" groups="kin_loading.group_show_other_sales_menu"/>
+
+
+        <record id="purchase_order_form_loading_taurus" model="ir.ui.view">
+            <field name="name">purchase.order.form.taurus</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase_order_secondary_unit.purchase_order_form" />
+            <field name="arch" type="xml">
+
+
+                <field name="secondary_uom_qty" position="attributes" >
+                      <attribute name="string">MT Qty.</attribute>
+                      <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>
+                      <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
+                </field>
+
+                <field name="secondary_uom_id" position="attributes" >
+                      <attribute name="string">MT.</attribute>
+                      <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>
+                      <attribute name="groups" >kin_loading.group_show_purchase_menu</attribute>
+                </field>
+
+            </field>
+        </record>
+
+
+<!--        <record id="view_picking_form_stock_taurus" model="ir.ui.view">-->
+<!--            <field name="name">stock.picking.form.kin.stock.account</field>-->
+<!--            <field name="model">stock.picking</field>-->
+<!--            <field name="inherit_id" ref="stock.view_picking_form"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                 <field name="origin" position="after">-->
+<!--                     <field name="aftershore_receipt_documents" />-->
+<!--                 </field>-->
+<!--            </field>-->
+<!--        </record>-->
+
+
+         <record id="purchase_request_form_extend_taurus" model="ir.ui.view">
+            <field name="name">purchase.request.form.extend</field>
+            <field name="model">purchase.request</field>
+            <field name="inherit_id" ref="purchase_request.view_purchase_request_form" />
+            <field name="arch" type="xml">
+                <field name="assigned_to" position="attributes" >
+                     <attribute name="required">1</attribute>
+                </field>
+                <field name="requested_by" position="after" >
+                    <field name="department_id" options="{'no_create': True, 'no_open': True}" required="1" attrs="{'readonly': [('state', '!=', 'draft')]}" />
+                </field>
+                <field name="description" position="after" >
+                    <field name="attachment" />
+                </field>
+
+            </field>
+         </record>
+
+
+        <!-- Partner Extend -->
+         <record id="view_res_partner_extend" model="ir.ui.view">
+            <field name="name" >res.partner.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+
+                <field name="mobile"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                <field name="phone"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+                 <field name="email"  position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+                <field name="vat" position="after" >
+                    <field name="manager" />
+                </field>
+            </field>
+         </record>
+
+         <record id="account.menu_action_account_payments_receivable" model="ir.ui.menu" >
+            <field name="name" >Customer's Receipts</field>
+        </record>
+         <record id="account.action_account_payments" model="ir.actions.act_window">
+            <field name="name" >Customer's Receipts</field>
+         </record>
+
+
+
+        <record id="view_move_form_extend_taurus" model="ir.ui.view" >
+            <field name="name" >account.move.form.extend.taurus</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form" />
+            <field name="arch" type="xml">
+                <field name="invoice_date" position="attributes" >
+                     <attribute name="required" >True</attribute>
+                </field>
+                <div groups="account.group_account_invoice,account.group_account_readonly" class="alert alert-info" role="alert" style="margin-bottom:0px;" attrs="{'invisible': ['|', '|', ('move_type', 'not in', ('out_invoice', 'out_refund')), ('invoice_has_outstanding', '=', False), ('payment_state', 'not in', ('not_paid', 'partial'))]}"  position="replace"  >
+                       <div groups="account.group_account_invoice,account.group_account_readonly"
+                         class="alert alert-info" role="alert" style="margin-bottom:0px;"
+                         attrs="{'invisible': ['|', '|', ('move_type', 'not in', ('out_invoice', 'out_refund')), ('invoice_has_outstanding', '=', False), ('payment_state', 'not in', ('not_paid', 'partial'))]}">
+                        You have <bold><a class="alert-link" href="#outstanding" role="button">outstanding credits</a></bold> for this customer. You can allocate them to mark this invoice as paid.
+                    </div>
+                </div>
+
+
+                <field name="amount_in_words" position="attributes" >
+                    <attribute name="invisible" >1</attribute>
+                </field>
+
+            </field>
+        </record>
+
+
+    </data>
+</odoo>

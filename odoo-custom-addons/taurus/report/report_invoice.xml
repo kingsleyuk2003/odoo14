@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+         <template id="report_invoice_document_taurus" inherit_id="account.report_invoice_document">
+
+             <xpath expr="//address"  position="replace" >
+                <span t-if="o.company_id.id == 2" ><b>Name: </b>  <span t-field="o.partner_id.name"/></span>
+                <address  t-else=""  t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
+            </xpath>
+
+            <xpath expr="//th[@name='th_quantity']/span"  position="replace" >
+                <span t-if="o.company_id.id == 2" >Trip</span>
+                <span t-else="" >Quantity</span>
+            </xpath>
+
+              <xpath expr="//th[@name='th_taxes']/span"  position="replace" >
+                <span t-if="o.company_id.id == 2" >NCAA</span>
+                <span t-else="" >Taxes</span>
+            </xpath>
+
+             <xpath expr="//p[@name='payment_communication']" position="replace" >
+                 <br />
+                 <p>
+                     <b>Amount in Words:</b><span t-field="o.amount_in_words" />
+                 </p>
+                 <p  t-if="o.company_id.id == 2 and o.move_type in ('out_invoice', 'in_refund')" name="payment_communication">
+                       <p>
+                           <br />
+                           <b>Bank Account Details:</b><br/>
+                           <b>Bank:</b> Zenith Bank <br/>
+                           <b>USD Account Number:</b> 5071195707<br/>
+                           <b>NGN Account Number:</b> 1016666363<br/>
+                       </p>
+                </p>
+                 <p  t-else="o.move_type in ('out_invoice', 'in_refund') and o.payment_reference" name="payment_communication">
+                        Please use the following communication for your payment : <b><span t-field="o.payment_reference"/></b>
+                 </p>
+             </xpath>
+
+
+
+<!--            <xpath expr="//div[@id='qrcode']"  position="after">-->
+<!--                <br />-->
+<!--                <br />-->
+<!--                <br />-->
+<!--                     <div class="col-xs-12" >-->
+<!--                         <div class="row">-->
+<!--                             <div class="col-xs-12" >-->
+<!--                                 <div>-->
+<!--                                    <strong> Authorised Signature: <img t-if="o.company_id.img_signature" t-att-src="image_data_uri(o.company_id.img_signature)" style="max-height:45pt;max-width:90%" /></strong>-->
+<!--                                 </div>-->
+<!--                             </div>-->
+<!--                         </div>-->
+<!--                     </div>-->
+<!--            </xpath>-->
+
+         </template>
+
+
+
+    </data>
+</odoo>
