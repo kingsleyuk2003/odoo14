@@ -134,6 +134,10 @@
                      <field name="product_id" string="Expense" options="{'no_open': True, 'no_create': True}" />
                 </field>
 
+                <field name="date" position="attributes" >
+                    <attribute name="required" >1</attribute>
+                </field>
+
                 <field name="total_amount" position="before" >
                     <field name="unit_amount"  widget="monetary" options="{'currency_field': 'currency_id'}"/>
                 </field>
