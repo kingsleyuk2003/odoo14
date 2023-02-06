@@ -777,7 +777,7 @@ class StockPickingExtend(models.Model):
                     amount_in_words = current_curr.amount_to_text(
                         self.move_ids_without_package[0].quantity_done)
                     rec.amount_in_words = amount_in_words.replace(
-                        'Naira', '').replace('Kobo', '') + ' Gallons'
+                        'Naira', '').replace('Kobo', '') + ' Ltrs'
             else:
                 rec.amount_in_words = False
 
