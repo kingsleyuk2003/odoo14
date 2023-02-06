@@ -2,8 +2,24 @@
 <odoo>
     <data>
 
-		<record id="action_report_loading_ticket_taurus" model="ir.actions.report">
+        <record id="paperformat_loading_ticket" model="report.paperformat">
             <field name="name">Loading Ticket</field>
+            <field name="default" eval="True"/>
+            <field name="format">custom</field>
+            <field name="page_height">160</field>
+            <field name="page_width">60</field>
+            <field name="orientation">Portrait</field>
+            <field name="margin_top">3</field>
+            <field name="margin_bottom">3</field>
+            <field name="margin_left">3</field>
+            <field name="margin_right">3</field>
+            <field name="header_line" eval="False" />
+            <field name="header_spacing">3</field>
+            <field name="dpi">130</field>
+        </record>
+
+		<record id="action_report_loading_ticket_taurus" model="ir.actions.report">
+            <field name="name">Loading Meter Ticket</field>
             <field name="model">stock.picking</field>
             <field name="report_type">qweb-pdf</field>
             <field name="report_name">taurus.report_loading_ticket</field>
@@ -11,20 +27,21 @@
             <field name="print_report_name">'Loading Ticket - %s - %s' % (object.partner_id.name or '', object.name)</field>
             <field name="binding_model_id" ref="model_stock_picking"/>
             <field name="binding_type">report</field>
+            <field name="paperformat_id" ref="taurus.paperformat_loading_ticket" />
         </record>
 
 
     <template id="taurus_external_layout_standard"   >
         <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
             <div class="row">
-                <div class="col-7"  >
-                    <h3>
-                        <strong>LOADING TICKET</strong><br />
-                        No: <span t-field="o.name"/>
-                    </h3>
+                <div class="col-xs-4 text-left">
+                    <img  width="100" height="100" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
                 </div>
-                <div class="col-5 text-right">
-                    <img  width="300" height="100" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                <div class="col-xs-8 text-center"  >
+                    <strong style="color:blue"><b>TAURUS OIL &amp; GAS LTD</b></strong><br />
+                    <strong style="font-size:10px">DEPOT OWNERS, OIL &amp; GAS, STORAGE, TRADING</strong><br/>
+                    <strong>No:</strong> <span t-field="o.name"/> <br />
+                    <strong><b>LOADING METER TICKET</b></strong>
                 </div>
             </div>
         </div>
@@ -33,14 +50,14 @@
             <t t-raw="0"/>
         </div>
 
-        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
-            <div class="text-center" style="border-bottom: 1px solid black;" />
-             <div class="row">
-                 <div class="col-auto"  >
-                     <span class="col-auto"  >Distribution | <strong>White</strong>  Customer | <strong>Blue</strong> Des/stock <strong>Pink</strong> Operations <strong>Yellow</strong> | Security</span>
-                 </div>
-             </div>
-        </div>
+<!--        <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">-->
+<!--            <div class="text-center" style="border-bottom: 1px solid black;" />-->
+<!--             <div class="row">-->
+<!--                 <div class="col-auto"  >-->
+<!--&lt;!&ndash;                     <span class="col-auto"  >Distribution | <strong>White</strong>  Customer | <strong>Blue</strong> Des/stock <strong>Pink</strong> Operations <strong>Yellow</strong> | Security</span>&ndash;&gt;-->
+<!--                 </div>-->
+<!--             </div>-->
+<!--        </div>-->
     </template>
 
 
@@ -72,218 +89,153 @@
                 <t t-set="partner" t-value="o.partner_id or (o.move_lines and o.move_lines[0].partner_id) or False"/>
 
                 <div class="page">
-                     <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART A</strong>
+                    <br/><br/><br/><br/>
+                    <div  class="row"  >
+                         <div class="col-xs-12" >
+                             <strong style="border-bottom: 1px solid black; color:red" >(A)</strong>
                          </div>
                      </div>
-                    <div  class="row"  >
-                        <div class="col-auto"   >
-                          <strong>TRUCK NO: </strong>____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>METER NO: </strong>____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>DATE OF REQUEST: </strong><span t-field="o.ticket_date"/>
+                    <br/>
+                    <div class="row">
+						<div class="col-xs-12">
+							<span><b>DATE:  </b></span><span t-field="o.ticket_date" />
+						</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <span><b>CUSTOMER:  </b></span><span t-field="o.partner_id" />
                         </div>
                     </div>
-                    <br />
-                    <div class="row"  >
-                        <div class="col-12"  >
-                           <strong>QUANTITY REQUIRED:  </strong><span t-field="o.ticket_load_qty"/>
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <span><b>METER TICKET NO:  </b></span><span t-field="o.name" />
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-xs-12"  >
+                           <strong>PRODUCT NAME: </strong> <span t-field="o.product_id.name"/>
+                        </div>
+					</div>
+                    <div class="row">
+                        <div class="col-xs-12"  >
+                           <strong>QTY. REQUESTED LTS: </strong> <span t-field="o.ticket_load_qty"/>
+                        </div>
+					</div>
                     <table class="table table-sm  table-bordered border border-dark "  >
-                        <thead>
-                            <tr>
-                                <th style="border: 1px solid black;" ><strong>COMP. NO.</strong></th>
-                                <th class="border border-dark" ><strong>LITRES QTY.</strong></th>
-                                <th style="border: 1px solid black;" ><strong>COMP. NO.</strong></th>
-                                <th class="border border-dark" ><strong>LITRES QTY.</strong></th>
-                                <th style="border: 1px solid black;" ><strong>COMP. NO.</strong></th>
-                                <th class="border border-dark" ><strong>LITRES QTY.</strong></th>
-                            </tr>
-                        </thead>
                         <tbody>
                             <tr>
-                                <td class="border border-dark text-center" >1</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >4</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >7</td>
-                                <td class="border border-dark" />
-                            </tr>
+                                <td width="10%" class="border border-dark text-center" ><span><b>1</b></span></td>
+                                <td width="40%" class="border border-dark" />
+                                <td width="10%" class="border border-dark text-center" ><span><b>4</b></span></td>
+                                <td width="40%" class="border border-dark" />
+							</tr>
                             <tr>
-                               <td class="border border-dark text-center" >2</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >5</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >8</td>
-                                <td class="border border-dark" />
-                            </tr>
+                                <td width="10%" class="border border-dark text-center" ><span><b>2</b></span></td>
+                                <td width="40%" class="border border-dark" />
+                                <td width="10%" class="border border-dark text-center" ><span><b>5</b></span></td>
+                                <td width="40%" class="border border-dark" />
+							</tr>
                             <tr>
-                                <td class="border border-dark text-center" >3</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >6</td>
-                                <td class="border border-dark" />
-                                <td class="border border-dark text-center" >9</td>
-                                <td class="border border-dark" />
-                            </tr>
+                                <td width="10%" class="border border-dark text-center" ><span><b>3</b></span></td>
+                                <td width="40%" class="border border-dark" />
+                                <td width="10%" class="border border-dark text-center" ><span><b>6</b></span></td>
+                                <td width="40%" class="border border-dark" />
+							</tr>
                         </tbody>
                     </table>
+
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>VEHICLE NO: </strong><span t-field="o.truck_no"/>
+                        </div>
+                    </div>
                     <div class="row"  >
-                        <div class="col-3"  >
-                           <strong>PRODUCT: </strong> <span t-field="o.product_id.name"/>
+                        <div class="col-xs-12"   >
+                          <strong>DESTINATION: </strong>  <span t-field="o.dpr_info_id"/>
                         </div>
-                         <div class="col-9"  >
-                           <strong>DESTINATION/ADDRESS: </strong>  <span t-field="o.dpr_info_id"/>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>SALES OFFICER: </strong>_________________________________
+                        </div>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>ACCOUNTANT NAME: </strong>_________________________
                         </div>
                     </div>
                     <br />
-                    <div class="row"  >
-                        <div class="col-auto"  >
-                            <strong>AUTHORIZATION OFFICER:</strong> ____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong>  ____________________
-                        </div>
-                    </div>
-                <br />
-                    <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART B</strong>
-                         </div>
-                     </div>
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>LOADING DATE: </strong> ____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>LOADING SUPERVISOR: </strong> ___________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong>____________________
-                        </div>
-                    </div>
-                     <br />
-                    <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART C</strong>
-                         </div>
-                     </div>
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>QTY. LOADED (LTRS): </strong>_______________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>LOADER'S NAME: </strong>_______________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong>____________________
-                        </div>
-                    </div>
-
-                    <br />
-                    <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART D</strong>
-                         </div>
-                     </div>
-                    <div  class="row"  >
-                        <div class="col-4"  >
-                          <strong>ULLAGE FIGURES</strong>
-                        </div>
-                    </div>
-                    <table class="table table-sm  table-bordered border border-dark "  >
-                        <thead>
-                            <tr>
-                                <th class="text-center" style="border: 1px solid black;" ><strong>COMP. NO.</strong></th>
-                                <th class="border border-dark text-center" ><strong>LOADING</strong></th>
-                                <th class="border border-dark text-center" ><strong>COMP. NO.</strong></th>
-                                <th class="border border-dark text-center" ><strong>LOADING</strong></th>
-
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="border border-dark text-center" >1</td>
-                                <td class="border border-dark text-center" />
-                                <td class="border border-dark text-center" >5</td>
-                                <td class="border border-dark text-center" />
-                            </tr>
-                            <tr>
-                                <td class="border border-dark text-center" >2</td>
-                                <td class="border border-dark text-center" />
-                                <td class="border border-dark text-center" >6</td>
-                                <td class="border border-dark text-center" />
-                            </tr>
-                            <tr>
-                                <td class="border border-dark text-center" >3</td>
-                                <td class="border border-dark text-center" />
-                                <td class="border border-dark text-center" >7</td>
-                                <td class="border border-dark text-center" />
-                            </tr>
-                            <tr>
-                                <td class="border border-dark text-center" >4</td>
-                                <td class="border border-dark text-center" />
-                                <td class="border border-dark text-center" >8</td>
-                                <td class="border border-dark text-center" />
-                            </tr>
-
-                        </tbody>
-                    </table>
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>ULLAGER'S NAME: </strong> ____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong> ____________________
-                        </div>
-                    </div>
-                    <br />
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>DRIVER'S NAME: </strong> ______________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong> ____________________
-                        </div>
-                    </div>
-                    <br />
-                    <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART E</strong>
-                         </div>
-                     </div>
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>RECEIVING DISPATCH OFFICER: </strong>____________________
-                        </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong> ____________________
-                        </div>
-                    </div>
-                    <br />
-                    <div  class="row"  >
-                         <div class="col-12" >
-                             <strong style="border-bottom: 1px solid black;" >PART F</strong>
-                         </div>
-                     </div>
-                    <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>WAYBILL NO: </strong>  <span t-field="o.waybill_no"/>
-                        </div>
-                        <div class="col-auto"  >
-                          <strong>WAYBILL DATE: </strong> <span t-field="o.dispatch_date"/>
-                        </div>
-                    </div>
                      <div  class="row"  >
-                        <div class="col-auto"  >
-                          <strong>DISPATCH OFFICER: </strong><span t-field="o.depot_officer_id"/>
+                         <div class="col-xs-12" >
+                             <strong style="border-bottom: 1px solid black; color:red" >(B)</strong>
+                         </div>
+                     </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>DATE OF LOADING: </strong>_____________________________
                         </div>
-                        <div class="col-auto" >
-                            <strong>SIGN &amp; DATE: </strong>____________________
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>OPENING METER READING: </strong>___________________
+                        </div>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>CLOSING METER READING: </strong>____________________
+                        </div>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>QUANTITY LOADED: </strong>____________________________
+                        </div>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>FLASH POINT: </strong>________________
+                        </div>
+                        <div class="col-xs-12" >
+                            <strong>SG: </strong>_______________
+                        </div>
+                    </div>
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>LOADER'S NAME: </strong>________________________________
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>SIGN: </strong>___________________
+                        </div>
+                        <div class="col-xs-12" >
+                            <strong>DATE: </strong>___________________
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>DISPATCH SUPU: </strong>________________________________
+                        </div>
+                    </div>
+                    <br />
+                    <p style="color:red;font-style:italic" >
+                       <strong>I received the quality and quantity of Product state above</strong>
+                    </p>
+
+                    <div  class="row"  >
+                        <div class="col-xs-12"   >
+                          <strong>CUSTOMER'S NAME: </strong>____________________________
+                        </div>
+                    </div>
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-xs-6"   >
+                          <strong>SIGN: </strong>___________________
+                        </div>
+                        <div class="col-xs-6" >
+                            <strong>DATE: </strong>___________________
                         </div>
                     </div>
                 </div>

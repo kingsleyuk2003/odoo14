@@ -17,21 +17,22 @@
  <template id="external_layout_standard_delivery_taurus"   >
         <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
             <div class="row">
-                <div class="col-3 mb4">
-                    <img  width="300" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
+                <div class="col-xs-3 mb4">
+                    <img  width="150" height="150" t-if="company.logo" t-att-src="image_data_uri(company.logo)"  alt="Logo"/>
                 </div>
-                <div class="col-9 text-right" style="margin-top:22px;" t-field="company.report_header" name="moto"/>
-            </div>
-            <div t-if="company.logo or company.report_header" class="row zero_min_height">
-                <div class="col-12">
-                    <div style="border-bottom: 1px solid black;"/>
+                <div class="col-xs-4 text-center" >
+                    <h2><b>
+                     <strong style="color:blue" >TAURUS OIL AND GAS</strong><br /><br />
+                    <strong style="color:blue" >DELIVERY NOTE / WAYBILL</strong>
+                        </b>
+                    </h2>
+                </div>
+                 <div class="col-xs-5 text-right " >
+                    <span t-field="company.street" /><br />
+                    <span><strong>Tel:</strong><span>08076100241, 07064476403</span> <br />
+                     <strong>Website:</strong><span t-field="company.website" /></span><br />
                 </div>
             </div>
-<!--            <div class="row">-->
-<!--                <div class="col-6" name="company_address">-->
-<!--                    <div t-field="company.partner_id"  t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": true}'  />-->
-<!--                </div>-->
-<!--            </div>-->
         </div>
 
         <div t-attf-class="article o_report_layout_standard o_company_#{company.id}_layout"  t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
@@ -43,7 +44,7 @@
         </div>
 
         <div t-attf-class="footer o_standard_footer o_company_#{company.id}_layout">
-            <div class="text-center" style="border-bottom: 1px solid black;">
+            <div class="text-center">
 <!--                <ul class="list-inline mb4">-->
 <!--                   #using the list-inline-item class from bootstrap causes weird behaviours in pdf report adding d-inline class fixes the problem-->
 <!--                    <li t-if="company.phone" class="list-inline-item d-inline"><span class="o_force_ltr" t-field="company.phone"/></li>-->
@@ -51,15 +52,11 @@
 <!--                    <li t-if="company.website" class="list-inline-item d-inline"><span t-field="company.website"/></li>-->
 <!--                    <li t-if="company.vat" class="list-inline-item d-inline"><t t-esc="company.country_id.vat_label or 'Tax ID'"/>: <span t-field="company.vat"/></li>-->
 <!--                </ul>-->
-                <div>
-                     <strong><span t-field="company.name"/></strong><br />
-                    <span t-field="company.street" /><br />
-                    <span><strong>TEL:</strong><span t-field="company.phone" />  <strong>EMAIL:</strong><span t-field="company.email" /></span><br />
-                </div>
 
-                <div name="financial_infos">
-                    <span t-field="company.report_footer"/>
-                </div>
+
+<!--                <div name="financial_infos">-->
+<!--                    <span t-field="company.report_footer"/>-->
+<!--                </div>-->
 
 <!--                <div t-if="report_type == 'pdf'" class="text-muted">-->
 <!--                    Page: <span class="page"/> / <span class="topage"/>-->
@@ -67,14 +64,14 @@
                  <br />
             </div>
 
-             <div class="row">
-                    <div class="col-auto text-left"  >
-                        <span class="col-auto"  ><strong>White</strong> / Customer,  <strong>Pink</strong> / Finance,  <strong>Blue</strong> / Book Copy</span>
-                    </div>
-                    <div class="col-auto text-right"  >
-                        <span >Requisition Department</span>
-                    </div>
-                </div>
+<!--             <div class="row">-->
+<!--                    <div class="col-auto text-left"  >-->
+<!--                        <span class="col-auto"  ><strong>White</strong> / Customer,  <strong>Pink</strong> / Finance,  <strong>Blue</strong> / Book Copy</span>-->
+<!--                    </div>-->
+<!--                    <div class="col-auto text-right"  >-->
+<!--                        <span >Requisition Department</span>-->
+<!--                    </div>-->
+<!--                </div>-->
 
         </div>
     </template>
@@ -109,223 +106,156 @@
 
                 <div class="page">
                     <div  class="row"  >
-                        <div class="col-auto" >
-                           <p style="border-bottom: 1px solid black;" > <strong>Name: </strong><span t-field="partner.name"  /></p>
-                            <p style="border-bottom: 1px solid black;" ><strong>Address:</strong><span t-field="partner.street"  /></p>
-                        </div>
-                        <div class="col-auto">
-                            <h4>
-                                <strong>DELIVERY NOTE/WAYBILL </strong><br />
-                                No: <span t-field="o.waybill_no"/>
-                            </h4>
-                        </div>
-                    </div>
-                    <br />
-                    <div  class="row"  >
-                        <div class="col-auto" >
-                            <p>
-                                The underlisted goods were received in good order
-                            </p>
-                        </div>
-                        <div class="col-auto" >
+                        <div class="col-auto text-right" >
                             <strong>Date:  </strong><span t-field="o.loaded_date"/>
                         </div>
                     </div>
-                    <br />
-                    <table  class="table table-sm table-bordered"  name="stock_move_table">
-                        <thead>
-                            <tr>
-                                <th  style="border: 1px solid black;"><strong>ITEM</strong></th>
-                                <th  style="border: 1px solid black;"><strong>QUANTITY ORDERED</strong></th>
-                                <th  style="border: 1px solid black;" ><strong>QUANTITY RECEIVED</strong></th>
-                                <th  style="border: 1px solid black;" ><strong>REMARK</strong></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
-                            <tr t-foreach="lines" t-as="move">
-                                <td  style="border: 1px solid black;" >
-                                    <span t-field="move.product_id"/>
-                                    <p t-if="move.description_picking != move.product_id.name">
-                                        <span t-field="move.description_picking"/>
-                                    </p>
-                                </td>
-                                <td  style="border: 1px solid black;" >
-                                    <span t-field="move.product_uom_qty"/>
-                                    <span t-field="move.product_uom"/>
-                                </td>
-                                <td  style="border: 1px solid black;" >
-                                    <span t-field="move.product_uom_qty"/>
-                                    <span t-field="move.product_uom"/>
-                                </td>
-                                <td  style="border: 1px solid black;"> <span t-field="o.remark"/></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <br />
-                    <table class="table table-sm table-bordered border border-dark"  >
-                        <thead>
-                            <tr>
-                                <th  style="border: 1px solid black;" ><strong>HAULAGE</strong></th>
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                                <th class="border border-dark" />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="border border-dark">
-                                   <span>TEMPERATURE</span>
-                                </td>
-                                <td class="border border-dark" >
-                                     <span  >°C</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span>1</span>
-                                </td>
-                               <td class="border border-dark">
-                                    <span>2</span>
-                                </td>
-                               <td class="border border-dark">
-                                    <span>3</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span>4</span>
-                                </td>
-                               <td class="border border-dark">
-                                    <span>5</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span>6</span>
-                                </td>
-                               <td class="border border-dark">
-                                    <span>7</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="border border-dark">
-                                   <span>ON DISPATCH</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                   <span t-if="o.comp1_vol != 0" t-field="o.comp1_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span t-if="o.comp2_vol != 0"  t-field="o.comp2_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span t-if="o.comp3_vol != 0.0" t-field="o.comp3_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span t-if="o.comp4_vol != 0"  t-field="o.comp4_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span  t-if="o.comp5_vol != 0" t-field="o.comp5_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span  t-if="o.comp6_vol != 0" t-field="o.comp6_vol"/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span  t-if="o.comp7_vol != 0" t-field="o.comp7_vol"/>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td class="border border-dark">
-                                   <span>ON RECEIPT</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                                <td class="border border-dark">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="border border-dark">
-                                   <span>TRANSIT</span>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                               <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                               <td class="border border-dark">
-                                    <span/>
-                                </td>
-                                <td class="border border-dark">
-                                    <span/>
-                                </td>
-                               <td class="border border-dark">
-                                    <span/>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-
-                <br />
-               <div  class="row"  >
-                        <div class="col-auto" >
-                            <p><strong>Metric Ticket:</strong>  <span t-field="o.name"  /></p>
-                            <p><strong>Vehicle No:</strong><span t-field="o.truck_no"  /></p>
-                            <p><strong>Driver's Name:</strong><span t-field="o.driver_name"  /></p>
-                            <p><strong>Receiving Officer:</strong><span t-field="o.receiving_officer"  /></p>
-                            <p><strong>Depot Manager:</strong><span t-field="o.depot_manager"  /></p>
-                        </div>
-                        <div class="col-auto">
-                            <p><strong>Invoice No:</strong>  <span /></p>
-                            <p><strong>Signature &amp; Date:__________________________________</strong></p>
-                            <p><strong>Signature &amp; Date:__________________________________</strong></p>
-                            <p><strong>Signature &amp; Date:__________________________________</strong></p>
-                            <p><strong>Signature &amp; Date:__________________________________</strong></p>
-
-                        </div>
-               </div>
-                    <br />
-                    <p>
-                        <strong>I confirm the transit loss as shown above</strong>
-                    </p>
                     <div  class="row"  >
-                        <div class="col-auto">
-                            <p><strong>Receiving Officer's Signature &amp; Date:__________________</strong></p>
+                        <div class="col-auto" >
+                           <p style="border-bottom: 1px solid black;" > <strong>CUSTOMER: </strong><span t-field="partner.name"  /></p>
+                            <p style="border-bottom: 1px solid black;" ><strong>DESTINATION: </strong><span t-field="o.dpr_info_id"  /></p>
                         </div>
                         <div class="col-auto">
-                            <p><strong>Driver's Signature &amp; Date:________________________</strong></p>
+                                <strong>NO.: </strong><span t-field="o.waybill_no"/>
                         </div>
                     </div>
 
+                    <br />
+                    <div  class="row"  >
+                        <div class="col-auto" >
+                            <table  class="table table-sm table-bordered"  name="stock_move_table">
+                                <tbody>
+                                    <t t-set="lines" t-value="o.move_lines.filtered(lambda x: x.product_uom_qty)"/>
+                                    <tr t-foreach="lines" t-as="move" >
+                                        <th class="border border-dark p-3" >PRODUCT</th>
+                                        <td class="border border-dark p-3" >
+                                            <span t-field="move.product_id"/>
+                                            <span t-field="move.product_uom_qty"/>
+                                            <span t-field="move.product_uom"/>
+                                            <p t-if="move.description_picking != move.product_id.name">
+                                                <span t-field="move.description_picking"/>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                         <th class="border border-dark p-3" >DEPOT</th>
+                                         <td class="border border-dark p-3" ><span t-field="o.location_id"/></td>
+                                    </tr>
+                                    <tr>
+                                         <th class="border border-dark p-3" >VEHICLE NO.</th>
+                                         <td class="border border-dark p-3" ><span t-field="o.truck_no"/></td>
+                                    </tr>
+                                    <tr>
+                                         <th class="border border-dark p-3" >DRIVER'S NAME</th>
+                                         <td class="border border-dark p-3"><span t-field="o.driver_name"  /></td>
+                                    </tr>
+                                    <tr>
+                                         <th class="border border-dark p-3" >DRIVER'S PHONE NO.</th>
+                                         <td class="border border-dark p-3"><span t-field="o.truck_driver_phone"  /></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                             <div class="row">
+                                <div class="col-auto">
+                                    <div style="text-align:center" >
+                                        <strong><b>UNDERTAKING</b></strong>
+                                    </div>
+                                    <p>
+                                        We the undersigned, confirm that the above products have been received, sealed, free from water and in good condition.
+                                    </p>
+                                    <p>
+                                        We therefore take full responsibility for all liabilities resulting hereafter, from either contamination or shortage in quantity thus relieving TAURUS OIL &amp; GAS from any claims.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
 
+                        <div class="col-auto">
+                            <table  class="table table-sm table-bordered"  name="stock_move_table">
+                                 <thead>
+                                     <tr>
+                                         <th class="border border-dark p-3"  >
+                                             <strong>COMPARTMENT</strong>
+                                         </th>
+                                         <th class="border border-dark p-3" >
+                                             <strong>QUANTITY</strong>
+                                         </th>
+                                         <th class="border border-dark p-3" >
+                                             <strong>USAGE</strong>
+                                         </th>
+                                     </tr>
+                                 </thead>
+                                <tbody>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >1</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp1_vol != 0" t-field="o.comp1_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >2</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp2_vol != 0" t-field="o.comp2_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >3</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp3_vol != 0" t-field="o.comp3_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >4</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp4_vol != 0" t-field="o.comp4_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >5</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp5_vol != 0" t-field="o.comp5_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >6</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp6_vol != 0" t-field="o.comp6_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                    <tr>
+                                         <td class="border border-dark p-3 text-center" >7</td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.comp7_vol != 0" t-field="o.comp7_vol"/>
+                                        </td>
+                                         <td class="border border-dark" ></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="row">
+                                    <div class="col-auto">
+                                        <span> <strong>LOADING METER TICKET NO: </strong><span style="border-bottom: 1px solid black;" t-field="o.name"  /></span>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br /><br/><br /><br/>
+                <div  class="row"  >
+                        <div class="col-auto">
+                            <p style="border-top: 1px solid black; text-align:center" ><strong>DISPATCH OFFICER</strong></p>
+                        </div>
+                       <div class="col-auto" />
+                        <div class="col-auto"  >
+                            <p style="border-top: 1px solid black;text-align:center"  ><strong >CUSTOMER</strong></p>
+                        </div>
+                </div>
                 </div>
 
             </t>
