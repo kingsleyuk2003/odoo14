@@ -1,12 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        <template id="web_external_layout_standard_heyden" inherit_id="web.external_layout_standard">
+
+                <xpath expr="//div[@class='text-center']"  position="replace" >
+                    <div class="text-left" style="border-top: 1px solid black;">
+                        <div class="row">
+                               <div class="col-auto" >
+                                   <span t-field="company.street" /><br/>
+                                   Tel. <span t-field="company.phone" /><br/>
+                                   Email: <span t-field="company.email" /><br />
+                                   Website: <span t-field="company.website" />
+                              </div>
+                        </div>
+                    </div>
+                </xpath>
+        </template>
+
+
          <template id="report_invoice_document_heyden" inherit_id="account.report_invoice_document">
 
              <xpath expr="//address"  position="replace" >
-                <span t-if="o.company_id.id == 2" ><b>Name: </b>  <span t-field="o.partner_id.name"/></span>
-                <address  t-else=""  t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />
-            </xpath>
+<!--                <span t-if="o.company_id.id == 2" ><b>Name: </b>  <span t-field="o.partner_id.name"/></span>-->
+<!--                <address  t-else=""  t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}' />-->
+                <div class="row">
+                    <div class="col-auto" >
+                        <span t-field="o.partner_id" /><br/>
+                        <span t-field="o.partner_id.street" /><br/>
+                    </div>
+                </div>
+             </xpath>
 
             <xpath expr="//th[@name='th_quantity']/span"  position="replace" >
                 <span t-if="o.company_id.id == 2" >Trip</span>
@@ -15,7 +38,7 @@
 
               <xpath expr="//th[@name='th_taxes']/span"  position="replace" >
                 <span t-if="o.company_id.id == 2" >NCAA</span>
-                <span t-else="" >Taxes</span>
+                <span t-else="" >VAT</span>
             </xpath>
 
              <xpath expr="//p[@name='payment_communication']" position="replace" >
@@ -37,22 +60,26 @@
                  </p>
              </xpath>
 
+             <xpath expr="//th[@name='th_description']/span"  position="replace" >
+                <span>Product</span>
+            </xpath>
 
 
-<!--            <xpath expr="//div[@id='qrcode']"  position="after">-->
-<!--                <br />-->
-<!--                <br />-->
-<!--                <br />-->
-<!--                     <div class="col-xs-12" >-->
-<!--                         <div class="row">-->
-<!--                             <div class="col-xs-12" >-->
-<!--                                 <div>-->
-<!--                                    <strong> Authorised Signature: <img t-if="o.company_id.img_signature" t-att-src="image_data_uri(o.company_id.img_signature)" style="max-height:45pt;max-width:90%" /></strong>-->
-<!--                                 </div>-->
-<!--                             </div>-->
-<!--                         </div>-->
-<!--                     </div>-->
-<!--            </xpath>-->
+
+            <xpath expr="//div[@id='qrcode']"  position="after">
+                <br />
+                <br />
+                <br />
+
+                <div class="row">
+                       <div class="col-auto" >
+                                 <div>
+                                    <strong> Signature: ______________________</strong>
+                                 </div>
+                      </div>
+                </div>
+
+            </xpath>
 
          </template>
 

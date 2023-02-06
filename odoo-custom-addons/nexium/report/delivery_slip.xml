@@ -6,7 +6,7 @@
               <div name="other_signature">
                   <div  class="row mt32 mb32" name="div_sign_picking" >
                         <div class="col-xs-6" >
-                            <span>Reeived by ......................................................</span>
+                            <span>Received by ......................................................</span>
                         </div>
                         <div class="col-xs-6" >
                             <span>Delivered by ......................................................</span>
