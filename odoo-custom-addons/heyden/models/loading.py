@@ -37,6 +37,10 @@ class StockPicking(models.Model):
             self.depot_officer_id = self.env.user
         return self.env.ref('heyden.action_report_delivery_heyden').report_action(self)
 
+
+
+
+
     def button_validate(self):
         res = super(StockPicking, self).button_validate()
         picking_type_code = self.picking_type_code
@@ -47,6 +51,7 @@ class StockPicking(models.Model):
 
         if self.env.company.id != 1:
             inv = self.create_sales_invoice()
+
             sale_order = self.sale_id
             if sale_order :
                 inv.invoice_date = sale_order.date_order
@@ -188,6 +193,7 @@ class ResPartner(models.Model):
 
 
     manager = fields.Char(string='Manager')
+    is_commercial = fields.Boolean(string="Is Commercial Customer")
 
 
 
@@ -220,17 +226,34 @@ class SaleOrder(models.Model):
         return inv
 
     def action_confirm(self):
-         res = super(SaleOrder, self).action_confirm()
-         for picking in self.picking_ids :
-             picking.action_assign()
-             picking.button_validate()
-         return res
+
+
+        res = super(SaleOrder, self).action_confirm()
+
+        #for commercial customer
+        if self.env.company.id != 1 and self.partner_id.is_commercial:
+            for line in self.order_line:
+                mgt_prod = line.product_id.mgt_product_id
+                inv_line_mgt = {
+                    'product_id': mgt_prod.id,
+                    'product_uom_qty': line.product_uom_qty,
+                    'price_unit': 5,
+                    'order_id' : self.id
+                }
+                self.order_line.create(inv_line_mgt)
+
+        for picking in self.picking_ids :
+            picking.action_assign()
+            picking.button_validate()
+        return res
 
     def action_submit_to_manager(self):
         if self.is_other_sale :
             raise UserError('Kindly go through the Retail Sales Order Menu for this operation')
         res = super(SaleOrder, self).action_submit_to_manager()
         return res
+
+
 
     def _default_get_invoiceable_lines(self, final=False):
         """Return the invoiceable lines for order `self`."""
@@ -258,6 +281,7 @@ class SaleOrder(models.Model):
                 invoiceable_line_ids.append(line.id)
 
         return self.env['sale.order.line'].browse(invoiceable_line_ids + down_payment_line_ids)
+
 
     def _get_invoiceable_lines(self, final=False):
         if self.env.company.id != 1:
@@ -362,3 +386,9 @@ class AccountPayment(models.Model):
     _inherit = 'stock.picking'
 
     employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+
+class ProductProductLoading(models.Model):
+    _inherit = 'product.template'
+
+    mgt_product_id = fields.Many2one('product.product',string='Management Service')
+

@@ -163,7 +163,7 @@ class CrmLeadExtend(models.Model):
             'description': details + "\n" + msg  ,
         }
         ticket_obj = self.env['kin.ticket'].create(vals)
-        ticket_obj.crm_id = self.id
+        ticket_obj.sudo().crm_id = self.id
         self.is_survey_ticket_created = True
         self.survey_ticket_created_date = datetime.today()
         self.survey_ticket_id = ticket_obj.ticket_id

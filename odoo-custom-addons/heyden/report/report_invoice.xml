@@ -36,6 +36,8 @@
                 <span t-else="" >Quantity</span>
             </xpath>
 
+
+
               <xpath expr="//th[@name='th_taxes']/span"  position="replace" >
                 <span t-if="o.company_id.id == 2" >NCAA</span>
                 <span t-else="" >VAT</span>
@@ -75,6 +77,15 @@
                        <div class="col-auto" >
                                  <div>
                                     <strong> Signature: ______________________</strong>
+                                 </div>
+                      </div>
+                </div>
+                <br /><br />
+
+                <div t-if="o.partner_id.is_commercial" class="row" >
+                       <div class="col-auto" >
+                                 <div>
+                                    <strong>NOTE: </strong><span>Witholding tax to be calculated on management fee only</span>
                                  </div>
                       </div>
                 </div>
