@@ -115,26 +115,27 @@
                     <br />
 
                     <div  class="row"  >
-                        <div class="col-auto">
-                            <p>Issued by: <strong>__________________</strong></p>
-                        </div>
+<!--                        <div class="col-auto">-->
+<!--                            <p>Issued by: <strong>__________________</strong></p>-->
+<!--                        </div>-->
                         <div class="col-auto">
                             <p>Approved by: <strong><span t-field="o.atl_approved_user_id.name"   /></strong></p>
                         </div>
                     </div>
                     <br />
-                    <div  class="row"  >
-                        <div class="col-auto">
-                            <p>JETTY: <strong><span t-field="o.atl_jetty_id.name"   /></strong></p>
-                        </div>
-                        <div class="col-auto">
-                            <p>Released by: <strong>________________________</strong></p>
-                        </div>
-                    </div>
+<!--                    <div  class="row"  >-->
+<!--                        <div class="col-auto">-->
+<!--                            <p>JETTY: <strong><span t-field="o.atl_jetty_id.name"   /></strong></p>-->
+<!--                        </div>-->
+<!--                        <div class="col-auto">-->
+<!--                            <p>Released by: <strong>________________________</strong></p>-->
+<!--                        </div>-->
+<!--                    </div>-->
                     <br />
-                     <p>
+                   <!--  <p>
                         <strong>NOTE:</strong> Please note that failure to load your product within <strong style="border-bottom: 1px solid black;" >TWO (2) WEEKS AFTER PURCHASE</strong> will henceforth <strong style="border-bottom: 1px solid black;" >ATTRACT DEMURRAGE CHARGES</strong>
                     </p>
+                    -->
 
                 </div>
 

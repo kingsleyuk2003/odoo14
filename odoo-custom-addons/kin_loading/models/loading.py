@@ -1057,6 +1057,27 @@ class LoadingProgramme(models.Model):
 class AccountMoveExtend(models.Model):
     _inherit = 'account.move'
 
+    def credit_limit_check(self):
+        customer = self.partner_id
+        # Credit limit Check
+        if customer.is_enforce_credit_limit_so:
+            if not customer.is_credit_limit_approved:
+                raise UserError('%s credit limit is yet to be approved' % (customer.name))
+            allowed_credit = customer._get_allowed_credit()
+            if allowed_credit < 0 :
+                raise UserError('The customer (%s) has a balance credit of %s %s' % (customer.name,self.currency_id.symbol, allowed_credit))
+
+    def action_atl_approval(self):
+        if self.sale_order_id:
+            if self.sale_order_id.state == 'atl_approved' :
+                raise UserError('ATL has already been approved')
+            else:
+                self.credit_limit_check()
+                self.sale_order_id.action_atl_approval()
+                self.is_atl_approved = True
+        else:
+            raise UserError('Not required for this record. Please ignore')
+
     def action_view_picking(self):
         action = self.env["ir.actions.actions"]._for_xml_id("kin_loading.action_depot_dispatch")
         action['views'] = [
@@ -1109,17 +1130,23 @@ class AccountMoveExtend(models.Model):
 
 
     def write(self, vals):
+
         is_partner = vals.get('partner_id', False)
         if is_partner and self.is_advance_invoice:
             raise UserError(_('Sorry, you are not allowed to change the customer, for the advance payment invoice'))
 
         res = super(AccountMoveExtend, self).write(vals)
+
+        group_obj = self.env.ref('kin_loading.group_allow_advance_sales_invoice_edit')
+        user = self.env.user
+        for rec in self:
+            if rec.is_advance_invoice and user not in group_obj.users and self.sale_order_id:
+                raise UserError('Sorry, you cannot edit this advance invoice')
         return res
 
 
 
     def button_draft(self):
-
         for rec in self:
             order = rec.sale_order_id
             if rec.is_advance_invoice :
@@ -1130,13 +1157,13 @@ class AccountMoveExtend(models.Model):
             if order:
                 for picking in order.picking_ids:
                     if picking.state != 'cancel':
-                        raise UserError(_('Please first of all cancel all delivery orders for the sales order that is attached to this invoice, before this invoice can be reset'))
+                        raise UserError(_('Please first of all cancel all loading tickets for the sales order that is attached to this invoice, before this invoice can be reset'))
 
-                if order.state == 'atl_approved' and rec.is_advance_invoice :
-                    raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
                 order.is_has_advance_invoice = True
                 order.is_cancelled_invoice = True
                 order.is_advance_invoice_validated = False
+                order.state = 'atl_awaiting_approval'
+                self.is_atl_approved = False
             res = super(AccountMoveExtend,rec).button_draft()
         return res
 
@@ -1151,8 +1178,6 @@ class AccountMoveExtend(models.Model):
             for picking in order.picking_ids:
                 if picking.state != 'cancel':
                     raise UserError(_('Please first of all cancel all loading tickets for the sales order that is attached to this invoice, before this invoice can be cancelled'))
-            if order.state == 'atl_approved' and self.is_advance_invoice :
-                raise UserError(_('Sorry, this advance invoice cannot be reset to draft, since the linked sales order is no longer in draft '))
             order.is_has_advance_invoice = True
             order.is_cancelled_invoice = True
             order.is_advance_invoice_validated = False
@@ -1161,13 +1186,6 @@ class AccountMoveExtend(models.Model):
         return res
 
     
-    def write(self, vals):
-        is_partner = vals.get('partner_id', False)
-        if is_partner and self.is_advance_invoice:
-            raise UserError(_('Sorry, you are not allowed to change the customer, for the advance payment invoice'))
-
-        res = super(AccountMoveExtend, self).write(vals)
-        return res
 
 
 
@@ -1182,8 +1200,9 @@ class AccountMoveExtend(models.Model):
     is_from_inventory = fields.Boolean(string='Is From Inventory')
     is_cancelled_remaining_order = fields.Boolean(string='Is Cancelled Remaining Order')
     is_transfer_order = fields.Boolean(string='Is Transfer Order')
-
     is_truck_park_ticket_invoice = fields.Boolean(string='Truck Park Ticket Invoice')
+    is_atl_approved = fields.Boolean(string='Is ATL Approved')
+
 
 
 
@@ -1651,8 +1670,6 @@ class SaleOrderLoading(models.Model):
         return transfer_order_id
 
 
-
-
     def create_transfer_sale_order(self):
         recipient_id = self.env.context.get('recipient_id', False)
 
@@ -1888,7 +1905,6 @@ class SaleOrderLoading(models.Model):
             return res
 
 
-    
     def action_ticket_wizard(self):
 
         for inv in self.invoice_ids:
@@ -1896,10 +1912,18 @@ class SaleOrderLoading(models.Model):
                 raise UserError(_(
                     "Please contact the accountant to validate the invoice for %s, before creating loading tickets for the order with ID: %s" % (
                         self.partner_id.name, self.name)))
+            if inv.is_advance_invoice and not inv.is_atl_approved:
+                raise UserError(_(
+                    "This order (%s) linked to the Invoice (%s) for %s, has not been Authoritzed to be Loaded or Released" % (
+                   self.name, inv.name, inv.partner_id.name)))
+
+        if self.state != 'atl_approved':
+            raise UserError(_(
+                "This Order %s for %s does not have the Authority to be Loaded or Released" % (self.name,self.partner_id.name)))
 
         model_data_obj = self.env['ir.model.data']
-        action = self.env['ir.model.data'].ref('kin_loading.action_loading_ticket_wizard')
-        form_view_id = model_data_obj.ref('kin_loading.view_loading_ticket_wizard')
+        action = self.env['ir.model.data'].xmlid_to_object('kin_loading.action_loading_ticket_wizard')
+        form_view_id = model_data_obj.xmlid_to_res_id('kin_loading.view_loading_ticket_wizard')
 
         return {
             'name': action.name,
@@ -1910,9 +1934,6 @@ class SaleOrderLoading(models.Model):
             'context': {'the_order_id':self.id},
             'res_model': action.res_model,
         }
-
-
-
     
     def action_view_delivery(self):
         '''
@@ -2278,33 +2299,7 @@ class SaleOrderLoading(models.Model):
         elif is_cancel_unloaded_unticketed_qty == 'select_one' :
             raise UserError(_('Please Select one of the Cancellation Type Below'))
         inv = self.create_customer_refund_invoice()
-
         return
-
-
-    
-    def action_ticket_wizard(self):
-
-        for inv in self.invoice_ids:
-            if inv.state == 'draft':
-                raise UserError(_(
-                    "Please contact the accountant to validate the invoice for %s, before creating loading tickets for the order with ID: %s" % (
-                        self.partner_id.name, self.name)))
-
-        model_data_obj = self.env['ir.model.data']
-        action = self.env['ir.model.data'].xmlid_to_object('kin_loading.action_loading_ticket_wizard')
-        form_view_id = model_data_obj.xmlid_to_res_id('kin_loading.view_loading_ticket_wizard')
-
-        return {
-            'name': action.name,
-            'help': action.help,
-            'type': action.type,
-            'views': [[form_view_id, 'form']],
-            'target': action.target,
-            'context': {'the_order_id':self.id},
-            'res_model': action.res_model,
-        }
-
 
     def _default_get_invoiceable_lines(self, final=False):
         """Return the invoiceable lines for order `self`."""
@@ -2512,6 +2507,8 @@ class SaleOrderLoading(models.Model):
                 raise UserError(_(
                     "Kindly contact the accountant to post the invoice for %s, before this order (%s) can be authorized to load" % (
                         self.partner_id.name, self.name)))
+            inv.credit_limit_check()
+            inv.is_atl_approved = True
 
         self.state = 'atl_approved'
         self.atl_id = self.env['ir.sequence'].next_by_code('atl_code')
@@ -2523,8 +2520,8 @@ class SaleOrderLoading(models.Model):
         user_name = self.env.user.name
         #send email to user/dispatch officer, notifying them to create loading tickets
         self.send_email(grp_name='kin_loading.group_receive_atl_approved',
-                        subject='The ATL document (ATL_ID_HERE_PLEASE) has been approved by %s, you may now create loading tickets' % (user_name),
-                        msg='The ATL document (ATL_ID_HERE_PLEASE) for the sales order (%s) has been approved by %s, you may now create loading tickets' % (self.name,user_name))
+                        subject='The Order (%s) has been authorized to be loaded  by %s' % (self.name,user_name),
+                        msg='The Order (%s) for %s, has been authorized to be loaded by %s, Depot officers may now proceed to create loading tickets and programme the tickets for dispatch' % (self.name,self.partner_id.name,user_name))
 
 
     def action_confirm_main_sale(self):
@@ -2558,14 +2555,6 @@ class SaleOrderLoading(models.Model):
                 raise UserError(
                     'Please Ensure that the Quote is confirmed from the customer and that the PO reference is set. e.g. you may put the po number, email, contact name, number of the customer that confirmed the Quote')
 
-        #Credit limit Check
-        if customer.is_enforce_credit_limit_so :
-            if not customer.is_credit_limit_approved:
-                raise UserError('%s credit limit is yet to be approved' % (customer.name))
-            if self.amount_total > customer.allowed_credit :
-                raise UserError('Total Amount %s%s has exceeded the remaining credit %s%s for %s' % (
-                self.currency_id.symbol, self.amount_total, self.currency_id.symbol, customer.allowed_credit,
-                customer.name))
 
         #Low stock check
         msg, stock_locations = self.get_low_stock_msg()

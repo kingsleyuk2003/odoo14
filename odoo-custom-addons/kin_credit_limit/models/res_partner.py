@@ -117,11 +117,19 @@ class ResPartner(models.Model):
                 partner.allowed_credit = 0
             else :
                 partner.allowed_credit = allowed_credit
+        return allowed_credit
+
+
+    @api.model
+    def create(self, vals):
+        is_enforce_credit_limit_so = self.env['ir.config_parameter'].sudo().get_param('kin_credit_limit.is_activate_credit_limit', default=False)
+        vals.update({'is_enforce_credit_limit_so':is_enforce_credit_limit_so})
+        return super(ResPartner, self).create(vals)
 
 
     name = fields.Char(tracking=True)
-    credit_limit = fields.Monetary(string='Credit Limit')
-    is_enforce_credit_limit_so = fields.Boolean(string='Activate Credit Limit')
+    credit_limit = fields.Monetary(string='Credit Limit',tracking=True)
+    is_enforce_credit_limit_so = fields.Boolean(string='Activate Credit Limit',tracking=True)
     due_amount_receivable = fields.Monetary(string='Due',compute=_get_due_amount_receivable,help='Receivables that are Due to be paid')
     not_due_amount_receivable = fields.Monetary(string='Not Due',compute=_get_not_due_amount_receivable,help='Receivables that are Not Due to be Paid')
     allowed_credit = fields.Float(string='Remaining Credit Allowed',compute=_get_allowed_credit,help='Credit Allowance for the partner')

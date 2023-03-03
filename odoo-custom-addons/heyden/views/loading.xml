@@ -191,5 +191,20 @@
 
 
 
+        <record model="ir.ui.view" id="view_stock_quant_tree_heyden">
+        <field name="name">stock.quant.tree</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+         <field name="inherit_id" ref="stock.view_stock_quant_tree" />
+            <field name="arch" type="xml">
+                 <field name="company_id"  position="before" >
+                    <field name="average_cost"  />
+                </field>
+            </field>
+        </record>
+
+
+
+
     </data>
 </odoo>

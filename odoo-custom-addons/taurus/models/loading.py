@@ -191,22 +191,9 @@ class SaleOrder(models.Model):
         }
 
 
-    def create_advance_invoice_depot(self):
-        is_post_invoice_before_delivery = self.env['ir.config_parameter'].sudo().get_param(
-            'is_post_invoice_before_delivery', default=False)
-
-        # create advance invoice for depot
-        inv = self._create_advance_invoice_depot(final=True)
-        inv.sale_order_id = self
-        inv.is_advance_invoice = True
-        self.is_has_advance_invoice = True
-        self.advance_invoice_id = inv
-        self.state = 'atl_awaiting_approval'
-        if is_post_invoice_before_delivery:
-            inv.request_validation()
-            #inv.validate_tier() # no effect here. so we depend on the scheduler autovalidate
-        return inv
-
+    def action_submit_quote(self):
+        super(SaleOrder,self).action_submit_quote()
+        return self.action_submit_to_manager()
     def action_confirm(self):
          res = super(SaleOrder, self).action_confirm()
          for picking in self.picking_ids :

@@ -927,6 +927,8 @@ class Ticket(models.Model):
                 self.crm_id.is_survey_ticket_close = True
                 mrt = ''
                 for mr in self.material_request_ids :
+                    if not mr.product_id:
+                        raise UserError('Please check the material tab below.. There is an empty line that needs a material to be set.')
                     mrt += str(mr.qty) + " " + mr.product_id.uom_id.name + " of " + mr.product_id.name  + "\n"
                 self.crm_id.material_requested = mrt
             # send email

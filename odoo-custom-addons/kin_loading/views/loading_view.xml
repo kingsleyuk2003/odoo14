@@ -254,10 +254,49 @@
                          <attribute name="string" >Loaded Qty.</attribute>
                  </xpath>
 
+                 <xpath expr="//field[@name='order_line']/form/group/group/field[@name='price_unit']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/tree/field[@name='price_unit']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/kanban/field[@name='price_unit']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/form/group/group/field[@name='price_subtotal']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/tree/field[@name='price_subtotal']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/kanban/field[@name='price_subtotal']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='order_line']/form/group/group/field[@name='tax_id']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/tree/field[@name='tax_id']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/kanban/field[@name='tax_id']" position="attributes" >
+                      <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </xpath>
+
+                <field name="amount_untaxed" position="attributes" >
+                    <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+                <field name="amount_tax" position="attributes" >
+                    <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+                <field name="amount_total" position="attributes" >
+                    <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+
                 <!--<field name="client_order_ref" position="after" >-->
                     <!--<field name="authorization_code" />-->
                 <!--</field>-->
-
 
                  <group name="sale_info" position="after">
                       <group name="order_status" string="Order Status and Source">
@@ -282,8 +321,9 @@
                      </group>
                  </group>
 
+
                 <page name="order_lines" position="after" >
-                    <page name="atl" string="Authority to Load"  attrs="{'invisible': [('state', 'not in', ['atl_awaiting_approval','atl_approved','sale'])], 'readonly': [('state', 'in', ['atl_approved','cancel'])]}" >
+                    <page name="atl" string="Authority to Load"  attrs="{'invisible': [('state', 'not in', ['atl_awaiting_approval','sale'])], 'readonly': [('state', 'in', ['atl_approved','cancel'])]}" >
                         <group col="4" >
                             <field name="atl_id" readonly="1" />
                             <field name="atl_date" readonly="1" />
@@ -988,11 +1028,14 @@
             <field name="model">account.move</field>
             <field name="inherit_id" ref="account.view_move_form" />
             <field name="arch" type="xml">
+                <button name="button_draft" position="after" >
+                    <button name="action_atl_approval" attrs="{'invisible': [('is_atl_approved', '=', True)]}"  string="Approve ATL" class="btn-primary" type="object" groups="kin_loading.group_show_approve_atl_invoice"   />
+                </button>
                  <group id="other_tab_group" position="inside">
                     <group string="Depot Info." id="sale_info" >
                          <field name="sales_order_credit_transfer_id" readonly="1" string="Sales Order Credit Transfer ID" />
                            <field name="is_has_advance_invoice" readonly="1" />
-                   <field name="is_advance_invoice" readonly="1" />
+                       <field name="is_advance_invoice" readonly="1" />
                        <field name="sales_order_cancel_id" readonly="1" />
                        <field name="sales_order_transfer_id" readonly="1" />
                        <field name="is_transfer_invoice" readonly="1" />
@@ -1001,6 +1044,7 @@
                        <field name="is_transfer_order" readonly="1" />
                        <field name="is_throughput_invoice" readonly="1" />
                        <field name="throughput_receipt_id" readonly="1" />
+                        <field name="is_atl_approved" readonly="1" />
                     </group>
                 </group>
             </field>

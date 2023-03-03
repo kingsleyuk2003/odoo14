@@ -56,9 +56,9 @@
                     <span t-field="company.report_footer"/>
                 </div>
 
-<!--                <div t-if="report_type == 'pdf'" class="text-muted">-->
-<!--                    Page: <span class="page"/> / <span class="topage"/>-->
-<!--                </div>-->
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> / <span class="topage"/>
+                </div>
                  <br />
             </div>
         </div>
@@ -139,7 +139,18 @@
 											</tbody>
 										</table>
 									</div>
+							</div>
+
+							<br />
+							<br />
+							<div  class="row"  >
+								<div class="col-auto">
+									<p><strong>Prepared by: </strong><span t-field="o.depot_officer_id.name"   /></p>
 								</div>
+								<div class="col-auto">
+									<p><strong>Approved by: </strong><span t-field="o.depot_manager_id.name"   /></p>
+								</div>
+							</div>
 
 						</div>
 

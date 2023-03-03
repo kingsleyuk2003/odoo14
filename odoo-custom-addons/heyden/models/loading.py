@@ -16,6 +16,18 @@ from datetime import *
 from odoo import SUPERUSER_ID
 
 
+class StockQuant(models.Model):
+    _inherit = 'stock.quant'
+
+    @api.depends('quantity')
+    def _compute_average_cost(self):
+        for quant in self:
+            quant.average_cost = quant.value / quant.quantity
+
+    average_cost = fields.Monetary('Average Cost',compute='_compute_average_cost')
+
+
+
 class StockPicking(models.Model):
     _inherit = "stock.picking"
     _order = 'name desc'

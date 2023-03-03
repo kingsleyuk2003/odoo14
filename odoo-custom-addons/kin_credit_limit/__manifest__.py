@@ -14,7 +14,7 @@ Credit Limit Workflow
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['sale','web_notify'],
+    'depends': ['sale','kin_sales','web_notify'],
     'data': [
         'wizard/credit_limit_by_pass.xml',
         'wizard/credit_limit_disapproval.xml',
@@ -22,6 +22,7 @@ Credit Limit Workflow
         'security/ir.model.access.csv',
         'views/partner_view.xml',
         'views/sale_view.xml',
+        'views/res_config_settings_views.xml',
 
     ],
     'test':[],
