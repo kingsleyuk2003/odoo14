@@ -927,6 +927,19 @@
                  <field name="qty_delivered" position="attributes" >
                      <attribute name="string" >Dispatched Qty.</attribute>
                  </field>
+
+                <field name="qty_invoiced" position="attributes" >
+                     <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+
+                <field name="qty_to_invoice" position="attributes" >
+                     <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+
+                <field name="price_subtotal" position="attributes" >
+                     <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+
             </field>
          </record>
 
