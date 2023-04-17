@@ -61,6 +61,8 @@ class StockPicking(models.Model):
         res = super(StockPicking, self).write(vals)
         return res
 
+
+
     def _check_qty_demand_done(self, quantity_demanded, quantity_done):
         allow_over_transfer = self.env['ir.config_parameter'].sudo().get_param('allow_over_transfer', default=False)
         if quantity_done > quantity_demanded and not allow_over_transfer:
@@ -68,6 +70,11 @@ class StockPicking(models.Model):
                 'Quantity done (%s) is higher than Quantity Demanded (%s)' % (quantity_done, quantity_demanded))
 
     def button_validate(self):
+        # this fixes the mov lines not getting update when te source/destination is changed on the stock pikcing and validated without clicking save button
+        for move_line in self.move_line_ids:
+            move_line.location_id = self.location_id
+            move_line.location_dest_id = self.location_dest_id
+
         #check if the quantity done is more than the qty demanded
         for move in self.move_ids_without_package : # dont use move_line_ids. it fails for internal transfer
             quantity_done = round(move.quantity_done,2)

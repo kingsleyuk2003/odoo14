@@ -18,6 +18,7 @@ wifiber Modifications
     'data': [
         'data/data.xml',
         'report/report_invoice.xml',
+        'report/custom_sales_order.xml',
         'security/security.xml',
         'security/ir.model.access.csv',
         'views/report.xml',
