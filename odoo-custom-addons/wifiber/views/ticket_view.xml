@@ -122,6 +122,7 @@
                 <field name="ticket_company_id" position="after" >
                     <field name="is_pause_escalation"  />
                     <field name="is_pause_comment" attrs="{'required': [('is_pause_escalation', '=', True)],'invisible': [('is_pause_escalation', '=', False)]}" />
+                    <field name="no_coverage" />
                 </field>
 
 
@@ -311,7 +312,7 @@
                     <page string="Material" attrs="{'invisible': [('category_code', 'not in', ('installation','survey','support'))]}" >
 
                         <group string="Material Request" >
-                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey','installation','support'))]}"  >
+                             <field nolabel="1" name="material_request_ids"   attrs="{'readonly': [('category_code', 'not in', ('survey','support'))]}"  >
                                 <tree editable="bottom" >
                                     <field name="product_id" domain="[('is_material', '=', True)]"    options="{'no_open': True, 'no_create': True}"   />
                                     <field name="qty" sum="Total" />

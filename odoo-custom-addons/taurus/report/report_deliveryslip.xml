@@ -182,7 +182,7 @@
                                              <strong>QUANTITY</strong>
                                          </th>
                                          <th class="border border-dark p-3" >
-                                             <strong>USAGE</strong>
+                                             <strong>ULLAGE</strong>
                                          </th>
                                      </tr>
                                  </thead>
@@ -192,54 +192,73 @@
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp1_vol != 0" t-field="o.comp1_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                        <td class="border border-dark p-3">
+                                           <span t-if="o.ullage1 != 0" t-field="o.ullage1"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >2</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp2_vol != 0" t-field="o.comp2_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage2 != 0" t-field="o.ullage2"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >3</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp3_vol != 0" t-field="o.comp3_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage3 != 0" t-field="o.ullage3"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >4</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp4_vol != 0" t-field="o.comp4_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage4 != 0" t-field="o.ullage4"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >5</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp5_vol != 0" t-field="o.comp5_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage5 != 0" t-field="o.ullage5"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >6</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp6_vol != 0" t-field="o.comp6_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage6 != 0" t-field="o.ullage6"/>
+                                        </td>
                                     </tr>
                                     <tr>
                                          <td class="border border-dark p-3 text-center" >7</td>
                                         <td class="border border-dark p-3">
                                            <span t-if="o.comp7_vol != 0" t-field="o.comp7_vol"/>
                                         </td>
-                                         <td class="border border-dark" ></td>
+                                         <td class="border border-dark p-3">
+                                           <span t-if="o.ullage7 != 0" t-field="o.ullage7"/>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
 
                             <div class="row">
+                                    <div class="col-auto">
+                                        <span t-if="o.partner_id.is_nnpc_ppmc" > <strong>PPMC NO: </strong><span t-field="o.nnpc_ppmc_no"/></span>
+                                         <span t-if="o.partner_id.is_nnpc_retail" > <strong>RT NO: </strong><span  t-field="o.nnpc_retail_no"/></span>
+                                    </div>
+
                                     <div class="col-auto">
                                         <span> <strong>LOADING METER TICKET NO: </strong><span style="border-bottom: 1px solid black;" t-field="o.name"  /></span>
                                     </div>

@@ -83,6 +83,8 @@ class StockPicking(models.Model):
         moves.action_post()
         return moves
 
+    nnpc_ppmc_no = fields.Char(string="NNPC PPMC NO.")
+    nnpc_retail_no = fields.Char(string="NNPC RETAIL NO.")
    # aftershore_receipt_documents = fields.Binary(string='After Shore Receipt Documents')
 
 
@@ -178,6 +180,8 @@ class ResPartner(models.Model):
 
 
     manager = fields.Char(string='Manager')
+    is_nnpc_ppmc = fields.Boolean(string='Is NNPC PPMC')
+    is_nnpc_retail = fields.Boolean(string='Is NNPC Retail')
 
 
 

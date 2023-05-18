@@ -111,18 +111,6 @@ class StockMoveLoading(models.Model):
             moves._assign_picking_post_process(new=new_picking)
         return True
 
-    def write(self,vals):
-        res = super(StockMoveLoading, self).write(vals)
-        picking_id = vals.get('picking_id',False)
-        if picking_id:
-            # see: ../addons/stock/stock.py:821
-            # Change locations of moves if those of the picking change
-            picking_obj = self.env['stock.picking'].browse(picking_id)
-            location_id = picking_obj.location_id
-            location_dest_id = picking_obj.location_dest_id
-            picking_obj.write({'location_id':location_id.id,'location_dest_id': location_dest_id.id})
-        return res
-
     @api.model
     def create(self, vals):
         location_id = self.env.context.get('atl_depot_id', False)
@@ -131,7 +119,6 @@ class StockMoveLoading(models.Model):
             vals['location_id'] = location_id
         # if location_dest_id :
         #     vals['location_dest_id'] = location_dest_id
-
         res = super(StockMoveLoading,self).create(vals)
         return res
 
@@ -520,7 +507,7 @@ class StockPickingExtend(models.Model):
             if pickings_without_quantities:
                 raise UserError(self._get_without_quantities_error_message())
             if pickings_without_lots:
-                raise UserError(_('You need to set a Vessel name for products %s.') % ', '.join(products_without_lots.mapped('display_name')))
+                raise UserError(_('You need to set a Vessel name for product - %s.') % ', '.join(products_without_lots.mapped('display_name')))
         else:
             message = ""
             if pickings_without_moves:
@@ -528,7 +515,7 @@ class StockPickingExtend(models.Model):
             if pickings_without_quantities:
                 message += _('\n\nTransfers %s: You cannot validate these transfers if no quantities are reserved nor done. To force these transfers, switch in edit more and encode the done quantities.') % ', '.join(pickings_without_quantities.mapped('name'))
             if pickings_without_lots:
-                message += _('\n\nTransfers %s: You need to set a Vessel name for products %s.') % (', '.join(pickings_without_lots.mapped('name')), ', '.join(products_without_lots.mapped('display_name')))
+                message += _('\n\nTransfers %s: You need to set a Vessel name for product - %s.') % (', '.join(pickings_without_lots.mapped('name')), ', '.join(products_without_lots.mapped('display_name')))
             if message:
                 raise UserError(message.lstrip())
 
@@ -817,6 +804,14 @@ class StockPickingExtend(models.Model):
     comp6_vol = fields.Float('6')
     comp7_vol = fields.Float('7')
     comp8_vol = fields.Float('8')
+    ullage1 = fields.Float('1')
+    ullage2 = fields.Float('2')
+    ullage3 = fields.Float('3')
+    ullage4 = fields.Float('4')
+    ullage5 = fields.Float('5')
+    ullage6 = fields.Float('6')
+    ullage7 = fields.Float('7')
+    ullage8 = fields.Float('8')
     ticket_id = fields.Char(related='name',string="Ticket")
     # supervisor_id = fields.Many2one('res.users', string="Supervisor's  Name")
     # supervisor_date = fields.Date(string="Supervisor's Date")
@@ -962,16 +957,35 @@ class LoadingProgramme(models.Model):
         for picking in self.ticket_ids :
             picking.loading_programme_id = self
 
-        # Notify User/depot manager
-        self.send_email(grp_name='kin_loading.group_depot_manager',
-                        subject='A New %s Loading Programme (%s) has been Confirmed by %s for %s' % (self.product_id.name,self.name, self.env.user.name,self.programme_date),
-                        msg='A New %s Loading Programme (%s) has been created and confirmed by %s for %s. Kindly approve the programme' % (self.product_id.name,self.name, self.env.user.name,self.programme_date))
+
+        #Notify programme approver
+        self.send_email(grp_name='kin_loading.group_programme_approver',
+                        subject='A New %s Loading Programme (%s) has been Confirmed by %s for %s' % (
+                        self.product_id.name, self.name, self.env.user.name, self.programme_date),
+                        msg='A New %s Loading Programme (%s) has been created and confirmed by %s for %s. Kindly approve the programme' % (
+                        self.product_id.name, self.name, self.env.user.name, self.programme_date))
+
 
         depot_officer_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         return self.write({'state': 'confirm','depot_officer_id':self.env.user.id,'depot_officer_date':depot_officer_date})
 
 
+    def action_line_mgr_approve(self):
+        self.check_blocked_tickets()
 
+        # Notify User/depot manager
+        self.send_email(grp_name='kin_loading.group_depot_manager',
+                            subject='A New %s Loading Programme (%s) has been Confirmed by %s for %s' % (
+                            self.product_id.name, self.name, self.env.user.name, self.programme_date),
+                            msg='A New %s Loading Programme (%s) has been created and confirmed by %s for %s. Kindly approve the programme' % (
+                            self.product_id.name, self.name, self.env.user.name, self.programme_date))
+
+
+        line_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        res = self.write({'state': 'line_approve', 'line_manager_id': self.env.user.id,
+                           'line_manager_date': depot_manager_date})
+
+        return res
 
 
     def action_approve(self):
@@ -983,10 +997,10 @@ class LoadingProgramme(models.Model):
 
         # Notify Dispatch officers/Inventory users
         self.send_email(grp_name='kin_loading.group_dispatch_officer',
-                        subject='A New %s Loading Programme (%s) has been finally approved by %s for %s' % (
+                        subject='The %s Loading Programme (%s) has been finally approved by %s for %s' % (
                         self.product_id.name, self.name, self.env.user.name, self.programme_date),
-                        msg='A New %s Loading Programme (%s) has been finally approved by %s for %s. Kindly proceed with the loading and dispatch of the goods for all the tickets in the programme' % (
-                        self.product_id.name, self.name, self.env.user.name, self.programme_date))
+                        msg='The %s Loading Programme (%s) has been finally approved by %s for %s. You may now print the loading programme (%s) and the tickets under the programme, and submit to the safety department for their truck checks' % (
+                        self.product_id.name, self.name, self.env.user.name, self.programme_date, self.name))
 
         depot_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         res = self.write({'state': 'approve', 'depot_manager_id': self.env.user.id,
@@ -1004,8 +1018,8 @@ class LoadingProgramme(models.Model):
                                   self.name, user.name),
                         msg = 'The Loading Programme (%s) has been DisApproved by %s. Reason for Disapproval: %s ' % (
                                   self.name, user.name, msg))
-        return self.write({'state': 'draft', 'depot_manager_disapprove_id': user.id,
-                           'depot_manager_disapprove_date': datetime.today(), 'depot_manager_reason': msg})
+        return self.write({'state': 'draft', 'manager_disapprove_id': user.id,
+                           'manager_disapprove_date': datetime.today(), 'manager_reason': msg})
 
     @api.model
     def create(self, vals):
@@ -1041,15 +1055,17 @@ class LoadingProgramme(models.Model):
     product_id = fields.Many2one('product.product', string='Product')
     depot_officer_id = fields.Many2one('res.users',string='Depot Officer')
     depot_officer_date = fields.Datetime(string='Depot Officer Confirmation Date')
+    line_manager_id = fields.Many2one('res.users', string='Line Manager')
+    line_manager_date = fields.Datetime(string='Line Manager Approval Date')
     depot_manager_id = fields.Many2one('res.users', string='Depot Manager')
     depot_manager_date = fields.Datetime(string='Depot Manager Approval Date')
-    depot_manager_disapprove_id = fields.Many2one('res.users', string='Depot Manager')
-    depot_manager_disapprove_date = fields.Datetime(string='Depot Manager DisApproval Date')
-    depot_manager_reason = fields.Text('Depot Manager Reason')
+    manager_disapprove_id = fields.Many2one('res.users', string='Manager Disapprover')
+    manager_disapprove_date = fields.Datetime(string='Manager DisApproval Date')
+    manager_reason = fields.Text('Manager Reason')
     ticket_ids = fields.Many2many('stock.picking', 'lp_ticket',  'loading_prog_id', 'picking_id', string='Loading Program Lines', ondelete='restrict')
     ticket_count = fields.Integer(compute="_compute_ticket_count", string='# of Tickets', copy=False, default=0)
     state = fields.Selection(
-        [('draft', 'Draft'),('confirm', 'Confirmed'), ('approve', 'Approved'), ('cancel','Cancel')],
+        [('draft', 'Draft'),('confirm', 'Confirmed'), ('line_approve', 'Line Mgr. Approved'),('approve', 'Depot Mgr Approved'), ('cancel','Cancel')],
         default='draft')
 
 

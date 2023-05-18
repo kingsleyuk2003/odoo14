@@ -16,6 +16,12 @@
         <field name="category_id" ref="module_depot"/>
     </record>
 
+    <record id="group_programme_approver" model="res.groups">
+        <field name="name">Loading Programme Approver</field>
+        <field name="category_id" ref="module_depot"/>
+    </record>
+
+
    <record id="group_depot_officer" model="res.groups">
         <field name="name">Depot/CSC Officer</field>
         <field name="category_id" ref="module_depot"/>

@@ -54,7 +54,8 @@
                 <form string="Loading Programme" duplicate="0" >
                     <header>
                         <button name="action_confirm" type="object" states="draft" string="Confirm" class="oe_highlight" groups="kin_loading.group_depot_officer" />
-                        <button name="action_approve" type="object" states="confirm" string="Approve" class="oe_highlight" groups="kin_loading.group_depot_manager" />
+                         <button name="action_line_mgr_approve" type="object" states="confirm" string="Line Manager Approve" class="oe_highlight" groups="kin_loading.group_programme_approver" />
+                        <button name="action_approve" type="object" states="line_approve" string="Depot Manager Approve" class="oe_highlight" groups="kin_loading.group_depot_manager" />
                         <button name="%(action_disapproval_reason)d" type="action" states="confirm" string="Dis-Approve" groups="kin_loading.group_depot_manager" />
                         <button name="action_cancel" states="confirm,approve" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
                         <button name="action_draft" states="confirm,approve,cancel" type="object" string="Reset to Draft" confirm="Are you sure you want to Reset the Loading Programme?" />
@@ -119,9 +120,9 @@
                              <page string="Dis-Approvals/Dates/Reasons"  >
                                  <group col="4"  >
                                      <group col="2" string="Depot Manager" >
-                                         <field name="depot_manager_disapprove_id" readonly="1" />
-                                         <field name="depot_manager_disapprove_date" readonly="1" />
-                                         <field name="depot_manager_reason" readonly="1" />
+                                         <field name="manager_disapprove_id" readonly="1" />
+                                         <field name="manager_disapprove_date" readonly="1" />
+                                         <field name="manager_reason" readonly="1" />
                                      </group>
                                  </group>
                              </page>
@@ -205,6 +206,13 @@
                      </button>
                  </div>
 
+                <button name="action_view_invoice" position="attributes" >
+                     <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </button>
+
+                <button name="preview_sale_order" position="attributes" >
+                    <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </button>
 
                 <button name="action_cancel"  type="object"  position="attributes">
                      <attribute name="states">draft,sent,sale,so_to_approve,sale,no_sale,atl_awaiting_approval</attribute>
@@ -1242,7 +1250,7 @@
                     </page>
                     <page string="Waybill Details" attrs="{'invisible': [('is_loading_ticket', '=', False),('is_exdepot_ticket', '=', False),('is_throughput_ticket', '=', False),('is_internal_use_ticket', '=', False)]}">
                          <group >
-                            <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
+                            <group  col="2" string="COMPARTMENT" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
                                 <field name="comp3_vol" />
@@ -1252,6 +1260,16 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
+                             <group col="2" string="ULLAGE" >
+                                 <field name="ullage1" />
+                                 <field name="ullage2" />
+                                 <field name="ullage3" />
+                                 <field name="ullage4" />
+                                 <field name="ullage5" />
+                                 <field name="ullage6" />
+                                 <field name="ullage7" />
+                                 <field name="ullage8" />
+                             </group>
                         </group>
                         <group>
                             <field name="remark" />
@@ -1361,7 +1379,7 @@
 
         <menuitem id="menu_depot_form" name="In Depot Loading Docs." parent="menu_root_in_depot_operation" sequence="2" action="action_depot_dispatch"/>
 
-
+f
 <!-- Throughput Operations -->
          <record id="view_picking_throughput_form" model="ir.ui.view">
             <field name="name">stock.picking.form.throughput</field>
@@ -1455,7 +1473,7 @@
                             <!--<field name="ref_no" />-->
                         </group>
                         <group>
-                            <group  col="2" string="COMPARTMENT (ON DISPATCH)" >
+                            <group  col="2" string="COMPARTMENT" >
                                 <field name="comp1_vol" />
                                 <field name="comp2_vol" />
                                 <field name="comp3_vol" />
@@ -1465,6 +1483,16 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
+                            <group col="2" string="ULLAGE" >
+                                 <field name="ullage1" />
+                                 <field name="ullage2" />
+                                 <field name="ullage3" />
+                                 <field name="ullage4" />
+                                 <field name="ullage5" />
+                                 <field name="ullage6" />
+                                 <field name="ullage7" />
+                                 <field name="ullage8" />
+                             </group>
 
                         </group>
                         <group>
@@ -1610,7 +1638,7 @@
                              <field name="source_location_id"  readonly="1" required="1"  />
                             <field name="user_id" readonly="1"  />
                             <field name="destination_location_id"   required="1" invisible="1" />
-                            <field name="destination_oper_loss_location_id"    required="1" />
+                            <field name="destination_oper_loss_location_id"    required="1" readonly="1" />
                             <field name="note"  attrs="{'readonly': [('state', '!=', 'draft')]}" />
                             <field name="create_date" readonly="1" />
                             <field name="user_confirmed_date" readonly="1" />
@@ -1774,6 +1802,16 @@
                                 <field name="comp7_vol" />
                                 <field name="comp8_vol" />
                             </group>
+                            <group col="2" string="ULLAGE" >
+                                 <field name="ullage1" />
+                                 <field name="ullage2" />
+                                 <field name="ullage3" />
+                                 <field name="ullage4" />
+                                 <field name="ullage5" />
+                                 <field name="ullage6" />
+                                 <field name="ullage7" />
+                                 <field name="ullage8" />
+                             </group>
 
                         </group>
                         <group>
@@ -2249,12 +2287,12 @@
 
 
 
-         <!-- DRP INFO -->
+         <!-- DPR INFO -->
         <record id="view_dpr_info_form" model="ir.ui.view" >
             <field name="name" >dpr.info.form</field>
             <field name="model">dpr.info</field>
             <field name="arch" type="xml" >
-                <form string="DRP Information" >
+                <form string="DPR Information" >
                     <sheet>
                         <group col="4">
                             <field name="customer_id" required="1" />
@@ -2271,7 +2309,7 @@
             <field name="name" >dpr.info.tree</field>
             <field name="model">dpr.info</field>
             <field name="arch" type="xml" >
-                <tree string="DRP Information " >
+                <tree string="DPR Information " >
                     <field name="customer_id" />
                     <field name="address" />
                     <field name="dpr_no" />
@@ -2294,7 +2332,7 @@
         </record>
 
         <record id="action_dpr_info_form" model="ir.actions.act_window" >
-            <field name="name" >DRP Information</field>
+            <field name="name" >DPR Information</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">dpr.info</field>
             <field name="view_mode">tree,form</field>
@@ -2302,11 +2340,11 @@
              <field name="search_view_id" ref="view_dpr_info_filter"/>
             <field name="help" type="html">
               <p class="oe_view_nocontent_create">
-                Click to create a DRP Information for a customer
+                Click to create a DPR Information for a customer
               </p>
             </field>
         </record>
-        <menuitem id="menu_dpr_info_form" name="DRP Information" parent="menu_depot_configuration" sequence="1" action="action_dpr_info_form"/>
+        <menuitem id="menu_dpr_info_form" name="DPR Information" parent="menu_depot_configuration" sequence="1" action="action_dpr_info_form"/>
 
 
         <!-- Res Partner -->
@@ -2320,7 +2358,7 @@
                      <field  name="throughput_rate" />
                  </field>
                 <notebook position="inside" >
-                    <page string="DRP Informations">
+                    <page string="DPR Informations">
                              <field name="dpr_info_ids"  >
                                  <tree editable="bottom" >
                                     <field name="address" required="1" />

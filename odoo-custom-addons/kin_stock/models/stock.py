@@ -10,6 +10,17 @@ from odoo.exceptions import UserError
 class StockMove(models.Model):
     _inherit = "stock.move"
 
+    def write(self,vals):
+        res = super(StockMove, self).write(vals)
+        picking_id = vals.get('picking_id',False)
+        if picking_id:
+            # see: ../addons/stock/stock.py:821
+            # Change locations of moves if those of the picking change
+            picking_obj = self.env['stock.picking'].browse(picking_id)
+            location_id = picking_obj.location_id
+            location_dest_id = picking_obj.location_dest_id
+            picking_obj.write({'location_id':location_id.id,'location_dest_id': location_dest_id.id})
+        return res
 
 
 class StockPicking(models.Model):
@@ -70,10 +81,10 @@ class StockPicking(models.Model):
                 'Quantity done (%s) is higher than Quantity Demanded (%s)' % (quantity_done, quantity_demanded))
 
     def button_validate(self):
-        # this fixes the mov lines not getting update when te source/destination is changed on the stock pikcing and validated without clicking save button
-        for move_line in self.move_line_ids:
-            move_line.location_id = self.location_id
-            move_line.location_dest_id = self.location_dest_id
+        # this fixes the mov lines not getting update when the source/destination is changed on the stock pikcing and validated without clicking save button
+        # for move_line in self.move_line_ids:
+        #     move_line.location_id = self.location_id
+        #     move_line.location_dest_id = self.location_dest_id
 
         #check if the quantity done is more than the qty demanded
         for move in self.move_ids_without_package : # dont use move_line_ids. it fails for internal transfer

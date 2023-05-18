@@ -1361,7 +1361,7 @@ class Ticket(models.Model):
     phone = fields.Char(related='partner_id.phone', string='Phone', readonly=True)
     mobile = fields.Char(related='partner_id.mobile', string='Mobile', readonly=True)
     email = fields.Char(related='partner_id.email', string='Email', readonly=True)
-
+    no_coverage = fields.Boolean(string='No Coverage')
 
     order_id = fields.Many2one('sale.order', string='Order')
     order_count = fields.Integer(compute="_compute_order_count", string='# of CRMs', copy=False, default=0)
