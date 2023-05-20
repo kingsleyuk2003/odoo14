@@ -211,6 +211,15 @@ class Ticket(models.Model):
         return
 
 
+    def btn_ticket_re_populate_materials(self):
+        for rec in self:
+            order = rec.order_id
+            if not rec.material_request_ids and order.opportunity_id and order.opportunity_id.ticket_ids :
+                material_request_ids =  order.opportunity_id.ticket_ids[0].material_request_ids
+                if material_request_ids:
+                    rec.material_request_ids = material_request_ids
+            else:
+                raise UserError('Not necessary, since materials requested have already been populated')
 
 
     def btn_view_stock_picking(self):
@@ -860,6 +869,10 @@ class Ticket(models.Model):
                 body=_(msg),
                 subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+    def btn_ticket_close_call_log(self):
+        self.state = 'closed'
 
     def btn_ticket_close(self):
 
