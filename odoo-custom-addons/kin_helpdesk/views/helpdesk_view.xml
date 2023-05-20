@@ -21,9 +21,10 @@
                     <button name="btn_ticket_progress" type="object" states="new" string="Work In Progress" class="oe_highlight" groups="kin_helpdesk.group_helpdesk_progess_ticket" />
                     <button name="btn_ticket_done" type="object" states="progress" string="Done"  class="oe_highlight" groups="kin_helpdesk.group_helpdesk_done_ticket"/>
                     <button name="btn_ticket_close" type="object" states="done,draft,new" string="Close" class="oe_highlight"  groups="kin_helpdesk.group_helpdesk_close_ticket" confirm="Ticket will be Closed?" />
+                    <button name="%(action_reassign_ticket)d" type="action"  states="draft,new,progress" string="Reassign Ticket"  groups="kin_helpdesk.group_helpdesk_reassign_ticket" />
                     <button name="btn_ticket_reset" type="object" states="cancel,closed" string="Reset Ticket"  groups="kin_helpdesk.group_helpdesk_reset_ticket" />
                      <button name="btn_ticket_cancel" type="object" states="done,new,closed" string="Cancel Ticket"  groups="kin_helpdesk.group_helpdesk_cancel_ticket" />
-                   <field name="state" widget="statusbar"  />
+                 <field name="state" widget="statusbar"  />
 
                     <!--<field name="stage_id" widget="statusbar" clickable="True"-->
                             <!--options="{'fold_field': 'fold'}"-->

@@ -18,10 +18,11 @@ HelpDesk
     'data': [
         'security/helpdesk_security.xml',
         'security/ir.model.access.csv',
+        'wizard/reassign_ticket_wizard.xml',
         'views/helpdesk_view.xml',
         'views/sequence.xml',
         'views/mail_template.xml',
-'views/res_config_settings_views.xml',
+        'views/res_config_settings_views.xml',
     ],
     'installable': True,
 }

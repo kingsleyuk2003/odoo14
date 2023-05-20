@@ -1,0 +1,44 @@
+<?xml version="1.0" ?>
+<odoo>
+    <data>
+
+        <record id="reassign_ticket_view" model="ir.ui.view">
+            <field name="name">Reassign Ticket</field>
+            <field name="model">reassign.ticket.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Survey Ticket">
+                    <b>Re assign Ticket to another group</b>
+                    <group col="4" >
+                        <field name="user_ticket_group_id" required="1"/>
+                    </group>
+                    <footer>
+                        <button name="btn_reassign_ticket" string="Reassign Ticket" type="object" class="oe_highlight"/>
+                        or
+                        <button string="Cancel" class="oe_link" special="cancel"/>
+                    </footer>
+
+                </form>
+            </field>
+        </record>
+
+        <record id="action_reassign_ticket" model="ir.actions.act_window">
+            <field name="name">Reassign Ticket</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">reassign.ticket.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <!--<field name="groups_id" eval="[(4,ref('kin_sales_double_validation.group_show_disapprove_btn'))]"/>-->
+        </record>
+
+
+        <!--<record model="ir.values" id="sale_order_multiple_disapprove">-->
+            <!--<field name="model_id" ref="sale.model_sale_order" />-->
+            <!--<field name="name">Disapprove Sales Orders</field>-->
+            <!--<field name="key2">client_action_multi</field>-->
+            <!--<field name="value" eval="'ir.actions.act_window,' + str(ref('action_disapprove_sale_orders'))" />-->
+            <!--<field name="key">action</field>-->
+            <!--<field name="model">sale.order</field>-->
+        <!--</record>-->
+
+    </data>
+</odoo>

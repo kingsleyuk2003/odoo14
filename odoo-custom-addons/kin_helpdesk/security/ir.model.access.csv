@@ -29,3 +29,4 @@ access_user_ticket_group_general_manager,user.ticket.group general manager,model
 access_account_invoice_helpdesk_user,account.move helpdesk user,account.model_account_move,group_helpdesk_customers,1,0,0,0
 access_account_move_line_helpdesk_user,account.move.line helpdesk user,account.model_account_move_line,group_helpdesk_customers,1,0,0,0
 access_res_partner_helpdesk_user,res.partner helpdesk user,base.model_res_partner,group_helpdesk_customers,1,1,1,1
+access_reassign_ticket_wizard_user,reassign.ticket.wizard user,model_reassign_ticket_wizard,base.group_user,1,1,1,1

@@ -171,7 +171,26 @@ class Ticket(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
-    
+    def reassign_ticket(self,grp):
+        # send email to the Assigned users too
+        partn_ids = []
+        user_names = ''
+        users = grp.sudo().user_ids
+        msg = 'The Ticket (%s) with description (%s), has been Reassigned to %s by %s ' % (
+            self.ticket_id, self.name,  grp.name,self.env.user.name)
+
+        for user in users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            self.message_post( body=_(msg), subject='%s' % msg, partner_ids=partn_ids ,subtype_xmlid='mail.mt_comment')
+
+        self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+
     def btn_ticket_open(self):
         self.state = 'new'
         self.open_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
@@ -189,8 +208,8 @@ class Ticket(models.Model):
 
         if partn_ids:
             self.message_post(
-                _(msg),
-                subject='%s' % msg, partner_ids=partn_ids)
+               body= _(msg),
+                subject='%s' % msg, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment')
 
         self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
@@ -286,7 +305,7 @@ class Ticket(models.Model):
             partner_ids.append(ticket_obj.partner_id.id)
             #ticket_obj.message_subscribe(partner_ids=partner_ids)
             #ticket_obj.message_subscribe_users(user_ids=user_ids)
-            #inv_obj.message_post( _('A New Ticket has been Opened with Ticket No: %s.') % (ticket_obj.ticket_id),subject='A New Ticket ahs been created for your request', subtype_xmlid='mail.mt_comment', force_send=False)
+            #inv_obj.message_post( body=_('A New Ticket has been Opened with Ticket No: %s.') % (ticket_obj.ticket_id),subject='A New Ticket ahs been created for your request', subtype_xmlid='mail.mt_comment', force_send=False)
 
         return ticket_obj
 
