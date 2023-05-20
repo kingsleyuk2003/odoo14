@@ -54,7 +54,7 @@
                 <button name="btn_ticket_done" position="after" >
                     <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="wifiber.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', 'not in', ('installation','support','change_request') ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="wifiber.group_helpdesk_finalized_ticket"  />
-                     <button name="btn_ticket_close_call_log" type="object"  string="Close Call Log"  class="oe_highlight" groups="wifiber.group_helpdesk_close_call_log" attrs="{'invisible': ['|',('category_code', 'not in', ('call_log') ),('state', 'in', ('closed') )]}"   />   />
+                     <button name="btn_ticket_close_call_log" type="object"  string="Close Call Log"  class="oe_highlight" groups="wifiber.group_helpdesk_close_call_log" attrs="{'invisible': ['|',('category_code', 'not in', ('call_log') ),('state', 'in', ('draft','closed') )]}"   />   />
                 </button>
                 <button name="btn_ticket_done" position="attributes" >
                       <attribute  name="states" >progress,installed</attribute>

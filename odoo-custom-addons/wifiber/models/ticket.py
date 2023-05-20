@@ -873,6 +873,14 @@ class Ticket(models.Model):
 
     def btn_ticket_close_call_log(self):
         self.state = 'closed'
+        self.closed_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        self._compute_time_spent()
+
+        group_name = 'kin_helpdesk.group_helpdesk_receive_close_ticket_email'
+        msg = 'The Ticket (%s) with description (%s), has been Closed by %s' % (
+            self.ticket_id, self.name, self.env.user.name)
+        subject = msg
+        self.send_email(group_name, subject, msg)
 
     def btn_ticket_close(self):
 
