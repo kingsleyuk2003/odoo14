@@ -9,7 +9,7 @@
                 <form string="Survey Ticket">
                     <b>Re assign Ticket to another group</b>
                     <group col="4" >
-                        <field name="user_ticket_group_id" required="1"/>
+                        <field name="user_ticket_group_id" required="1" options="{'no_open': True, 'no_create': True}"  />
                     </group>
                     <footer>
                         <button name="btn_reassign_ticket" string="Reassign Ticket" type="object" class="oe_highlight"/>

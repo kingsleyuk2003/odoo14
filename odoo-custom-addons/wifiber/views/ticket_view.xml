@@ -293,10 +293,10 @@
                     <page  string="Call Log" attrs="{'invisible': [('category_code', '!=', 'call_log' )]}" >
                          <group col="4" string="Potential Customer" >
                             <field name="description" />
-                             <field name="prospect_name"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
-                             <field name="prospect_area_id"  options="{'no_open': True, 'no_create': True}"   />
-                             <field name="prospect_address"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
-                             <field name="prospect_phone"  attrs="{'required': [('category_code', '=', 'call_log' )]}" />
+                             <field name="prospect_name"   />
+                             <field name="prospect_area_id"    />
+                             <field name="prospect_address"   />
+                             <field name="prospect_phone"   />
                              <field name="prospect_email"  />
                          </group>
                     </page>
