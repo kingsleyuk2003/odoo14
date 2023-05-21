@@ -16,5 +16,17 @@
             </field>
         </record>
 
+
+      <record id="account_view_move_form_inherited_landed_cost_extend" model="ir.ui.view">
+        <field name="name">account.view.move.form.landed.cost</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="stock_landed_costs.account_view_move_form_inherited"/>
+        <field name="arch" type="xml">
+                 <button name="button_create_landed_costs" position="attributes" >
+                     <attribute name="groups">kin_account.group_show_create_landed_cost_button</attribute>
+                 </button>
+        </field>
+        </record>
+
     </data>
 </odoo>

@@ -17,7 +17,6 @@
             <field name="inherit_id" ref="purchase_order_secondary_unit.purchase_order_form" />
             <field name="arch" type="xml">
 
-
                 <field name="secondary_uom_qty" position="attributes" >
                       <attribute name="string">MT Qty.</attribute>
                       <attribute name="attrs">{'invisible': [('parent.is_purchase', '=', False)]}</attribute>

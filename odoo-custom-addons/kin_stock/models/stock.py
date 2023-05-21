@@ -258,6 +258,19 @@ class LandedCost(models.Model):
         self.is_request_approval_by = self.env.user
         self.is_request_approval_date = fields.Datetime.now()
 
+
     is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
     is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
     is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
+
+
+class StockLandedCostLine(models.Model):
+    _inherit = 'stock.landed.cost.lines'
+
+    @api.onchange('product_id')
+    def onchange_product_id(self):
+        self.name = self.product_id.name or ''
+        self.split_method = self.product_id.product_tmpl_id.split_method_landed_cost or self.split_method or 'equal'
+        self.price_unit = self.product_id.standard_price or 0.0
+        accounts_data = self.product_id.product_tmpl_id.get_product_accounts()
+        self.account_id = accounts_data['expense'] or accounts_data['stock_input']

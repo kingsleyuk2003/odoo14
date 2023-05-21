@@ -347,7 +347,7 @@
 	</record>
 
     <record id="group_show_unit_subtotal_sales" model="res.groups">
-			<field name="name">Show Unit Price and Sub-Totals on Sales Order</field>
+			<field name="name">Show Unit Price and Sub-Totals Orders</field>
 		   <field name="category_id" ref="module_depot"/>
 	</record>
 

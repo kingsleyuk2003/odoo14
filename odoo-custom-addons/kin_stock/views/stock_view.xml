@@ -287,10 +287,71 @@
                         <attribute name="groups" >kin_stock.group_stock_landed_cost_stock_cancel_button</attribute>
                 </button>
 
-
-
             </field>
         </record>
+
+        <record model="ir.ui.view" id="view_stock_quant_tree_extend">
+        <field name="name">stock.quant.tree.extend</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree" />
+        <field name="arch" type="xml">
+                <field name="available_quantity" position="attributes" >
+                    <!-- not needed. seems to be confusing -->
+                      <attribute name="invisible" >1</attribute>
+                </field>
+        </field>
+        </record>
+
+
+         <record model="ir.ui.view" id="view_stock_quant_tree_editable_extend">
+        <field name="name">stock.quant.tree.editable.extend</field>
+        <field name="model">stock.quant</field>
+        <field eval="10" name="priority"/>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree_editable" />
+        <field name="arch" type="xml">
+             <field name="available_quantity" position="attributes" >
+                    <!-- not needed. seems to be confusing -->
+                      <attribute name="invisible" >1</attribute>
+                </field>
+
+        </field>
+         </record>
+
+
+    <record model="ir.ui.view" id="view_stock_quant_tree_inherit_extend">
+        <field name="name">stock.quant.tree.inherit.extend</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock_account.view_stock_quant_tree_inherit" />
+        <field name="arch" type="xml">
+            <field name="value" position="attributes">
+                <attribute name="groups" >kin_stock.group_show_value_inventory</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="view_stock_quant_tree_editable_inherit_extend">
+        <field name="name">stock.quant.tree.editable.inherit.extend</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree_editable" />
+        <field name="arch" type="xml">
+            <field name="value" position="attributes">
+                <attribute name="groups" >kin_stock.group_show_value_inventory</attribute>
+            </field>
+        </field>
+    </record>
+
+
+    <record id="stock_valuation_layer_tree_extend" model="ir.ui.view">
+        <field name="name">stock.valuation.layer.tree.extend</field>
+        <field name="model">stock.valuation.layer</field>
+         <field name="inherit_id" ref="stock_account.stock_valuation_layer_tree" />
+        <field name="arch" type="xml">
+            <field name="value" position="attributes">
+                <attribute name="groups" >kin_stock.group_show_value_inventory</attribute>
+            </field>
+        </field>
+    </record>
 
 
 
