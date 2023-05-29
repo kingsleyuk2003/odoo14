@@ -19,6 +19,7 @@ class MaterialReport(models.AbstractModel):
     def _get_data(self, form):
         start_date = form['start_date']
         end_date = form['end_date']
+        category_id = form['category_id'][0]
         company_id = form['company_id'][0]
 
         if not start_date:
@@ -30,6 +31,9 @@ class MaterialReport(models.AbstractModel):
             where_end_date = "assigned_date <= '%s'" % datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         else:
             where_end_date = "assigned_date <= '%s'" % (end_date)
+
+        if category_id:
+            where_category = "category_id = %s AND" % (category_id)
 
         if company_id:
             where_company = "ticket_company_id = %s AND" % (company_id)
@@ -55,7 +59,8 @@ class MaterialReport(models.AbstractModel):
                   left JOIN product_product ON material_request.product_id = product_product.id
                   LEFT JOIN product_template  ON product_product.id = product_template.id
                 WHERE
-                    kin_ticket.state != 'cancel' AND   
+                    kin_ticket.state != 'cancel' AND  
+                    """ + where_category + """  
                      """ + where_company + """
                       """ + where_start_date + """
                        """ + where_end_date + """ 
@@ -101,6 +106,8 @@ class MaterialReport(models.AbstractModel):
         control_report_worksheet.set_row(2, 20)
         # control_report_worksheet.merge_range(2, 0, 2, 10, 'Report', title_format)
 
+        category_id = data['form']['category_id'][0]
+        cat_name = self.env['kin.ticket.category'].browse(category_id).name
 
         # Period
         control_report_worksheet.set_row(0, 20)
@@ -110,12 +117,12 @@ class MaterialReport(models.AbstractModel):
             end_date_format = localize_tz(datetime.strptime(end_date, DEFAULT_SERVER_DATETIME_FORMAT)).astimezone(
                 user_tz_obj).strftime('%d/%m/%Y %I:%M:%S %p')
             control_report_worksheet.merge_range(0, 0, 0, 10,
-                                                 '%s MATERIAL REQUEST REPORT FROM %s to %s' % (
-                                                     user_company.name, start_date_format, end_date_format),
+                                                 '%s %s MATERIAL REQUEST REPORT FROM %s to %s' % (
+                                                     user_company.name, cat_name,start_date_format, end_date_format),
                                                  title_format)
         else:
             control_report_worksheet.merge_range(0, 0, 0, 10,
-                                                 '%s MATERIAL REQUEST REPORT FOR ALL PERIOD' % (user_company.name),
+                                                 '%s %s MATERIAL REQUEST REPORT FOR ALL PERIOD' % (user_company.name,cat_name),
                                                  title_format)
 
         col = 0

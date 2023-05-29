@@ -35,6 +35,10 @@ class UserGroups(models.Model):
     name = fields.Char(string='User Ticket Group')
     user_ids = fields.Many2many('res.users', 'user_ticket_group_rel', 'user_ticket_group_id', 'user_id', string='Users', ondelete='restrict')
     company_id = fields.Many2one('res.company',string='Company')
+    pre_state = fields.Selection(
+        [('draft', 'Draft'), ('new', 'Open'), ('progress', 'Work In Progress'), ('done', 'Done'), ('closed', 'Closed'),
+         ('cancel', 'Cancelled')], string="Pre-Status", default='draft')
+
 
 class sla(models.Model):
     _name = "kin.sla"
@@ -172,6 +176,8 @@ class Ticket(models.Model):
 
 
     def reassign_ticket(self,grp):
+        self.state = grp.pre_state
+        self.user_ticket_group_id = grp
         # send email to the Assigned users too
         partn_ids = []
         user_names = ''

@@ -23,6 +23,11 @@ class UserGroups(models.Model):
     is_installation_group_default_csc = fields.Boolean(string='Is Installation Group Default for CSC')
     is_maint_default = fields.Boolean(string='Is Maintenance Close Team Default')
     is_csc_group = fields.Boolean(string='Is CSC Group')
+    pre_state = fields.Selection(
+        [('draft', 'Draft'), ('new', 'Open'), ('new_call', 'Open Call Log'), ('maint_approve', 'Maint. Approved'),
+         ('progress', 'Work In Progress'), ('installed', 'Installed'), ('done', 'Completed'), ('qa', 'Quality Assured'),
+         ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'), ('major', 'Major')],
+        default='draft')
 
 
 class MaterialRequest(models.Model):
@@ -214,10 +219,12 @@ class Ticket(models.Model):
     def btn_ticket_re_populate_materials(self):
         for rec in self:
             order = rec.order_id
-            if not rec.material_request_ids and order.opportunity_id and order.opportunity_id.ticket_ids :
+            if not rec.material_request_ids and order and order.opportunity_id and order.opportunity_id.ticket_ids :
                 material_request_ids =  order.opportunity_id.ticket_ids[0].material_request_ids
                 if material_request_ids:
                     rec.material_request_ids = material_request_ids
+            elif not rec.material_request_ids and order and not order.opportunity_id:
+                raise UserError('There is no survey ticket attached  for this installation')
             else:
                 raise UserError('Not necessary, since materials requested have already been populated')
 
@@ -460,7 +467,6 @@ class Ticket(models.Model):
                 'qty' : prod.is_pick_default_qty,
             })]
         return pr_list
-
 
 
     def btn_ticket_open(self):

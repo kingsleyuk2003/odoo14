@@ -423,9 +423,10 @@
                 <form string="User Ticket Groups">
                     <sheet>
                         <group>
-                              <field name="name" />
+                            <field name="name" />
                             <field name="company_id" />
-                                <field name="user_ids"  widget="many2many_tags" />
+                            <field name="user_ids"  widget="many2many_tags" />
+                            <field name="pre_state" required="1" />
                         </group>
                     </sheet>
 
