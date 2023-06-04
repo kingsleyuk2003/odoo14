@@ -255,6 +255,7 @@
 
 
                 <field name="vat" position="after" >
+                    <field name="is_enterprise" />
                     <field name="ref" string="Client ID" readonly="1" />
                     <field name="city_cust" required="1"  />
                     <field name="state_ng" required="1"   />

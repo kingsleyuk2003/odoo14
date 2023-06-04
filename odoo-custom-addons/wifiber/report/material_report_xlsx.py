@@ -57,7 +57,7 @@ class MaterialReport(models.AbstractModel):
                   left JOIN res_partner ON res_users.partner_id = res_partner.id
                   left JOIN kin_ticket  ON material_request.ticket_id = kin_ticket.id
                   left JOIN product_product ON material_request.product_id = product_product.id
-                  LEFT JOIN product_template  ON product_product.id = product_template.id
+                  LEFT JOIN product_template  ON product_product.product_tmpl_id = product_template.id
                 WHERE
                     kin_ticket.state != 'cancel' AND  
                     """ + where_category + """  

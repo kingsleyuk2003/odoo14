@@ -66,7 +66,7 @@ class IssuedReport(models.AbstractModel):
                   left JOIN kin_ticket  ON stock_move_line.ticket_id = kin_ticket.id  
                   left Join res_partner as partner_id ON kin_ticket.partner_id = partner_id.id   
                   left JOIN product_product tp ON partner_id.product_id = tp.id
-                  LEFT JOIN product_template as pt  ON tp.id = pt.id             
+                  LEFT JOIN product_template as pt  ON tp.product_tmpl_id = pt.id             
                   left JOIN res_users  ON stock_move_line.issued_by = res_users.id                   
                   left JOIN res_partner issuedby ON res_users.partner_id = issuedby.id 
                   left JOIN stock_production_lot ON stock_move_line.lot_id = stock_production_lot.id

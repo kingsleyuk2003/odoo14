@@ -766,7 +766,7 @@ class ResPartnerExtend(models.Model):
     partner_tracking_ids = fields.One2many('partner.tracking.history','partner_track_id',string='Partner Tracking')
     is_partn_stock = fields.Boolean(string='User Keeps Stock')
     partn_location_id = fields.Many2one('stock.location', string='User Stock Location')
-
+    is_enterprise = fields.Boolean(string='Is Enterprise Customer')
 
 
 class AccountPayment(models.Model):
