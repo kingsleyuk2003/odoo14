@@ -28,6 +28,7 @@ class UserGroups(models.Model):
          ('progress', 'Work In Progress'), ('installed', 'Installed'), ('done', 'Completed'), ('qa', 'Quality Assured'),
          ('finalized', 'Finalized'), ('closed', 'Closed'), ('cancel', 'Cancelled'), ('major', 'Major')],
         default='draft')
+    stock_location_id = fields.Many2one('stock.location',string='Store')
 
 
 class MaterialRequest(models.Model):
@@ -268,7 +269,7 @@ class Ticket(models.Model):
                 'product_id': m.product_id.id,
                 'product_uom_qty': m.qty,
                  'product_uom': m.product_id.uom_id.id,
-                'location_id': self.env.user.partner_id.partn_location_id.id,
+                'location_id': self.user_ticket_group_id.stock_location_id.id,
                 'location_dest_id': self.env.ref('stock.stock_location_customers').id,
             })]
         return m_list
@@ -283,7 +284,7 @@ class Ticket(models.Model):
                         'product_id': mr.product_id.id,
                         'qty_done': 1,
                         'product_uom_id': mr.product_id.uom_id.id,
-                        'location_id': self.env.user.partner_id.partn_location_id.id,
+                        'location_id': self.user_ticket_group_id.stock_location_id.id,
                         'location_dest_id': self.env.ref('stock.stock_location_customers').id,
                     })]
             else:
@@ -291,7 +292,7 @@ class Ticket(models.Model):
                     'product_id': mr.product_id.id,
                     'qty_done': mr.qty,
                     'product_uom_id': mr.product_id.uom_id.id,
-                    'location_id': self.env.user.partner_id.partn_location_id.id,
+                    'location_id': self.user_ticket_group_id.stock_location_id.id,
                     'location_dest_id': self.env.ref('stock.stock_location_customers').id,
                 })]
         return ml_list
@@ -352,7 +353,7 @@ class Ticket(models.Model):
                 'partner_id': self.partner_id.id,
                 'picking_type_id':self.env.ref('stock.picking_type_out').id,
                 'origin': self.name,
-                'location_id': self.env.user.partner_id.partn_location_id.id,
+                'location_id': self.user_ticket_group_id.stock_location_id.id,
                 'location_dest_id' : self.env.ref('stock.stock_location_customers').id,
                 # 'move_ids_without_package' : sm_list, # this adds another line for items with serial numbers, so no need to add this line
                 # 'move_type': 'one',
@@ -1461,7 +1462,7 @@ class Ticket(models.Model):
     site_survey_form = fields.Binary(string='Site Survey Form', attachment=True)
     srf_form = fields.Binary(string='SRF Form', attachment=True)
     dist_fpop = fields.Char(string='Distance to FPOP')
-    fpop_box_jb = fields.Char(string='POP Box ID')
+    fpop_box_jb = fields.Many2one('stock.production.lot',string='POP Box ID')
     comment_survey = fields.Text(string='Comment')
 
 
@@ -1538,7 +1539,9 @@ class Ticket(models.Model):
     adddress_ip_new = fields.Char(string='New IP Address')
     done_date = fields.Datetime(string='Completed Date')
     finalized_date = fields.Datetime(string='Finalized Date')
-
+    change_ssid = fields.Char(string="Change SSID")
+    change_wifi = fields.Char(string='Change Wifi/portal password')
+    change_ip_address = fields.Char(string='Change IP Address')
     last_log_datetime = fields.Datetime(string='Last Logged datetime')
     last_log_user_id = fields.Many2one('res.users',string='Last Logged User')
     last_log_message = fields.Html(string='Last Log Message')

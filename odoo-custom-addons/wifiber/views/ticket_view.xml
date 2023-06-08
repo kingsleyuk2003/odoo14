@@ -273,6 +273,9 @@
                                  <field name="address_new" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"    />
                                  <field name="address_ip_current" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                  <field name="adddress_ip_new" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
+                                <field name="change_ssid" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
+                                <field name="change_wifi" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
+                                <field name="change_ip_address" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
                             </group>
 
                     </page>
@@ -281,7 +284,7 @@
                                  <field name="description" />
                                  <field name="crm_id" readonly="1" />
                                  <field name="dist_fpop" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                                 <field name="fpop_box_jb" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="fpop_box_jb"  domain="[('product_id','=',220)]" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                 <field name="installation_constraint" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                    <field name="access_confirmation" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                    <field name="comment_survey" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
@@ -677,6 +680,7 @@
                      <field name="is_installation_group_default_csc" />
                      <field name="is_maint_default" />
                      <field name="is_csc_group" />
+                     <field name="stock_location_id" />
                  </field>
             </field>
           </record>
