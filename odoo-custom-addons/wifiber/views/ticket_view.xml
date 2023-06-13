@@ -273,9 +273,7 @@
                                  <field name="address_new" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"    />
                                  <field name="address_ip_current" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'change_request' )]}"   />
                                  <field name="adddress_ip_new" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
-                                <field name="change_ssid" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
-                                <field name="change_wifi" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
-                                <field name="change_ip_address" attrs="{'readonly': [('state', 'in', ('closed'))],  'required': [('category_code', '=', 'change_request' )]}"  />
+
                             </group>
 
                     </page>

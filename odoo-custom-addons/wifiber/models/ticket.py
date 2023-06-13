@@ -1528,7 +1528,7 @@ class Ticket(models.Model):
 
     #Change Request
     area_change_request_id = fields.Many2one('area', string="Area", tracking=True)
-    updown_grade_type = fields.Selection([('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('disconnect', 'Disconnect'),('reconnection', 'Reconnection'),('relocation', 'Relocation'),('voip', 'Voip')], string='Change Request Type')
+    updown_grade_type = fields.Selection([('upgrade', 'Upgrade'), ('downgrade', 'Downgrade'),('disconnect', 'Disconnect'),('reconnection', 'Reconnection'),('relocation', 'Relocation'),('voip', 'Voip'),('change_wifi_por','Change Wifi/portal password'),('change_ssid','Change SSID'),('change_ip_address','Change IP Address')], string='Change Request Type')
     product_curr_id = fields.Many2one('product.product',string='Current Package')
     product_new_id = fields.Many2one('product.product', string='New Package')
     bandwidth_current = fields.Char(string='Current Bandwidth')
@@ -1539,9 +1539,6 @@ class Ticket(models.Model):
     adddress_ip_new = fields.Char(string='New IP Address')
     done_date = fields.Datetime(string='Completed Date')
     finalized_date = fields.Datetime(string='Finalized Date')
-    change_ssid = fields.Char(string="Change SSID")
-    change_wifi = fields.Char(string='Change Wifi/portal password')
-    change_ip_address = fields.Char(string='Change IP Address')
     last_log_datetime = fields.Datetime(string='Last Logged datetime')
     last_log_user_id = fields.Many2one('res.users',string='Last Logged User')
     last_log_message = fields.Html(string='Last Log Message')
