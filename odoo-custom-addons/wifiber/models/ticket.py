@@ -226,6 +226,8 @@ class Ticket(models.Model):
                     rec.material_request_ids = material_request_ids
             elif not rec.material_request_ids and order and not order.opportunity_id:
                 raise UserError('There is no survey ticket attached  for this installation')
+            elif rec.category_id  in  (rec.env.ref('wifiber.support')) and not rec.material_request_ids :
+                raise UserError('Kindly add the material(s) in the material tab below')
             else:
                 raise UserError('Not necessary, since materials requested have already been populated')
 
