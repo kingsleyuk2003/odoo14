@@ -872,14 +872,16 @@ class Prospect(models.Model):
             user_names += user.name + ", "
             partn_ids.append(user.partner_id.id)
 
-            if partn_ids:
-                user = self.env.user.name
-                msg = 'The Prospect and Request Ticket (%s) for %s has been sealed by %s' % (self.request_ticket_id.ticket_id,self.name,user)
-                subject = 'Closure/Sealed notification for the request ticket (%s) by %s' % (self.request_ticket_id.ticket_id,user)
-                self.message_follower_ids.unlink()
-                self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
-                                  force_send=False)
-                self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+        if partn_ids:
+            user = self.env.user.name
+            msg = 'The Prospect and Request Ticket (%s) for %s has been sealed by %s' % (
+            self.request_ticket_id.ticket_id, self.name, user)
+            subject = 'Closure/Sealed notification for the request ticket (%s) by %s' % (
+            self.request_ticket_id.ticket_id, user)
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment',
+                              force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
 
 

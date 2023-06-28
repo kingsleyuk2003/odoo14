@@ -836,7 +836,21 @@ def send_sale_order_email(self):
         while business_days_to_add > 0:
             current_date += timedelta(days=1)
             weekday = current_date.weekday()
-            if weekday >= 5:  # sunday = 6
+            if weekday >= 5:  # saturday = 5 and sunday = 6
                 continue
             business_days_to_add -= 1
         return current_date
+
+    # odoo-custom-addons/fibernet/models/ticket.py:301
+    # reference: https://stackoverflow.com/a/12691993
+    # adds days except weekends
+    def get_installation_date(self, from_date, add_days):
+        business_days_to_add = add_days
+        install_date = from_date
+        while business_days_to_add > 0:
+            install_date += timedelta(days=1)
+            weekday = install_date.weekday()
+            if weekday > 4:  # saturday = 5 and sunday = 6
+                continue
+            business_days_to_add -= 1
+        return install_date

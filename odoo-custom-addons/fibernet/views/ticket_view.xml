@@ -22,6 +22,7 @@
                 <button name="btn_ticket_done" position="after" >
                     <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="fibernet.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', 'not in', ('installation','change_request') ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="fibernet.group_helpdesk_finalized_ticket"  />
+                    <button name="%(action_date_change_wizard)d" type="action" states="new,progress,done,finalized"  string="Reschedule Installation" groups="fibernet.group_ticket_reschedule_installation_btn" />
                 </button>
 
                  <button name="btn_ticket_progress" position="attributes" >
@@ -33,6 +34,7 @@
                 <button name="btn_ticket_cancel" position="attributes" >
                      <attribute  name="states" >new,progress,done,finalized,archived</attribute>
                  </button>
+
                  <button name="btn_ticket_reset" position="attributes" >
                          <attribute name="states" >new,progress,done,finalized,closed,cancel,archived</attribute>
                         <attribute name="confirm" >Are you sure you want to reset this ticket back to draft state?</attribute>
@@ -117,6 +119,7 @@
 <!--                    <field name="survey_ticket_id"  domain = "[('id','!=',id),('category_id','=',2)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />-->
                     <field name="duration_close" />
                     <field name="order_id" readonly="1" />
+                    <field name="installation_date" readonly="1" />
                 </field>
 
                 <page name="description" position="before" >
@@ -416,6 +419,8 @@
                             <field name="prefix"  />
                             <field name="sequence_id" readonly="1" />
                             <field name="is_others" />
+                            <field name="ticket_count_per_day" />
+                            <field name="installation_day_offset" />
                         </group>
                     </sheet>
 

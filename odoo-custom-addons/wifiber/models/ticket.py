@@ -958,22 +958,16 @@ class Ticket(models.Model):
                 mrt = ''
                 for mr in self.material_request_ids :
                     if not mr.product_id:
-                        raise UserError('Please check the material tab below.. There is an empty line that needs a material to be set.')
+                        raise UserError('Please check the material tab below. There is an empty line that needs a material to be set.')
                     mrt += str(mr.qty) + " " + mr.product_id.uom_id.name + " of " + mr.product_id.name  + "\n"
                 self.crm_id.material_requested = mrt
-            # send email
-            user_ids = []
-            group_obj = self.env.ref('wifiber.group_ticket_survey_close_notify')
-            user_names = ''
-            for user in group_obj.sudo().users:
-                user_names += user.name + ", "
-                user_ids.append(user.partner_id.id)
 
-                self.send_email('wifiber.group_ticket_survey_close_notify',
-                                subject='The Survey Ticket has been closed',
-                                msg=_(
-                    'The Survey Ticket %s has been closed for the order id - %s, from %s') % (
-                    self.name, self.order_id.name,self.env.user.name))
+            # send email
+            self.send_email('wifiber.group_ticket_survey_close_notify',
+                            subject='The Survey Ticket has been closed',
+                            msg=_(
+                                'The Survey Ticket %s has been closed for the order id - %s, from %s') % (
+                                    self.name, self.order_id.name, self.env.user.name))
 
             #notify the sales person
             partn_ids = []
