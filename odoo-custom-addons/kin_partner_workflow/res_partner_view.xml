@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+ <record id="view_res_partner_workflow_extend" model="ir.ui.view">
+            <field name="name" >res.partner.workflow.extend</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                 <xpath expr="//sheet" position="before">
+                    <header>
+                        <button name="btn_confirm" type="object" states="draft" string="Confirm and Submit" class="oe_highlight" groups="kin_partner_workflow.group_partner_workflow_user" />
+                        <button name="btn_activate" type="object" states="confirm" string="Approve and Activate" class="oe_highlight" groups="kin_partner_workflow.group_partner_workflow_manager" />
+                         <button name="%(action_customer_disapproval_reason)d" type="action" states="confirm" string="Disapprove" groups="kin_partner_workflow.group_partner_workflow_manager" />
+                        <button name="btn_deactivate" type="object" states="active" string="De-Activate" groups="kin_partner_workflow.group_partner_workflow_manager" />
+                        <button name="btn_reset" type="object" states="not_active" string="Reset to Draft"  groups="kin_partner_workflow.group_partner_workflow_manager" />
+                       <field name="state" widget="statusbar"  />
+                    </header>
+                 </xpath>
+
+
+
+                <field name="name" position="attributes" >
+                    <attribute name="attrs">{'readonly': [('state', '!=', 'draft')]}</attribute>
+                </field>
+                <notebook position="inside" >
+                    <page string="Customer Worfklow Information">
+                        <group>
+                             <field name="init_user_id" />
+                         <field name="disapprove_id" />
+                            <field name="disapprove_date" />
+                            <field name="reason_disapprove" />
+                        </group>
+                    </page>
+                </notebook>
+
+            </field>
+ </record>
+           <record id="action_partner_workflow_form_extend" model="ir.actions.act_window">
+            <field name="name">New / In Active Customers</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{"search_default_customer":1}</field>
+           <field name="domain">[('state', '!=', 'active'),('active', '=', False)]</field>
+            <field name="search_view_id" ref="base.view_res_partner_filter"/>
+
+        </record>
+
+        <menuitem action="action_partner_workflow_form_extend"
+            id="menu_customer_workflow" parent="sale.sale_order_menu"
+            sequence="15" groups="kin_partner_workflow.group_partner_workflow_user,kin_partner_workflow.group_partner_workflow_manager"/>
+
+        <menuitem action="action_partner_workflow_form_extend"
+            id="menu_customer_workflow_account" parent="account.menu_finance_receivables"
+            sequence="25" groups="kin_partner_workflow.group_partner_workflow_user,kin_partner_workflow.group_partner_workflow_manager"/>
+
+
+
+           <record id="action_partner_workflow_form_vendor_extend" model="ir.actions.act_window">
+            <field name="name">New / In Active Vendors</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{"search_default_supplier":1}</field>
+           <field name="domain">[('state', '!=', 'active'),('active', '=', False)]</field>
+            <field name="search_view_id" ref="base.view_res_partner_filter"/>
+
+        </record>
+
+        <menuitem action="action_partner_workflow_form_vendor_extend"
+            id="menu_vendor_workflow" parent="purchase.menu_procurement_management"
+            sequence="15" groups="kin_partner_workflow.group_partner_workflow_user,kin_partner_workflow.group_partner_workflow_manager"/>
+
+        <menuitem action="action_partner_workflow_form_vendor_extend"
+            id="menu_vendor_workflow_account" parent="account.menu_finance_payables"
+            sequence="25" groups="kin_partner_workflow.group_partner_workflow_user,kin_partner_workflow.group_partner_workflow_manager"/>
+
+
+    </data>
+</odoo>
