@@ -297,6 +297,34 @@
             </field>
         </record>
 
+        <record id="view_kin_ticket_filter_wifiber" model="ir.ui.view">
+            <field name="name">Ticket Search</field>
+            <field name="model">kin.ticket</field>
+            <field name="inherit_id" ref="kin_helpdesk.view_kin_ticket_filter" />
+            <field name="arch" type="xml">
+                <filter name="company" position="after" >
+                    <filter string="Installation Date" name="grpInstDate" context="{'group_by':'installation_date:day'}"/>
+                </filter>
+
+            </field>
+        </record>
+
+        <record id="action_view_scheduled_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Scheduled Installation Tickets</field>
+            <field name="view_mode">tree,pivot,graph</field>
+            <field name="context">{'search_default_grpInstDate': 1 }</field>
+              <field name="domain">[('category_code', '=', 'installation'),('state','in',['new','progress'])]</field>
+            <field name="help" type="html">
+                <p>
+                    Scheduled Installation Tickets
+                </p>
+            </field>
+        </record>
+
+         <menuitem id="menu_helpdesk_scheduled_tickets" name="Scheduled Installation Tickets" parent="kin_helpdesk.menu_help_desk" action="action_view_scheduled_tickets" sequence="10"/>
+
+
         <!-- OLT -->
           <record id="olt_form" model="ir.ui.view">
             <field name="name">olt.form</field>

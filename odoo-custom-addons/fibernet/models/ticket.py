@@ -400,7 +400,9 @@ class Ticket(models.Model):
                                ('installation_date', '=', new_installation_date)])
 
         if len(records) < ticket_count_per_day and self.category_id == self.env.ref('fibernet.installation'):
-            installation_date_conv = self.installation_date.strftime('%d/%m/%Y')
+            installation_date_conv = False
+            if self.installation_date:
+                installation_date_conv = self.installation_date.strftime('%d/%m/%Y')
             new_installation_date_conv = new_installation_date.strftime('%d/%m/%Y')
             self.installation_date = new_installation_date
 
