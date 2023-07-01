@@ -312,7 +312,7 @@
         <record id="action_view_scheduled_tickets" model="ir.actions.act_window">
             <field name="res_model">kin.ticket</field>
             <field name="name">Scheduled Installation Tickets</field>
-            <field name="view_mode">tree,pivot,graph</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
             <field name="context">{'search_default_grpInstDate': 1 }</field>
               <field name="domain">[('category_code', '=', 'installation'),('state','in',['new','progress'])]</field>
             <field name="help" type="html">

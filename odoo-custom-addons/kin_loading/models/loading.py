@@ -981,7 +981,7 @@ class LoadingProgramme(models.Model):
                             self.product_id.name, self.name, self.env.user.name, self.programme_date))
 
 
-        line_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        depot_manager_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
         res = self.write({'state': 'line_approve', 'line_manager_id': self.env.user.id,
                            'line_manager_date': depot_manager_date})
 

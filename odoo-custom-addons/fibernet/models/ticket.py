@@ -193,14 +193,52 @@ class Ticket(models.Model):
                         'Kindly set the email for the %s with client id %s, in the customers database' % (
                             partner_id.name, partner_id.ref or ''))
 
-                msg = 'Dear %s, <p>This is to remind you of installation set for tommorrow %s. Our team remains committed to providing you with exceptional service and ensuring a flawless installation. We are confident that the rescheduled date will allow us to meet your expectations while delivering the quality you deserve.</p><p>If you have any questions or concerns regarding this rescheduling, please feel free to reach out to our dedicated support team at </p><p><ul class=o_timeline_tracking_value_list><li>Calls: 018889028</li><li>Whatsapp: +234 907 101 1409</li><li>Email: csc@fibernet.ng</li></ul></p><p> We will be happy to address any inquiries you may have and provide you with regular updates as we progress towards the new installation date.</p><p>Thank you for your continued trust and support.</p><p> Regards,</p><p>Customer Onboarding/Retention Center</p>' % \
+                msg = 'Dear %s, <p>We shall be in your apartment tomorrow for your internet installation tomorrow, %s within 8am-5pm.</p><p>We shall need access to your apartment and an adult that can give us directions for us to achieve the installation. </p><p>Kindly let us know if you will not be available for the installation to be carried out. </p><p>If you have any questions or require further assistance, please do not hesitate to contact our customer support team at </p><p><ul class=o_timeline_tracking_value_list><li>Calls: 018889028</li><li>Whatsapp: +234 907 101 1409</li><li>Email: csc@fibernet.ng</li></ul></p><p> Thank you for choosing Fibernet Broadband Limited. We are committed to delivering excellence and exceeding your expectations.</p><p>Best Regards,</p><p>Customer Onboarding/Retention Center</p>' % \
                       (
                           partner_id.name, installation_date)
                 record.message_follower_ids.unlink()
                 mail_obj = record.message_post(
                     body=_(msg),
-                    subject='%s Installation Reminder Notification for %s' % (
-                        record.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],
+                    subject='Installation Reminder: Your internet Installation is Scheduled for Tomorrow %s' % (installation_date), partner_ids=[partner_id.id],
+                    subtype_xmlid='mail.mt_comment', force_send=False)
+                user_names += partner_id.name + ", "
+                mail_obj.email_from = 'csc@fibernet.ng'
+                mail_obj.reply_to = 'csc@fibernet.ng'
+
+                # notify sales person
+                if record.order_id.user_id:
+                    subject = 'For your information. Reminder Installation Notification for %s, is scheduled on %s' % (
+                        record.partner_id.name, installation_date)
+                    smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % record.order_id.user_id.name
+                    record._send_email_to_sales_person(subject, smsg + msg)
+        return True
+
+    @api.model
+    def run_installation_date_today_check(self):
+        today = datetime.now()
+        records = self.search(
+            [('category_id', '=', self.env.ref('fibernet.installation').id), ('installation_date', '=', today),
+             ('state', 'not in', ['draft', 'closed', 'cancel'])])
+
+        for record in records:
+            # Send email to customer and sales person
+            installation_date = record.installation_date.strftime('%d/%m/%Y')
+            partner_id = record.partner_id
+            user_names = ''
+            if partner_id and record.category_id == record.env.ref('fibernet.installation'):
+                if not partner_id.email:
+                    raise UserError(
+                        'Kindly set the email for the %s with client id %s, in the customers database' % (
+                            partner_id.name, partner_id.ref or ''))
+
+                msg = 'Dear %s, <p>We shall be in your apartment tomorrow for your internet installation today, %s within 8am-5pm.</p><p>We shall need access to your apartment and an adult that can give us directions for us to achieve the installation. </p><p>Kindly let us know if you will not be available for the installation to be carried out. </p><p>If you have any questions or require further assistance, please do not hesitate to contact our customer support team at </p><p><ul class=o_timeline_tracking_value_list><li>Calls: 018889028</li><li>Whatsapp: +234 907 101 1409</li><li>Email: csc@fibernet.ng</li></ul></p><p> Thank you for choosing Fibernet Broadband Limited. We are committed to delivering excellence and exceeding your expectations.</p><p>Best Regards,</p><p>Customer Onboarding/Retention Center</p>' % \
+                      (
+                          partner_id.name, installation_date)
+                record.message_follower_ids.unlink()
+                mail_obj = record.message_post(
+                    body=_(msg),
+                    subject='Installation Reminder: Your internet Installation is Today %s' % (
+                        installation_date), partner_ids=[partner_id.id],
                     subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += partner_id.name + ", "
                 mail_obj.email_from = 'csc@fibernet.ng'
@@ -214,6 +252,7 @@ class Ticket(models.Model):
                     record._send_email_to_sales_person(subject, smsg + msg)
 
         return True
+
 
     @api.model
     def run_escalate_installation_date_check(self):
@@ -386,7 +425,6 @@ class Ticket(models.Model):
 
         if len(records) < ticket_count_per_day and self.category_id == self.env.ref('fibernet.installation'):
             self.installation_date = installation_date
-
             return True
         return False
 
@@ -421,8 +459,7 @@ class Ticket(models.Model):
                 self.message_follower_ids.unlink()
                 mail_obj = self.message_post(
                     body=_(msg),
-                    subject='%s Installation Delayed Notification for %s' % (
-                        self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],
+                    subject='Rescheduled installation for %s' % (partner_id.name), partner_ids=[partner_id.id],
                     subtype_xmlid='mail.mt_comment', force_send=False)
                 user_names += partner_id.name + ", "
                 mail_obj.email_from = 'csc@fibernet.ng'
@@ -564,8 +601,7 @@ class Ticket(models.Model):
             self.message_follower_ids.unlink()
             mail_obj = self.message_post(
                 body=_(msg),
-                subject='%s Opened Installation Ticket Notification for %s' % (
-                    self.sudo().product_id.name, partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
+                subject='Installation Alert for %s' % (partner_id.name), partner_ids=[partner_id.id],subtype_xmlid='mail.mt_comment', force_send=False)
             user_names += partner_id.name + ", "
             mail_obj.email_from = 'csc@fibernet.ng'
             mail_obj.reply_to = 'csc@fibernet.ng'
@@ -577,7 +613,7 @@ class Ticket(models.Model):
                 smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.order_id.user_id.name
                 self._send_email_to_sales_person(subject, smsg + msg)
 
-        elif partner_id and  self.category_id in [self.env.ref('fibernet.support'),self.env.ref('fibernet.updown_grade')]:
+        elif partner_id and self.category_id in [self.env.ref('fibernet.support'),self.env.ref('fibernet.updown_grade')]:
             msg = 'Dear %s (%s), <p>We acknowledge the receipt of your complaints dated - %s with ticket ID - %s </p><p>Thank you for bringing this issue to our attention and we sincerely apologize for any inconvenience this may have caused you.</p><p>Please be assured that your complaint is being taken seriously and as such, you will be contacted shortly on necessary action for resolution.</p><p>Thank you for your patience.</p><p> Regards,</p>Customer Service Center</p>' % \
                   (
                 partner_id.name,partner_id.ref, datetime.strptime(self.open_date.strftime('%Y-%m-%d %H:%M:%S'), '%Y-%m-%d %H:%M:%S').strftime('%d-%m-%Y'), self.ticket_id)
