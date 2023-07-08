@@ -466,10 +466,10 @@ class Ticket(models.Model):
                 mail_obj.reply_to = 'csc@fibernet.ng'
 
                 # notify sales person
-                if self.order_id.user_id:
+                if self.sudo().order_id.user_id:
                     subject = 'For your information. Installation for %s, which was scheduled on %s , has been delayed till %s' % (
                         self.partner_id.name, installation_date_conv, new_installation_date_conv)
-                    smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.order_id.user_id.name
+                    smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.sudo().order_id.user_id.name
                     self._send_email_to_sales_person(subject, smsg + msg)
 
                 #Send email to authorized group users
@@ -477,7 +477,7 @@ class Ticket(models.Model):
                                 subject='The Ticket Installation date has been changed',
                                 msg=_(
                                     'The Installation date for the Ticket %s has been changed for the order id - %s, from %s') % (
-                                        self.name, self.order_id.name, self.env.user.name))
+                                        self.name, self.sudo().order_id.name, self.env.user.name))
 
 
 
@@ -490,12 +490,12 @@ class Ticket(models.Model):
     def _send_email_to_sales_person(self,subject,msg):
         # Send email to sales person
         partn_ids = []
-        user = self.order_id.user_id
+        user = self.sudo().order_id.user_id
         partn_ids.append(user.partner_id.id)
 
         if partn_ids:
-            self.order_id.message_follower_ids.unlink()
-            self.order_id.message_post(
+            self.sudo().order_id.message_follower_ids.unlink()
+            self.sudo().order_id.message_post(
                 body=msg,
                 subject=subject, partner_ids=partn_ids,
                 subtype_xmlid='mail.mt_comment', force_send=False)
@@ -608,9 +608,9 @@ class Ticket(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
             #notify sales person
-            if self.order_id.user_id:
+            if self.sudo().order_id.user_id:
                 subject = 'For your information. Installation for %s, has been scheduled on %s' %  (self.partner_id.name, installation_date)
-                smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.order_id.user_id.name
+                smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.sudo().order_id.user_id.name
                 self._send_email_to_sales_person(subject, smsg + msg)
 
         elif partner_id and self.category_id in [self.env.ref('fibernet.support'),self.env.ref('fibernet.updown_grade')]:
@@ -832,8 +832,9 @@ class Ticket(models.Model):
 
         # Send email to customer and sales person
         partner_id = self.partner_id
-        installation_date = self.installation_date.strftime('%d/%m/%Y')
-        if partner_id and self.category_id == self.env.ref('fibernet.installation'):
+        if self.installation_date and partner_id and self.category_id == self.env.ref('fibernet.installation'):
+            partner_id = self.partner_id
+            installation_date = self.installation_date.strftime('%d/%m/%Y')
 
             if not partner_id.email:
                 raise UserError(
@@ -854,14 +855,14 @@ class Ticket(models.Model):
             mail_obj.reply_to = 'csc@fibernet.ng'
 
             # notify sales person
-            if self.order_id.user_id:
+            if self.sudo().order_id.user_id:
                 subject = 'For your information. Installation for %s, which was scheduled on %s , has been installed by %s' % (
                 self.partner_id.name, installation_date, self.installation_fse_id.name)
-                smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.order_id.user_id.name
+                smsg = "<p> Dear %s </p><p> Kindly see the message below for your reference </p> <br />" % self.sudo().order_id.user_id.name
                 self._send_email_to_sales_person(subject, smsg + msg)
 
                 # send email to other authorized group
-                self.send_email('wifiber.group_ticket_installation_date_notify',
+                self.send_email('fibernet.group_ticket_installation_date_notify',
                                 subject=subject,
                                 msg=smsg + msg)
 
@@ -874,7 +875,7 @@ class Ticket(models.Model):
             raise UserError('You cannot close an installation ticket that is not yet finalized')
 
         if self.category_id == self.env.ref('fibernet.installation') and self.order_id :
-            self.order_id.is_installation_ticket_close = True
+            self.sudo().order_id.is_installation_ticket_close = True
 
             #set partner parameters
             self.partner_id.status = self.status
@@ -889,7 +890,7 @@ class Ticket(models.Model):
             # send email
             self.send_email('fibernet.group_ticket_installation_close_notify',subject='An Installation Ticket has been closed',
             msg = _('The Installation Ticket %s has been closed for the order id - %s, from %s') % (
-                self.name, self.order_id.name, self.env.user.name))
+                self.name, self.sudo().order_id.name, self.env.user.name))
 
 
             # Send email to the customer for closing the installation ticket
@@ -935,7 +936,7 @@ class Ticket(models.Model):
                             subject='The Survey Ticket has been closed',
                             msg=_(
                                 'The Survey Ticket %s has been closed for the order id - %s, from %s') % (
-                                    self.name, self.order_id.name, self.env.user.name))
+                                    self.name, self.sudo().order_id.name, self.env.user.name))
 
 
         elif self.category_id == self.env.ref('fibernet.updown_grade'):

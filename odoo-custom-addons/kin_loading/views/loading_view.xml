@@ -2072,6 +2072,7 @@ f
             <field name="model">product.template</field>
             <field name="inherit_id" ref="product.product_template_form_view"/>
             <field name="arch" type="xml">
+
                 <field name="categ_id" position="after">
                    <field name="white_product" />
                     <field name="account_unearned_revenue_id"  />
@@ -2086,6 +2087,30 @@ f
 <!--                    </div>-->
             </field>
         </record>
+
+        <record id="product_template_only_form_extend_loading" model="ir.ui.view">
+            <field name="name">product.template.form.extend.loading</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view"/>
+            <field name="arch" type="xml">
+                 <field name="standard_price" position="attributes" >
+                     <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+            </field>
+        </record>
+
+        <record id="product_template_tree_view_extend_loading" model="ir.ui.view">
+            <field name="name">product.template.product.tree.loading</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_tree_view" />
+            <field name="arch" type="xml">
+                <field name="standard_price" position="attributes" >
+                    <attribute name="groups" >kin_loading.group_show_unit_subtotal_sales</attribute>
+                </field>
+            </field>
+        </record>
+
+
 
 
         <!-- Depot -->

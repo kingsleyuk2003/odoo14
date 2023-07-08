@@ -282,7 +282,7 @@
                                  <field name="description" />
                                  <field name="crm_id" readonly="1" />
                                  <field name="dist_fpop" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
-                                 <field name="fpop_box_jb"  domain="[('product_id','=',220)]" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
+                                 <field name="fpop_box_jb"  domain="[('product_id','=',231)]" options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                 <field name="installation_constraint" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'survey' ),('state', 'not in', ('draft','new','maint_approve') )]}" />
                                    <field name="access_confirmation" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                                    <field name="comment_survey" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
