@@ -270,7 +270,7 @@ class SaleOrderExtend(models.Model):
 
             self.message_post(
                 body=msg,
-                subject=msg, partner_ids=partn_ids,
+                subject=subject, partner_ids=partn_ids,
                 subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
 
@@ -844,6 +844,7 @@ class Prospect(models.Model):
         users = self.sudo().request_ticket_id.initiator_ticket_group_id.sudo().user_ids
         partn_ids = []
         user_names = ''
+        subject = 'The Prospect (%s) has been contacted by %s' % (self.name,  self.env.user.name)
         msg = 'The Prospect (%s) has been contacted by %s with comment: <p>%s</p>' % (
             self.name,  self.env.user.name, self.comment)
         for user in users:
@@ -855,7 +856,7 @@ class Prospect(models.Model):
             self.message_follower_ids.unlink()
             self.message_post(
                 body=_(msg),
-                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+                subject='%s' % subject, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
 
     def btn_reset(self):

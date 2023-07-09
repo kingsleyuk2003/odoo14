@@ -10,3 +10,20 @@ class AccountJournal(models.Model):
     _inherit = "account.journal"
 
     is_expense = fields.Boolean(string='Is Expense')
+
+
+class AccountMove(models.Model):
+    _inherit = "account.move"
+
+    is_eservice_invoice = fields.Boolean(string='Is eservice Invoice')
+
+class AccountMove(models.Model):
+    _inherit = "account.move.line"
+
+    is_eservice_invoice_line = fields.Boolean(string='Is eservice invoice line')
+
+
+class AccountPayment(models.Model):
+    _inherit = "account.payment"
+
+    is_from_eservice = fields.Boolean(string='Is From eservice')
