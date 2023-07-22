@@ -57,7 +57,7 @@
                      <button name="btn_ticket_close_call_log" type="object"  string="Close Call Log"  class="oe_highlight" groups="wifiber.group_helpdesk_close_call_log" attrs="{'invisible': ['|',('category_code', 'not in', ('call_log') ),('state', 'in', ('draft','closed') )]}"   />   />
                 </button>
                 <button name="btn_ticket_done" position="attributes" >
-                      <attribute  name="states" >progress,installed</attribute>
+                      <attribute  name="states" >new,progress,installed</attribute>
                  </button>
                 <button name="btn_ticket_progress" position="before" >
                      <button name="btn_ticket_maint_approve" type="object"  string="Maintenance Approved"  class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket" attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"    />

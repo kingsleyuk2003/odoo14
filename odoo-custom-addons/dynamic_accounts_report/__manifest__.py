@@ -22,15 +22,19 @@
 
 {
     'name': 'Dynamic Financial Reports',
-    'version': '14.0.1.2.1',
+    'version': '14.0.1.2.7',
     'category': 'Accounting',
+    'live_test_url': 'https://www.youtube.com/watch?v=gVQi9q9Rs-E&t=5s',
     'summary': """Dynamic Financial Reports with drill 
                 down and filters– Community Edition""",
-    'description': "Dynamic Financial Reports, DynamicFinancialReports, FinancialReport, Accountingreports, odoo reports, odoo"
-                   "This module creates dynamic Accounting General Ledger, Trial Balance, Balance Sheet "
+    'description': "Dynamic Financial Reports, DynamicFinancialReports, "
+                   "FinancialReport, Accountingreports, odoo reports, odoo"
+                   "This module creates dynamic Accounting General Ledger, "
+                   "Trial Balance, Balance Sheet "
                    "Proft and Loss, Cash Flow Statements, Partner Ledger,"
                    "Partner Ageing, Day book"
-                   "Bank book and Cash book reports in Odoo 14 community edition.",
+                   "Bank book and Cash book reports in Odoo 14"
+                   "community edition.",
     'author': 'Cybrosys Techno Solutions',
     'website': "https://www.cybrosys.com",
     'company': 'Cybrosys Techno Solutions',
@@ -50,16 +54,16 @@
         'report/daybook.xml',
     ],
     'qweb': [
-            'static/src/xml/general_ledger_view.xml',
-            'static/src/xml/trial_balance_view.xml',
-            'static/src/xml/cash_flow_view.xml',
-            'static/src/xml/financial_reports_view.xml',
-            'static/src/xml/partner_ledger_view.xml',
-            'static/src/xml/ageing.xml',
-            'static/src/xml/daybook.xml',
+        'static/src/xml/general_ledger_view.xml',
+        'static/src/xml/trial_balance_view.xml',
+        'static/src/xml/cash_flow_view.xml',
+        'static/src/xml/financial_reports_view.xml',
+        'static/src/xml/partner_ledger_view.xml',
+        'static/src/xml/ageing.xml',
+        'static/src/xml/daybook.xml',
     ],
     'license': 'LGPL-3',
-    'images': ['static/description/banner.jpg'],
+    'images': ['static/description/banner.png'],
     'installable': True,
     'auto_install': False,
     'application': True,

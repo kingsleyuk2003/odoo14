@@ -1032,7 +1032,7 @@ class Ticket(models.Model):
             if not self.order_id :
                 raise UserError('No Sales Order for this Ticket')
 
-            if self.order_id.amount_balance:
+            if self.order_id.amount_balance and self.order_id.amount_balance > 0:
                 debt_subject = '%s has a balance of %s%s, to pay before his account can be activated, for the sales order (%s)' % (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance, self.order_id.name)
                 debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket '% (self.partner_id.name, self.order_id.currency_id.symbol, self.order_id.amount_balance,self.order_id.user_id.name, self.order_id.name)
                 #notify the sales person

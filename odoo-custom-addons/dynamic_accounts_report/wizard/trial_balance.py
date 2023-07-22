@@ -1,8 +1,30 @@
+# -*- coding: utf-8 -*-
+#############################################################################
+#
+#    Cybrosys Technologies Pvt. Ltd.
+#
+#    Copyright (C) 2021-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
+#    Author: Cybrosys Techno Solutions(<https://www.cybrosys.com>)
+#
+#    You can modify it under the terms of the GNU LESSER
+#    GENERAL PUBLIC LICENSE (LGPL v3), Version 3.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU LESSER GENERAL PUBLIC LICENSE (LGPL v3) for more details.
+#
+#    You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENSE
+#    (LGPL v3) along with this program.
+#    If not, see <http://www.gnu.org/licenses/>.
+#
+#############################################################################
 import time
 from odoo import fields, models, api, _
 
 import io
 import json
+from odoo.http import request
 from odoo.exceptions import AccessError, UserError, AccessDenied
 
 try:
@@ -30,7 +52,7 @@ class TrialView(models.TransientModel):
 
         data = {
             'display_account': r.display_account,
-            'model':self,
+            'model': self,
             'journals': r.journal_ids,
             'target_move': r.target_move,
 
@@ -80,21 +102,46 @@ class TrialView(models.TransientModel):
 
         return filters
 
+    def get_current_company_value(self):
+
+        cookies_cids = [int(r) for r in request.httprequest.cookies.get('cids').split(",")] \
+            if request.httprequest.cookies.get('cids') \
+            else [request.env.user.company_id.id]
+        for company_id in cookies_cids:
+            if company_id not in self.env.user.company_ids.ids:
+                cookies_cids.remove(company_id)
+        if not cookies_cids:
+            cookies_cids = [self.env.company.id]
+        if len(cookies_cids) == 1:
+            cookies_cids.append(0)
+        return cookies_cids
+
     def get_filter_data(self, option):
         r = self.env['account.trial.balance'].search([('id', '=', option[0])])
         default_filters = {}
-        company_id = self.env.company
-        company_domain = [('company_id', '=', company_id.id)]
-        journals = r.journal_ids if r.journal_ids else self.env['account.journal'].search(company_domain)
+        company_id = self.env.companies.ids
+        company_domain = [('company_id', 'in', company_id)]
+        journal_ids = r.journal_ids if r.journal_ids else self.env['account.journal'].search(company_domain, order="company_id, name")
+
+
+        journals = []
+        o_company = False
+        for j in journal_ids:
+            if j.company_id != o_company:
+                journals.append(('divider', j.company_id.name))
+                o_company = j.company_id
+            journals.append((j.id, j.name, j.code))
 
         filter_dict = {
             'journal_ids': r.journal_ids.ids,
-            'company_id': company_id.id,
+            'company_id': company_id,
             'date_from': r.date_from,
             'date_to': r.date_to,
             'target_move': r.target_move,
-            'journals_list': [(j.id, j.name, j.code) for j in journals],
-            'company_name': company_id and company_id.name,
+            'journals_list': journals,
+            # 'journals_list': [(j.id, j.name, j.code) for j in journals],
+
+            'company_name': ', '.join(self.env.companies.mapped('name')),
         }
         filter_dict.update(default_filters)
         return filter_dict
@@ -148,9 +195,9 @@ class TrialView(models.TransientModel):
             wheres.append(where_clause.strip())
         filters = " AND ".join(wheres)
         if data['target_move'] == 'posted':
-            filters += " AND account_move_line__move_id.state = 'posted'"
+            filters += " AND account_move_line.parent_state = 'posted'"
         else:
-            filters += " AND account_move_line__move_id.state in ('draft','posted')"
+            filters += " AND account_move_line.parent_state in ('draft','posted')"
         if data.get('date_from'):
             filters += " AND account_move_line.date >= '%s'" % data.get('date_from')
         if data.get('date_to'):
@@ -158,7 +205,7 @@ class TrialView(models.TransientModel):
 
         if data['journals']:
             filters += ' AND jrnl.id IN %s' % str(tuple(data['journals'].ids) + tuple([0]))
-        tables += 'JOIN account_journal jrnl ON (account_move_line.journal_id=jrnl.id)'
+        tables += ' JOIN account_journal jrnl ON (account_move_line.journal_id=jrnl.id)'
         # compute the balance, debit and credit for the provided accounts
         request = (
                     "SELECT account_id AS id, SUM(debit) AS debit, SUM(credit) AS credit, (SUM(debit) - SUM(credit)) AS balance" + \
@@ -207,15 +254,15 @@ class TrialView(models.TransientModel):
                 wheres.append(where_clause.strip())
             filters = " AND ".join(wheres)
             if data['target_move'] == 'posted':
-                filters += " AND account_move_line__move_id.state = 'posted'"
+                filters += " AND account_move_line.parent_state = 'posted'"
             else:
-                filters += " AND account_move_line__move_id.state in ('draft','posted')"
+                filters += " AND account_move_line.parent_state in ('draft','posted')"
             if data.get('date_from'):
                 filters += " AND account_move_line.date < '%s'" % data.get('date_from')
 
             if data['journals']:
                 filters += ' AND jrnl.id IN %s' % str(tuple(data['journals'].ids) + tuple([0]))
-            tables += 'JOIN account_journal jrnl ON (account_move_line.journal_id=jrnl.id)'
+            tables += ' JOIN account_journal jrnl ON (account_move_line.journal_id=jrnl.id)'
 
             # compute the balance, debit and credit for the provided accounts
             request = (
@@ -232,8 +279,13 @@ class TrialView(models.TransientModel):
             self.env.context.get('default_journal_id', False))
         if journal.currency_id:
             return journal.currency_id.id
+        lang = self.env.user.lang
+        if not lang:
+            lang = 'en_US'
+        lang = lang.replace("_", '-')
         currency_array = [self.env.company.currency_id.symbol,
-                          self.env.company.currency_id.position]
+                          self.env.company.currency_id.position,
+                          lang]
         return currency_array
 
     def get_dynamic_xlsx_report(self, data, response ,report_data, dfr_data):

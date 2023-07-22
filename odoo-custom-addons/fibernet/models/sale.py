@@ -408,7 +408,7 @@ class SaleOrderExtend(models.Model):
 
 
     def check_debt_customer(self):
-        if self.amount_balance:
+        if self.amount_balance and self.amount_balance > 0:
             debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you NOC can finalize this ticket ' % (
             self.partner_id.name, self.currency_id.symbol, self.amount_balance,
             self.user_id.name, self.name)

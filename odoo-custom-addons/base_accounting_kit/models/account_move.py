@@ -139,7 +139,9 @@ class AccountInvoiceLine(models.Model):
 
     @api.onchange('asset_category_id')
     def onchange_asset_category_id(self):
-        if self.asset_category_id:
+        if self.move_id == 'out_invoice' and self.asset_category_id:
+            self.account_id = self.asset_category_id.account_asset_id.id
+        elif self.move_id == 'in_invoice' and self.asset_category_id:
             self.account_id = self.asset_category_id.account_asset_id.id
 
     @api.onchange('product_uom_id')

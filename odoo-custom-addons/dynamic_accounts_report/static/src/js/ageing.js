@@ -9,6 +9,9 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
     var QWeb = core.qweb;
     var _t = core._t;
 
+    var datepicker = require('web.datepicker');
+    var time = require('web.time');
+
     window.click_num = 0;
     var PartnerAgeing = AbstractAction.extend({
     template: 'AgeingTemp',
@@ -20,6 +23,7 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
             'click #xlsx': 'print_xlsx',
             'click .gl-line': 'show_drop_down',
             'click .view-account-move': 'view_acc_move',
+            'mousedown div.input-group.date[data-target-input="nearest"]': '_onCalendarIconClick',
         },
 
         init: function(parent, action) {
@@ -48,6 +52,35 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
             })
         },
 
+        _onCalendarIconClick: function (ev) {
+        var $calendarInputGroup = $(ev.currentTarget);
+
+        var calendarOptions = {
+
+        minDate: moment({ y: 1000 }),
+            maxDate: moment().add(200, 'y'),
+            calendarWeeks: true,
+            defaultDate: moment().format(),
+            sideBySide: true,
+            buttons: {
+                showClear: true,
+                showClose: true,
+                showToday: true,
+            },
+
+            icons : {
+                date: 'fa fa-calendar',
+
+            },
+            locale : moment.locale(),
+            format : time.getLangDateFormat(),
+             widgetParent: 'body',
+             allowInputToggle: true,
+        };
+
+        $calendarInputGroup.datetimepicker(calendarOptions);
+    },
+
 
         load_data: function (initial_render = true) {
 
@@ -61,6 +94,17 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
                         method: 'view_report',
                         args: [[this.wizard_id]],
                     }).then(function(datas) {
+                    _.each(datas['report_lines'][0], function(rep_lines) {
+                            rep_lines.total = self.format_currency(datas['currency'],rep_lines.total);
+                            rep_lines[4] = self.format_currency(datas['currency'],rep_lines[4]);
+                            rep_lines[3] = self.format_currency(datas['currency'],rep_lines[3]);
+                            rep_lines[2] = self.format_currency(datas['currency'],rep_lines[2]);
+                            rep_lines[1] = self.format_currency(datas['currency'],rep_lines[1]);
+                            rep_lines[0] = self.format_currency(datas['currency'],rep_lines[0]);
+
+                            rep_lines['direction'] = self.format_currency(datas['currency'],rep_lines['direction']);
+
+                             });
 
                             if (initial_render) {
                                     self.$('.filter_view_tb').html(QWeb.render('AgeingFilterView', {
@@ -96,6 +140,15 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
                 catch (el) {
                     window.location.href
                     }
+            },
+            format_currency: function(currency, amount) {
+                if (typeof(amount) != 'number') {
+                    amount = parseFloat(amount);
+                }
+                var formatted_value = (parseInt(amount)).toLocaleString(currency[2],{
+                    minimumFractionDigits: 2
+                })
+                return formatted_value
             },
 
             print_pdf: function(e) {
@@ -214,8 +267,6 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
             var td = $(event.currentTarget).next('tr').find('td');
             if (td.length == 1) {
 
-
-
                     self._rpc({
                         model: 'account.partner.ageing',
                         method: 'view_report',
@@ -223,19 +274,23 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
                             [self.wizard_id]
                         ],
                     }).then(function(data) {
+
+
+                    _.each(data['report_lines'][0], function(rep_lines) {
+                    _.each(rep_lines['child_lines'], function(child_line) {
+                            child_line.amount = self.format_currency(data['currency'],child_line.amount);
+
+                            });
+                             });
+
+
                     for (var i = 0; i < data['report_lines'][0].length; i++) {
-
-
                     if (account_id == data['report_lines'][0][i]['partner_id'] ){
-
-
                     $(event.currentTarget).next('tr').find('td .gl-table-div').remove();
                     $(event.currentTarget).next('tr').find('td ul').after(
                         QWeb.render('SubSectional', {
                             account_data: data['report_lines'][0][i]['child_lines'],
-
                         }))
-
                     $(event.currentTarget).next('tr').find('td ul li:first a').css({
                         'background-color': '#00ede8',
                         'font-weight': 'bold',
@@ -293,10 +348,14 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
 
             var filter_data_selected = {};
 
-            if ($("#date_from").val()) {
-                var dateString = $("#date_from").val();
+//            if ($("#date_from").val()) {
+//                var dateString = $("#date_from").val();
+//
+//                filter_data_selected.date_from= dateString;
+//            }
 
-                filter_data_selected.date_from= dateString;
+            if (this.$el.find('.datetimepicker-input[name="date_from"]').val()) {
+                filter_data_selected.date_from = moment(this.$el.find('.datetimepicker-input[name="date_from"]').val(), time.getLangDateFormat()).locale('en').format('YYYY-MM-DD');
             }
             var partner_ids = [];
             var partner_text = [];
@@ -344,7 +403,6 @@ odoo.define('dynamic_accounts_report.ageing', function (require) {
 
             var post_res = document.getElementById("post_res")
             filter_data_selected.target_move = $(".target_move")[1].value
-                        console.log($(".target_move"))
 
             post_res.value = $(".target_move")[1].value
                     post_res.innerHTML=post_res.value;

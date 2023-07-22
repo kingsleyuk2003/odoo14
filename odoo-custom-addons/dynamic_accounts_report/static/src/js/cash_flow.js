@@ -9,6 +9,9 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
     var QWeb = core.qweb;
     var _t = core._t;
 
+    var datepicker = require('web.datepicker');
+    var time = require('web.time');
+
     window.click_num = 0;
     var CashFlow = AbstractAction.extend({
     template: 'CFTemp',
@@ -19,6 +22,7 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
             'click #pdf': 'print_pdf',
             'click #xlsx': 'print_xlsx',
             'click .cf-line': 'get_move_lines',
+            'mousedown div.input-group.date[data-target-input="nearest"]': '_onCalendarIconClick',
         },
 
         init: function(parent, action) {
@@ -44,6 +48,35 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
             })
         },
 
+        _onCalendarIconClick: function (ev) {
+        var $calendarInputGroup = $(ev.currentTarget);
+
+        var calendarOptions = {
+
+        minDate: moment({ y: 1000 }),
+            maxDate: moment().add(200, 'y'),
+            calendarWeeks: true,
+            defaultDate: moment().format(),
+            sideBySide: true,
+            buttons: {
+                showClear: true,
+                showClose: true,
+                showToday: true,
+            },
+
+            icons : {
+                date: 'fa fa-calendar',
+
+            },
+            locale : moment.locale(),
+            format : time.getLangDateFormat(),
+             widgetParent: 'body',
+             allowInputToggle: true,
+        };
+
+        $calendarInputGroup.datetimepicker(calendarOptions);
+    },
+
         get_move_lines: function(event) {
             event.preventDefault();
             var self = this;
@@ -58,6 +91,37 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
                     [self.wizard_id]
                 ],
             }).then(function(datas) {
+            _.each(datas['journal_res'], function(journal_lines) {
+                    _.each(journal_lines['journal_lines'], function(rep_lines) {
+                        rep_lines.total_debit = self.format_currency(datas['currency'],rep_lines.total_debit);
+                        rep_lines.total_credit = self.format_currency(datas['currency'],rep_lines.total_credit);
+                        rep_lines.balance = self.format_currency(datas['currency'],rep_lines.balance);
+
+
+
+
+                    });
+
+            });
+            _.each(datas['account_res'], function(journal_lines) {
+                    _.each(journal_lines['journal_lines'], function(rep_lines) {
+                        rep_lines.total_debit = self.format_currency(datas['currency'],rep_lines.total_debit);
+                        rep_lines.total_credit = self.format_currency(datas['currency'],rep_lines.total_credit);
+                        rep_lines.total_balance = self.format_currency(datas['currency'],rep_lines.total_balance);
+
+
+                    });
+                    _.each(journal_lines['move_lines'], function(move_lines) {
+                        move_lines.total_debit = self.format_currency(datas['currency'],move_lines.total_debit);
+                        move_lines.total_credit = self.format_currency(datas['currency'],move_lines.total_credit);
+                        move_lines.balance = self.format_currency(datas['currency'],move_lines.balance);
+
+
+
+
+                    });
+            });
+
 
                     if(datas['levels']== 'detailed'){
                         $(event.currentTarget).next('tr').find('td ul').after(
@@ -100,12 +164,29 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
                         method: 'view_report',
                         args: [[this.wizard_id]],
                     }).then(function(datas) {
+
+
+                            _.each(datas['fetched_data'], function(rep_lines) {
+                            rep_lines.total_debit = self.format_currency(datas['currency'],rep_lines.total_debit);
+                            rep_lines.total_credit = self.format_currency(datas['currency'],rep_lines.total_credit);
+                            rep_lines.total_balance = self.format_currency(datas['currency'],rep_lines.total_balance);
+
+
+
+
+                            });
                             if (initial_render) {
                                     self.$('.filter_view_tb').html(QWeb.render('CashFilterView', {
                                         filter_data: datas['filters'],
                                     }));
                                     self.$el.find('.journals').select2({
                                         placeholder: 'Select Journals...',
+                                    });
+                                    self.$el.find('.target_move').select2({
+                                        placeholder: 'Target Move...',
+                                    });
+                                    self.$el.find('.levels').select2({
+                                        placeholder: 'Levels...',
                                     });
                             }
                             var child=[];
@@ -123,6 +204,16 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
                 catch (el) {
                     window.location.href
                     }
+            },
+
+            format_currency: function(currency, amount) {
+                if (typeof(amount) != 'number') {
+                    amount = parseFloat(amount);
+                }
+                var formatted_value = (parseInt(amount)).toLocaleString(currency[2],{
+                    minimumFractionDigits: 2
+                })
+                return formatted_value
             },
 
             show_gl: function(e) {
@@ -231,8 +322,8 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
 
             if ($(".levels").length){
             var level_res = document.getElementById("level_res")
-            filter_data_selected.levels = $(".levels")[0].value
-            level_res.value = $(".levels")[0].value
+            filter_data_selected.levels = $(".levels")[1].value
+            level_res.value = $(".levels")[1].value
             level_res.innerHTML=level_res.value;
             if ($(".levels").value==""){
             type_res.innerHTML="summary";
@@ -240,21 +331,30 @@ odoo.define('dynamic_cash_flow_statements.cash_flow', function (require) {
             }
             }
 
-            if ($("#date_from").val()) {
-                var dateString = $("#date_from").val();
-                filter_data_selected.date_from = dateString;
+
+            if (this.$el.find('.datetimepicker-input[name="date_from"]').val()) {
+                filter_data_selected.date_from = moment(this.$el.find('.datetimepicker-input[name="date_from"]').val(), time.getLangDateFormat()).locale('en').format('YYYY-MM-DD');
             }
-            if ($("#date_to").val()) {
-                var dateString = $("#date_to").val();
-                filter_data_selected.date_to = dateString;
+
+            if (this.$el.find('.datetimepicker-input[name="date_to"]').val()) {
+                filter_data_selected.date_to = moment(this.$el.find('.datetimepicker-input[name="date_to"]').val(), time.getLangDateFormat()).locale('en').format('YYYY-MM-DD');
             }
+
+//            if ($("#date_from").val()) {
+//                var dateString = $("#date_from").val();
+//                filter_data_selected.date_from = dateString;
+//            }
+//            if ($("#date_to").val()) {
+//                var dateString = $("#date_to").val();
+//                filter_data_selected.date_to = dateString;
+//            }
 
             if ($(".target_move").length) {
             var post_res = document.getElementById("post_res")
-            filter_data_selected.target_move = $(".target_move")[0].value
-            post_res.value = $(".target_move")[0].value
+            filter_data_selected.target_move = $(".target_move")[1].value
+            post_res.value = $(".target_move")[1].value
                     post_res.innerHTML=post_res.value;
-              if ($(".target_move")[0].value == "") {
+              if ($(".target_move")[1].value == "") {
               post_res.innerHTML="posted";
 
               }

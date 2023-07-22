@@ -59,7 +59,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['direction'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['direction']"/>
+<!--                                                <t t-esc="Math.round(account['direction'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
 
                                         </td>
@@ -69,7 +70,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['4'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['4']"/>
+<!--                                                <t t-esc="Math.round(account['4'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                         <td style="text-align:right;">
@@ -78,7 +80,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['3'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['3']"/>
+<!--                                                <t t-esc="Math.round(account['3'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                         <td style="text-align:right;">
@@ -87,7 +90,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['2'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['2']"/>
+<!--                                                <t t-esc="Math.round(account['2'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                         <td style="text-align:right;">
@@ -96,7 +100,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['1'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['1']"/>
+<!--                                                <t t-esc="Math.round(account['1'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                         <td style="text-align:right;">
@@ -105,7 +110,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['0'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['0']"/>
+<!--                                                <t t-esc="Math.round(account['0'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                         <td style="text-align:right;">
@@ -114,7 +120,8 @@
                                             </t>
                                             <t t-else="">
                                                 <t t-esc="currency[0]"/>
-                                                <t t-esc="Math.round(account['total'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['total']"/>
+<!--                                                <t t-esc="Math.round(account['total'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             </t>
                                         </td>
                                     </t>
@@ -124,7 +131,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['direction'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['direction']"/>
+<!--                                                <t t-esc="Math.round(account['direction'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -133,7 +141,9 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['4'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['4']"/>
+
+<!--                                                <t t-esc="Math.round(account['4'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -142,7 +152,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['3'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['3']"/>
+<!--                                                <t t-esc="Math.round(account['3'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -151,7 +162,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['2'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['2']"/>
+<!--                                                <t t-esc="Math.round(account['2'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -160,7 +172,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['1'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['1']"/>
+<!--                                                <t t-esc="Math.round(account['1'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -169,7 +182,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['0'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['0']"/>
+<!--                                                <t t-esc="Math.round(account['0'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -178,7 +192,8 @@
                                                 <span>-</span>
                                             </t>
                                             <t t-else="">
-                                                <t t-esc="Math.round(account['total'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                                <t t-esc="account['total']"/>
+<!--                                                <t t-esc="Math.round(account['total'] * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                                 <t t-esc="currency[0]"/>
                                             </t>
                                         </td>
@@ -204,38 +219,41 @@
 
 
     <t t-name="AgeingFilterView">
-        <div class="" style="position: relative;">
-            <div class="sub_container_left">
+       <div class="row" style="margin-right: 10px; margin-left: 10px;">
+            <div class="sub_container_left" style="width:70%;">
                 <div class="report_print">
                     <button type="button" class="btn btn-primary" id="pdf"
-                            style="left:10px; height:30px;position: relative;color:white;background-color: #00A0AD;border-color: #00A0AD; padding:3px;">
+                            style="position: relative;height:30px;color:white;background-color: #00A0AD;border-color: #00A0AD; padding:3px;">
                         Print (PDF)
                     </button>
                     <button type="button" class="btn btn-primary" id="xlsx"
-                            style="left:10px; height:30px;position: relative;color:white;background-color: #00A0AD;border-color: #00A0AD; padding:3px;">
+                            style="position: relative;height:30px;color:white;background-color: #00A0AD;border-color: #00A0AD; padding:3px;">
                         Export (XLSX)
                     </button>
                 </div>
             </div>
             <br></br>
-            <div class="sub_container_right" style="width:50%;height:3%;right:0px;top:0px;position: absolute;">
-                <div class="" style="right:80x;">
+            <div class="sub_container_right row" style="width:30%;height:3%;top:0px;position: relative;">
 
-                    <br></br>
-                    <div class="row" style="right:100px;top:0px;position: absolute;width:50;">
                         <div class="time_range" style="">
-                            <a type="button" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                            <a type="button" class="dropdown-toggle" data-toggle="dropdown" >
                                 <span class="fa fa-calendar" title="Dates" role="img" aria-label="Dates"></span>
-                                As On Date
+                                As on Date
                             </a>
                             <div class="dropdown-menu" role="menu">
-                                <div class="">
-                                    <label class="" for="date_from">As On Date :</label>
-                                    <div class="">
-                                        <div class="" aria-atomic="true" id="">
-                                            <input type="date" id="date_from"></input>
+                                <div class="form-group">
+                                    <label class="" for="date_from">As on Date :</label>
+                                        <div class="input-group date" id="date_from" data-target-input="nearest">
+                                            <input type="text" name="date_from" class="form-control datetimepicker-input" data-target="#date_from" t-att-name="prefix"/>
+                                            <div class="input-group-append" data-target="#date_from" data-toggle="datetimepicker">
+                                                <span class="input-group-text">
+                                                    <span class="fa fa-calendar" role="img" aria-label="Calendar"></span>
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
+
+
+
                                 </div>
                             </div>
                         </div>
@@ -299,16 +317,17 @@
                             </select>
                             <span id="post_res"></span>
                         </div>
-                    </div>
+                        <div style="">
+                            <button type="button" id="apply_filter" class="btn btn-primary"
+                                    style="top:0px;height:30px;color:white;background-color: #00A0AD;border-color: #00A0AD;">
+                                Apply
+                            </button>
 
-                </div>
-                <div style="">
-                    <button type="button" id="apply_filter" class="btn btn-primary"
-                            style="top:0px;height:30px;right:20px;position: absolute;color:white;background-color: #00A0AD;border-color: #00A0AD;">
-                        Apply
-                    </button>
+                        </div>
+<!--                    </div>-->
 
-                </div>
+<!--                </div>-->
+
             </div>
         </div>
     </t>
@@ -379,7 +398,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
 
                                     </t>
@@ -394,7 +414,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
 
                                     </t>
@@ -409,7 +430,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
 
 
@@ -425,7 +447,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
 
 
@@ -441,7 +464,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
 
                                     </t>
@@ -456,7 +480,8 @@
                                         </t>
                                         <t t-else="">
                                             <t t-esc="account_line.symbol"/>
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                         </t>
                                     </t>
                                     <t t-else="">
@@ -471,7 +496,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>
@@ -483,7 +509,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>
@@ -495,7 +522,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>
@@ -507,7 +535,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>
@@ -519,7 +548,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>
@@ -531,7 +561,8 @@
                                             <span>-</span>
                                         </t>
                                         <t t-else="">
-                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>
+                                            <t t-esc="account_line.amount"/>
+<!--                                            <t t-esc="Math.round(account_line.amount * Math.pow(10, 2)) / Math.pow(10, 2)"/>-->
                                             <t t-esc="account_line.symbol"/>
                                         </t>
                                     </t>

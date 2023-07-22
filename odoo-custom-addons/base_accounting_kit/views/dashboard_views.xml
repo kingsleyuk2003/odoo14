@@ -7,13 +7,10 @@
 
         <menuitem name="Dashboard" id="menu_accounting_dashboard" parent="account.menu_finance"
                   sequence="0"
-                  groups="group_show_account_dashboard"
+                  groups="account.group_account_manager"
                   action="action_account_invoice_report_all"/>
          <record model="ir.ui.menu" id="account.menu_board_journal_1">
             <field name="name">Overview</field>
         </record>
-
-
-
     </data>
 </odoo>

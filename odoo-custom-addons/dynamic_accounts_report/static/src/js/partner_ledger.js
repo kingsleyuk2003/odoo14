@@ -9,6 +9,9 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
     var QWeb = core.qweb;
     var _t = core._t;
 
+    var datepicker = require('web.datepicker');
+    var time = require('web.time');
+
     window.click_num = 0;
     var PartnerLedger = AbstractAction.extend({
     template: 'PartnerTemp',
@@ -20,6 +23,8 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
             'click #xlsx': 'print_xlsx',
             'click .pl-line': 'show_drop_down',
             'click .view-account-move': 'view_acc_move',
+                        'mousedown div.input-group.date[data-target-input="nearest"]': '_onCalendarIconClick',
+
 
         },
 
@@ -44,6 +49,35 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
             })
         },
 
+        _onCalendarIconClick: function (ev) {
+        var $calendarInputGroup = $(ev.currentTarget);
+
+        var calendarOptions = {
+
+        minDate: moment({ y: 1000 }),
+            maxDate: moment().add(200, 'y'),
+            calendarWeeks: true,
+            defaultDate: moment().format(),
+            sideBySide: true,
+            buttons: {
+                showClear: true,
+                showClose: true,
+                showToday: true,
+            },
+
+            icons : {
+                date: 'fa fa-calendar',
+
+            },
+            locale : moment.locale(),
+            format : time.getLangDateFormat(),
+             widgetParent: 'body',
+             allowInputToggle: true,
+        };
+
+        $calendarInputGroup.datetimepicker(calendarOptions);
+    },
+
         load_data: function (initial_render = true) {
             var self = this;
                 self.$(".categ").empty();
@@ -54,6 +88,18 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
                         method: 'view_report',
                         args: [[this.wizard_id]],
                     }).then(function(datas) {
+                            _.each(datas['report_lines'], function(rep_lines) {
+                            rep_lines.debit = self.format_currency(datas['currency'],rep_lines.debit);
+                            rep_lines.credit = self.format_currency(datas['currency'],rep_lines.credit);
+                            rep_lines.balance = self.format_currency(datas['currency'],rep_lines.balance);
+
+
+
+
+                            });
+
+
+
                         if (initial_render) {
                             self.$('.filter_view_tb').html(QWeb.render('PLFilterView', {
                                 filter_data: datas['filters'],
@@ -80,6 +126,9 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
                             self.$el.find('.acc').select2({
                             placeholder: 'Select Acc...',
                             });
+                            self.$el.find('.target_move').select2({
+                                        placeholder: 'Target Move...',
+                                    });
                         }
                         var child=[];
 
@@ -97,6 +146,18 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
                 catch (el) {
                     window.location.href
                     }
+            },
+
+
+
+            format_currency: function(currency, amount) {
+                if (typeof(amount) != 'number') {
+                    amount = parseFloat(amount);
+                }
+                var formatted_value = (parseInt(amount)).toLocaleString(currency[2],{
+                    minimumFractionDigits: 2
+                })
+                return formatted_value
             },
 
             print_pdf: function(e) {
@@ -139,6 +200,7 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
                     [self.wizard_id]
                 ],
             }).then(function(data) {
+            console.log(data['report_lines'])
                 var action = {
                     'type': 'ir_actions_dynamic_xlsx_download',
                     'data': {
@@ -185,6 +247,16 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
                             [self.wizard_id]
                         ],
                     }).then(function(data) {
+                     _.each(data['report_lines'], function(rep_lines) {
+                            _.each(rep_lines['move_lines'], function(move_line) {
+
+                             move_line.debit = self.format_currency(data['currency'],move_line.debit);
+                            move_line.credit = self.format_currency(data['currency'],move_line.credit);
+                            move_line.balance = self.format_currency(data['currency'],move_line.balance);
+
+
+                             });
+                             });
                     for (var i = 0; i < data['report_lines'].length; i++) {
 
                         if (account_id == data['report_lines'][i]['id'] ){
@@ -346,13 +418,21 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
             }
             filter_data_selected.partner_category_ids = partner_category_ids
 
-            if ($("#date_from").val()) {
-                var dateString = $("#date_from").val();
-                filter_data_selected.date_from = dateString;
+//            if ($("#date_from").val()) {
+//                var dateString = $("#date_from").val();
+//                filter_data_selected.date_from = dateString;
+//            }
+//            if ($("#date_to").val()) {
+//                var dateString = $("#date_to").val();
+//                filter_data_selected.date_to = dateString;
+//            }
+
+if (this.$el.find('.datetimepicker-input[name="date_from"]').val()) {
+                filter_data_selected.date_from = moment(this.$el.find('.datetimepicker-input[name="date_from"]').val(), time.getLangDateFormat()).locale('en').format('YYYY-MM-DD');
             }
-            if ($("#date_to").val()) {
-                var dateString = $("#date_to").val();
-                filter_data_selected.date_to = dateString;
+
+            if (this.$el.find('.datetimepicker-input[name="date_to"]').val()) {
+                filter_data_selected.date_to = moment(this.$el.find('.datetimepicker-input[name="date_to"]').val(), time.getLangDateFormat()).locale('en').format('YYYY-MM-DD');
             }
 
             if ($(".reconciled").length){
@@ -368,10 +448,10 @@ odoo.define('dynamic_accounts_report.partner_ledger', function (require) {
 
             if ($(".target_move").length) {
             var post_res = document.getElementById("post_res")
-            filter_data_selected.target_move = $(".target_move")[0].value
-            post_res.value = $(".target_move")[0].value
+            filter_data_selected.target_move = $(".target_move")[1].value
+            post_res.value = $(".target_move")[1].value
                     post_res.innerHTML=post_res.value;
-              if ($(".target_move")[0].value == "") {
+              if ($(".target_move")[1].value == "") {
               post_res.innerHTML="posted";
 
               }

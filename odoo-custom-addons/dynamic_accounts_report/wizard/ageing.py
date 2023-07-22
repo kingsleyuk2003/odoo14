@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#############################################################################
+#
+#    Cybrosys Technologies Pvt. Ltd.
+#
+#    Copyright (C) 2021-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
+#    Author: Cybrosys Techno Solutions(<https://www.cybrosys.com>)
+#
+#    You can modify it under the terms of the GNU LESSER
+#    GENERAL PUBLIC LICENSE (LGPL v3), Version 3.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU LESSER GENERAL PUBLIC LICENSE (LGPL v3) for more details.
+#
+#    You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENSE
+#    (LGPL v3) along with this program.
+#    If not, see <http://www.gnu.org/licenses/>.
+#
+#############################################################################
 import time
 from datetime import datetime
 
@@ -37,6 +58,7 @@ class AgeingView(models.TransientModel):
 
     @api.model
     def view_report(self, option):
+        print(self,option)
         r = self.env['account.partner.ageing'].search([('id', '=', option[0])])
 
         data = {
@@ -109,8 +131,8 @@ class AgeingView(models.TransientModel):
     def get_filter_data(self, option):
         r = self.env['account.partner.ageing'].search([('id', '=', option[0])])
         default_filters = {}
-        company_id = self.env.company
-        company_domain = [('company_id', '=', company_id.id)]
+        company_id = self.env.companies
+        company_domain = [('company_id', 'in', company_id.ids)]
         partner = r.partner_ids if r.partner_ids else self.env[
             'res.partner'].search([])
         categories = r.partner_category_ids if r.partner_category_ids \
@@ -119,14 +141,14 @@ class AgeingView(models.TransientModel):
         filter_dict = {
             'partners': r.partner_ids.ids,
             'partner_tags': r.partner_category_ids.ids,
-            'company_id': company_id.id,
+            'company_id': company_id.ids,
             'date_from': r.date_from,
 
             'target_move': r.target_move,
             'result_selection': r.result_selection,
             'partners_list': [(p.id, p.name) for p in partner],
             'category_list': [(c.id, c.name) for c in categories],
-            'company_name': company_id and company_id.name,
+            'company_name': ', '.join(self.env.companies.mapped('name')),
         }
         filter_dict.update(default_filters)
         return filter_dict
@@ -210,7 +232,9 @@ class AgeingView(models.TransientModel):
 
         user_currency = user_company.currency_id
         ResCurrency = self.env['res.currency'].with_context(date=date_from)
-        company_ids = self._context.get('company_ids') or [user_company.id]
+        # company_ids = self._context.get('company_ids') or [user_company.id]
+
+        company_ids = self.env.companies.ids
         move_state = ['draft', 'posted']
         if target_move == 'posted':
             move_state = ['posted']
@@ -226,7 +250,6 @@ class AgeingView(models.TransientModel):
         if reconciled_after_date:
             reconciliation_clause = '(l.reconciled IS FALSE OR l.id IN %s)'
             arg_list += (tuple(reconciled_after_date),)
-
         arg_list += (date_from, tuple(company_ids),)
         partner_list = '(l.partner_id IS NOT  NULL)'
         if partners:
@@ -397,88 +420,93 @@ class AgeingView(models.TransientModel):
                     partners_amount[partner_id] += line_amount
                     if i + 1 == 5:
                         period5 = i + 1
-                        lines[partner_id].append({
-                            'period5': period5,
-                            'line': line,
-                            'partner_id': partner_id,
-                            'move': move_name,
-                            'currency': currency_id,
-                            'symbol': currency_symbol,
-                            'jrnl': jrnl_id,
-                            'acc_name': account_id,
-                            'mov_id': move_id,
-                            'acc_code': account_code,
-                            'date': date_maturity,
-                            'amount': line_amount,
-                        })
+                        if partner_id:
+                            lines[partner_id].append({
+                                'period5': period5,
+                                'line': line,
+                                'partner_id': partner_id,
+                                'move': move_name,
+                                'currency': currency_id,
+                                'symbol': currency_symbol,
+                                'jrnl': jrnl_id,
+                                'acc_name': account_id,
+                                'mov_id': move_id,
+                                'acc_code': account_code,
+                                'date': date_maturity,
+                                'amount': line_amount,
+                            })
                     elif i + 1 == 4:
                         period4 = i + 1
-                        lines[partner_id].append({
+                        if partner_id:
+                            lines[partner_id].append({
 
-                            'period4': period4,
-                            'line': line,
-                            'partner_id': partner_id,
-                            'move': move_name,
-                            'jrnl': jrnl_id,
-                            'acc_name': account_id,
-                            'currency': currency_id,
-                            'symbol': currency_symbol,
-                            'mov_id': move_id,
-                            'acc_code': account_code,
-                            'date': date_maturity,
-                            'amount': line_amount,
-                        })
+                                'period4': period4,
+                                'line': line,
+                                'partner_id': partner_id,
+                                'move': move_name,
+                                'jrnl': jrnl_id,
+                                'acc_name': account_id,
+                                'currency': currency_id,
+                                'symbol': currency_symbol,
+                                'mov_id': move_id,
+                                'acc_code': account_code,
+                                'date': date_maturity,
+                                'amount': line_amount,
+                            })
                     elif i + 1 == 3:
                         period3 = i + 1
-                        lines[partner_id].append({
+                        if partner_id:
+                            lines[partner_id].append({
 
-                            'period3': period3,
-                            'line': line,
-                            'partner_id': partner_id,
-                            'move': move_name,
-                            'jrnl': jrnl_id,
-                            'acc_name': account_id,
-                            'currency': currency_id,
-                            'symbol': currency_symbol,
-                            'mov_id': move_id,
-                            'acc_code': account_code,
-                            'date': date_maturity,
-                            'amount': line_amount,
-                        })
+                                'period3': period3,
+                                'line': line,
+                                'partner_id': partner_id,
+                                'move': move_name,
+                                'jrnl': jrnl_id,
+                                'acc_name': account_id,
+                                'currency': currency_id,
+                                'symbol': currency_symbol,
+                                'mov_id': move_id,
+                                'acc_code': account_code,
+                                'date': date_maturity,
+                                'amount': line_amount,
+                            })
                     elif i + 1 == 2:
                         period2 = i + 1
-                        lines[partner_id].append({
+                        if partner_id:
+                            lines[partner_id].append({
 
-                            'period2': period2,
-                            'line': line,
-                            'partner_id': partner_id,
-                            'move': move_name,
-                            'jrnl': jrnl_id,
-                            'acc_name': account_id,
-                            'currency': currency_id,
-                            'symbol': currency_symbol,
-                            'mov_id': move_id,
-                            'acc_code': account_code,
-                            'date': date_maturity,
-                            'amount': line_amount,
-                        })
+                                'period2': period2,
+                                'line': line,
+                                'partner_id': partner_id,
+                                'move': move_name,
+                                'jrnl': jrnl_id,
+                                'acc_name': account_id,
+                                'currency': currency_id,
+                                'symbol': currency_symbol,
+                                'mov_id': move_id,
+                                'acc_code': account_code,
+                                'date': date_maturity,
+                                'amount': line_amount,
+                            })
                     else:
                         period1 = i + 1
-                        lines[partner_id].append({
+                        if partner_id:
+                            lines[partner_id].append({
 
-                            'period1': period1,
-                            'line': line,
-                            'partner_id': partner_id,
-                            'move': move_name,
-                            'jrnl': jrnl_id,
-                            'acc_name': account_id,
-                            'currency': currency_id,
-                            'symbol': currency_symbol,
-                            'mov_id': move_id,
-                            'acc_code': account_code,
-                            'date': date_maturity,
-                            'amount': line_amount,
-                        })
+                                'period1': period1,
+                                'line': line,
+                                'partner_id': partner_id,
+                                'move': move_name,
+                                'jrnl': jrnl_id,
+                                'acc_name': account_id,
+                                'currency': currency_id,
+                                'symbol': currency_symbol,
+                                'mov_id': move_id,
+                                'acc_code': account_code,
+                                'date': date_maturity,
+                                'amount': line_amount,
+                            })
 
             history.append(partners_amount)
 
@@ -533,8 +561,6 @@ class AgeingView(models.TransientModel):
                 partner['partner_id']]):
                 res.append(values)
 
-
-
         return res, total, lines
 
     @api.model
@@ -543,8 +569,12 @@ class AgeingView(models.TransientModel):
             self.env.context.get('default_journal_id', False))
         if journal.currency_id:
             return journal.currency_id.id
+        lang = self.env.user.lang
+        if not lang:
+            lang = 'en_US'
+        lang = lang.replace("_", '-')
         currency_array = [self.env.company.currency_id.symbol,
-                          self.env.company.currency_id.position]
+                          self.env.company.currency_id.position, lang]
         return currency_array
 
     def get_dynamic_xlsx_report(self, data, response, report_data, dfr_data ):

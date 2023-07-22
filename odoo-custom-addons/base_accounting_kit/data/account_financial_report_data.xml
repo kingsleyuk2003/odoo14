@@ -90,7 +90,6 @@
         <record id="account_financial_report_assets0"
                 model="account.financial.report">
             <field name="name">Assets</field>
-             <field name="sequence">0</field>
             <field name="parent_id"
                    ref="account_financial_report_balancesheet0"/>
             <field name="display_detail">detail_with_hierarchy</field>

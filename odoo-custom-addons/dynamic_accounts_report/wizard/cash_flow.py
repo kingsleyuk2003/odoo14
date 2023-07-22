@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+#############################################################################
+#
+#    Cybrosys Technologies Pvt. Ltd.
+#
+#    Copyright (C) 2021-TODAY Cybrosys Technologies(<https://www.cybrosys.com>)
+#    Author: Cybrosys Techno Solutions(<https://www.cybrosys.com>)
+#
+#    You can modify it under the terms of the GNU LESSER
+#    GENERAL PUBLIC LICENSE (LGPL v3), Version 3.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU LESSER GENERAL PUBLIC LICENSE (LGPL v3) for more details.
+#
+#    You should have received a copy of the GNU LESSER GENERAL PUBLIC LICENSE
+#    (LGPL v3) along with this program.
+#    If not, see <http://www.gnu.org/licenses/>.
+#
+#############################################################################
 import time
 from datetime import datetime
 
@@ -107,22 +128,22 @@ class AccountCasgFlow(models.TransientModel):
     def get_filter_data(self, option):
         r = self.env['account.cash.flow'].search([('id', '=', option[0])])
         default_filters = {}
-        company_id = self.env.company
-        company_domain = [('company_id', '=', company_id.id)]
+        company_id = self.env.companies
+        company_domain = [('company_id', 'in', company_id.ids)]
         journals = r.journal_ids if r.journal_ids else self.env['account.journal'].search(company_domain)
         accounts = self.account_ids if self.account_ids else self.env['account.account'].search(company_domain)
 
         filter_dict = {
             'journal_ids': r.journal_ids.ids,
             'account_ids': self.account_ids.ids,
-            'company_id': company_id.id,
+            'company_id': company_id.ids,
             'date_from': r.date_from,
             'date_to': r.date_to,
             'levels': r.levels,
             'target_move': r.target_move,
             'journals_list': [(j.id, j.name, j.code) for j in journals],
             'accounts_list': [(a.id, a.name) for a in accounts],
-            'company_name': company_id and company_id.name,
+            'company_name': ', '.join(self.env.companies.mapped('name')),
         }
         filter_dict.update(default_filters)
         return filter_dict
@@ -140,11 +161,11 @@ class AccountCasgFlow(models.TransientModel):
         account_res = []
         journal_res = []
         fetched = []
-
         account_type_id = self.env.ref('account.data_account_type_liquidity').id
         model = self.env.context.get('active_model')
         if data.get('levels') == 'summary':
-            state = """ WHERE am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+            state = """ AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else ''
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             query3 = """SELECT to_char(am.date, 'Month') as month_part, extract(YEAR from am.date) as year_part,
                          sum(aml.debit) AS total_debit, sum(aml.credit) AS total_credit,
                                  sum(aml.balance) AS total_balance FROM (SELECT am.date, am.id, am.state FROM account_move as am
@@ -154,11 +175,11 @@ class AccountCasgFlow(models.TransientModel):
                                  WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' ) am
+                account_type_id) + """' """ + state + state2 +""") am  
                                              LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                              LEFT JOIN account_account aa ON aa.id = aml.account_id
                                              LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
-                                             """ + state + """GROUP BY month_part,year_part"""
+                                             GROUP BY month_part,year_part"""
             cr = self._cr
             cr.execute(query3)
             fetched_data = cr.dictfetchall()
@@ -166,7 +187,9 @@ class AccountCasgFlow(models.TransientModel):
             account_type_id = self.env.ref(
                 'account.data_account_type_liquidity').id
             state = """AND am.state = 'posted' """ if data.get(
-                'target_move') == 'posted' else ''
+                'target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             sql = """SELECT DISTINCT aa.id, aa.name,aa.code, sum(aml.debit) AS total_debit,
                                                 sum(aml.credit) AS total_credit,sum(aml.balance) AS total_balance
                                                  FROM (SELECT am.* FROM account_move as am
@@ -176,7 +199,7 @@ class AccountCasgFlow(models.TransientModel):
                                                 WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' """ + state + """) am
+                account_type_id) + """' """ + state + state2 +""") am
                                                                     LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                                     LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                                     LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
@@ -188,7 +211,9 @@ class AccountCasgFlow(models.TransientModel):
             account_type_id = self.env.ref(
                 'account.data_account_type_liquidity').id
             state = """AND am.state = 'posted' """ if data.get(
-                'target_move') == 'posted' else ''
+                'target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             sql = """SELECT DISTINCT aa.id, aa.name,aa.code, sum(aml.debit) AS total_debit,
                                                            sum(aml.credit) AS total_credit,sum(aml.balance) AS total_balance
                                                             FROM (SELECT am.* FROM account_move as am
@@ -198,7 +223,7 @@ class AccountCasgFlow(models.TransientModel):
                                                            WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' """ + state + """) am
+                account_type_id) + """' """ + state + state2 + """) am
                                                                                LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                                                LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                                                LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
@@ -210,7 +235,9 @@ class AccountCasgFlow(models.TransientModel):
             account_type_id = self.env.ref(
                 'account.data_account_type_liquidity').id
             state = """AND am.state = 'posted' """ if data.get(
-                'target_move') == 'posted' else ''
+                'target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             sql = """SELECT DISTINCT aa.id, aa.name,aa.code, sum(aml.debit) AS total_debit,
                                                            sum(aml.credit) AS total_credit,sum(aml.balance) AS total_balance
                                                             FROM (SELECT am.* FROM account_move as am
@@ -220,7 +247,7 @@ class AccountCasgFlow(models.TransientModel):
                                                            WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' """ + state + """) am
+                account_type_id) + """' """ + state + state2 + """) am
                                                                                LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                                                LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                                                LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
@@ -233,7 +260,9 @@ class AccountCasgFlow(models.TransientModel):
             account_type_id = self.env.ref(
                 'account.data_account_type_liquidity').id
             state = """AND am.state = 'posted' """ if data.get(
-                'target_move') == 'posted' else ''
+                'target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             sql = """SELECT DISTINCT aa.id, aa.name,aa.code, sum(aml.debit) AS total_debit,
                                                 sum(aml.credit) AS total_credit,sum(aml.balance) AS total_balance
                                                  FROM (SELECT am.* FROM account_move as am
@@ -243,7 +272,7 @@ class AccountCasgFlow(models.TransientModel):
                                                 WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' """ + state + """) am
+                account_type_id) + """' """ + state + state2 + """) am
                                                                     LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                                     LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                                     LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
@@ -253,7 +282,8 @@ class AccountCasgFlow(models.TransientModel):
             fetched_data = cr.dictfetchall()
 
         elif data.get('levels') == 'consolidated':
-            state = """ WHERE am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+            state = """ AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else ''
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             query2 = """SELECT aat.name, sum(aml.debit) AS total_debit, sum(aml.credit) AS total_credit,
                          sum(aml.balance) AS total_balance FROM (  SELECT am.id, am.state FROM account_move as am
                          LEFT JOIN account_move_line aml ON aml.move_id = am.id
@@ -261,16 +291,17 @@ class AccountCasgFlow(models.TransientModel):
                          LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
                          WHERE am.date BETWEEN '""" + str(data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' ) am
+                account_type_id) + """' """ + state + state2 + """) am
                                      LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                      LEFT JOIN account_account aa ON aa.id = aml.account_id
                                      LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
-                                     """ + state + """GROUP BY aat.name"""
+                                     GROUP BY aat.name"""
             cr = self._cr
             cr.execute(query2)
             fetched_data = cr.dictfetchall()
         elif data.get('levels') == 'detailed':
-            state = """ WHERE am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+            state = """AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
             query1 = """SELECT aa.id,aa.name,aa.code, sum(aml.debit) AS total_debit, sum(aml.credit) AS total_credit,
                          sum(aml.balance) AS total_balance FROM (SELECT am.id, am.state FROM account_move as am
                          LEFT JOIN account_move_line aml ON aml.move_id = am.id
@@ -279,11 +310,11 @@ class AccountCasgFlow(models.TransientModel):
                          WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' ) am
+                account_type_id) + """' """ + state + state2 + """) am
                                      LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                      LEFT JOIN account_account aa ON aa.id = aml.account_id
                                      LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
-                                     """ + state + """GROUP BY aa.name, aa.code, aa.id"""
+                                     GROUP BY aa.name, aa.code, aa.id"""
             cr = self._cr
             cr.execute(query1)
             fetched_data = cr.dictfetchall()
@@ -295,7 +326,9 @@ class AccountCasgFlow(models.TransientModel):
         else:
             account_type_id = self.env.ref(
                 'account.data_account_type_liquidity').id
-            state = """AND am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+            state = """AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+            state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
+            # filter = " AND aml.parent_state in ('draft','posted')"
             sql = """SELECT DISTINCT aa.id, aa.name,aa.code, sum(aml.debit) AS total_debit,
                                              sum(aml.credit) AS total_credit,sum(aml.balance) AS total_balance
                                               FROM (SELECT am.* FROM account_move as am
@@ -305,7 +338,7 @@ class AccountCasgFlow(models.TransientModel):
                                              WHERE am.date BETWEEN '""" + str(
                 data.get('date_from')) + """' and '""" + str(
                 data.get('date_to')) + """' AND aat.id='""" + str(
-                account_type_id) + """' """ + state + """) am
+                account_type_id) + """' """ + state + state2 +""") am
                                                                  LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                                  LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                                  LEFT JOIN account_account_type aat ON aat.id = aa.user_type_id
@@ -339,7 +372,8 @@ class AccountCasgFlow(models.TransientModel):
     def _get_lines(self, account, data):
         account_type_id = self.env.ref(
             'account.data_account_type_liquidity').id
-        state = """AND am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+        state = """AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+        state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
         query = """SELECT aml.account_id,aj.id as j_id,aj.name,am.id, am.name as move_name, sum(aml.debit) AS total_debit, 
                     sum(aml.credit) AS total_credit, COALESCE(SUM(aml.debit - aml.credit),0) AS balance FROM (SELECT am.* FROM account_move as am
                     LEFT JOIN account_move_line aml ON aml.move_id = am.id
@@ -348,7 +382,7 @@ class AccountCasgFlow(models.TransientModel):
                     WHERE am.date BETWEEN '""" + str(
             data.get('date_from')) + """' and '""" + str(
             data.get('date_to')) + """' AND aat.id='""" + str(
-            account_type_id) + """' """ + state + """) am
+            account_type_id) + """' """ + state + state2 + """) am
                                         LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                         LEFT JOIN account_account aa ON aa.id = aml.account_id
                                         LEFT JOIN account_journal aj ON aj.id = am.journal_id
@@ -367,7 +401,7 @@ class AccountCasgFlow(models.TransientModel):
                             WHERE am.date BETWEEN '""" + str(
             data.get('date_from')) + """' and '""" + str(
             data.get('date_to')) + """' AND aat.id='""" + str(
-            account_type_id) + """' """ + state + """) am
+            account_type_id) + """' """ + state + state2 + """) am
                                                 LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                                 LEFT JOIN account_account aa ON aa.id = aml.account_id
                                                 LEFT JOIN account_journal aj ON aj.id = am.journal_id
@@ -392,7 +426,8 @@ class AccountCasgFlow(models.TransientModel):
         account_type_id = self.env.ref(
             'account.data_account_type_liquidity').id
         offset_count = offset * fetch_range
-        state = """AND am.state = 'posted' """ if data.get('target_move') == 'posted' else ''
+        state = """AND am.state = 'posted' """ if data.get('target_move') == 'Posted' else """AND am.state in ('draft','posted') """
+        state2 = ' AND aml.company_id IN %s' % str(tuple(self.env.companies.ids) + tuple([0]))
         sql2 = """SELECT aa.name as account_name, aj.name, sum(aml.debit) AS total_debit,
          sum(aml.credit) AS total_credit, COALESCE(SUM(aml.debit - aml.credit),0) AS balance FROM (SELECT am.* FROM account_move as am
              LEFT JOIN account_move_line aml ON aml.move_id = am.id
@@ -401,7 +436,7 @@ class AccountCasgFlow(models.TransientModel):
              WHERE am.date BETWEEN '""" + str(
             data.get('date_from')) + """' and '""" + str(
             data.get('date_to')) + """' AND aat.id='""" + str(
-            account_type_id) + """' """ + state + """) am
+            account_type_id) + """' """ + state + state2 + """) am
                                  LEFT JOIN account_move_line aml ON aml.move_id = am.id
                                  LEFT JOIN account_account aa ON aa.id = aml.account_id
                                  LEFT JOIN account_journal aj ON aj.id = am.journal_id
@@ -449,8 +484,12 @@ class AccountCasgFlow(models.TransientModel):
             self.env.context.get('default_journal_id', False))
         if journal.currency_id:
             return journal.currency_id.id
+        lang = self.env.user.lang
+        if not lang:
+            lang = 'en_US'
+        lang = lang.replace("_", '-')
         currency_array = [self.env.company.currency_id.symbol,
-                          self.env.company.currency_id.position]
+                          self.env.company.currency_id.position, lang]
         return currency_array
 
     def get_dynamic_xlsx_report(self, data, response, report_data, dfr_data):
@@ -549,7 +588,7 @@ class AccountCasgFlow(models.TransientModel):
         for j_rec in journal_res_list:
             if data['levels'] == 'detailed':
                 for k in fetched_data_list:
-                    if k['name'] == j_rec['account']:
+                    if k['id'] == j_rec['id']:
                         sheet.write(row_num + 1, col_num, str(k['code']) + str(k['name']), txt_bold)
                         sheet.write(row_num + 1, col_num + 1, str(k['total_debit']) + str(currency_symbol), amount_bold)
                         sheet.write(row_num + 1, col_num + 2, str(k['total_credit']) + str(currency_symbol), amount_bold)
@@ -568,7 +607,7 @@ class AccountCasgFlow(models.TransientModel):
         for j_rec in account_res_list:
             if data['levels'] == 'very':
                 for k in fetched_data_list:
-                    if k['name'] == j_rec['account']:
+                    if k['id'] == j_rec['id']:
                         sheet.write(row_num + 1, col_num, str(k['code']) + str(k['name']), txt_bold)
                         sheet.write(row_num + 1, col_num + 1, str(k['total_debit']) + str(currency_symbol), amount_bold)
                         sheet.write(row_num + 1, col_num + 2, str(k['total_credit']) + str(currency_symbol), amount_bold)
