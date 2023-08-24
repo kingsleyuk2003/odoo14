@@ -138,7 +138,7 @@ class SalesAtlReport(models.TransientModel):
         else:
             stklocs = 'All Depots'
 
-        report_worksheet = workbook.add_worksheet('SALES/ATL Report')
+        report_worksheet = workbook.add_worksheet('SALES/ATL Dispatch Report')
         header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 24})
         title_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 14})
         head_format = workbook.add_format({'bold': True, 'border': 1, 'font_size': 10,'bg_color':'blue','color':'white'})

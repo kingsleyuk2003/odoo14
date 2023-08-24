@@ -914,6 +914,8 @@ class LoadingProgramme(models.Model):
         for rec in self:
             for ticket in rec.ticket_ids:
                 ticket.is_loading_programme_approved = False
+        if self.state != 'draft':
+            raise UserError('Sorry, you can only cancel draft loading programme. Kindly reset to draft before cancellation')
         self.write({'state': 'cancel'})
         return
 

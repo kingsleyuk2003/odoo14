@@ -2,8 +2,8 @@
 <odoo>
     <data>
 
-        <menuitem id="menu_sales_atl" name="Sales/ATL Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
-        <menuitem id="menu_sales_atl_report" name="Sales/ATL Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
+        <menuitem id="menu_sales_atl" name="Sales/ATL DISPATCH Report" parent="kin_loading.menu_dispatch_operation" sequence="1" action="action_sales_atl_wizard"  />
+        <menuitem id="menu_sales_atl_report" name="Sales/ATL DISPATCH Report" parent="sale.menu_sale_report" sequence="2" action="action_sales_atl_wizard"  />
         <menuitem id="kin_loading.menu_sale_order_other"
             name="Retail Sales Orders"
             action="kin_loading.action_orders_other"
@@ -187,8 +187,6 @@
                 </field>
             </field>
         </record>
-
-
 
 
         <record model="ir.ui.view" id="view_stock_quant_tree_heyden">

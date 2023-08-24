@@ -238,21 +238,25 @@ class SaleOrder(models.Model):
         return inv
 
     def action_confirm(self):
-
-
         res = super(SaleOrder, self).action_confirm()
 
         #for commercial customer
         if self.env.company.id != 1 and self.partner_id.is_commercial:
+            is_mgt_prod_added = False
             for line in self.order_line:
-                mgt_prod = line.product_id.mgt_product_id
-                inv_line_mgt = {
-                    'product_id': mgt_prod.id,
-                    'product_uom_qty': line.product_uom_qty,
-                    'price_unit': 5,
-                    'order_id' : self.id
-                }
-                self.order_line.create(inv_line_mgt)
+                # management product already added, so dont repeat it
+                if line.product_id.property_account_income_id and line.product_id.property_account_income_id.id == 3642:
+                    is_mgt_prod_added = True
+            if not is_mgt_prod_added :
+                for line in self.order_line:
+                    mgt_prod = line.product_id.mgt_product_id
+                    inv_line_mgt = {
+                        'product_id': mgt_prod.id,
+                        'product_uom_qty': line.product_uom_qty,
+                        'price_unit': 5,
+                        'order_id' : self.id
+                    }
+                    self.order_line.create(inv_line_mgt)
 
         for picking in self.picking_ids :
             picking.action_assign()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-# Copyright 2022  Kinsolve Solutions
-# Copyright 2022 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
+# Copyright 2023  Kinsolve Solutions
+# Copyright 2023 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
 # License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
 
 
@@ -81,7 +81,8 @@ class SalesAtlReport(models.TransientModel):
                                 sm.name as product_name, sl.name as stock_location_name, pn.name as partner_name,
                                 sp.waybill_no,  sp.truck_no, loaded_date,
                                 address, receiving_station_management, receiving_manager_phone, truck_driver_phone,
-                                is_block_ticket, is_loading_ticket, is_exdepot_ticket, loader_partner.name as loader_name, dispatch_date, sp.dpr_no, location_addr_id as location , sp.name as ticket_name,  sp.picking_type_code
+                                is_block_ticket, is_loading_ticket, is_exdepot_ticket, loader_partner.name as loader_name, dispatch_date, sp.dpr_no, location_addr_id as location , sp.name as ticket_name,  sp.picking_type_code,
+                                so.user_id as sales_person, sol.price_unit as unit_price,sol.product_uom_qty as ordered_qty, sol.price_subtotal as amount
                           FROM stock_move_line as sml
                           LEFT JOIN stock_production_lot as spl
                           ON sml.lot_id = spl.id 
@@ -97,12 +98,12 @@ class SalesAtlReport(models.TransientModel):
                           ON sp.loader_id = loader.id
                           LEFT JOIN res_partner as loader_partner
                           ON loader.id = loader_partner.id    
-                          LEFT JOIN sale_order_line 
-                          ON sm.sale_line_id = sale_order_line.id 
-                          LEFT JOIN sale_order
-                          ON sale_order_line.id = sale_order.id 
+                          LEFT JOIN sale_order_line as sol
+                          ON sm.sale_line_id = sol.id 
+                          LEFT JOIN sale_order as so
+                          ON sol.id = so.id 
                           LEFT JOIN stock_move_line
-                          ON sale_order_line.id = stock_move_line.id 
+                          ON sol.id = stock_move_line.id 
                           LEFT JOIN dpr_info 
                           ON sp.dpr_info_id = dpr_info.id
                           WHERE
@@ -138,7 +139,7 @@ class SalesAtlReport(models.TransientModel):
         else:
             stklocs = 'All Depots'
 
-        report_worksheet = workbook.add_worksheet('SALES/ATL Report')
+        report_worksheet = workbook.add_worksheet('Sales Released Dispatch Report')
         header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 24})
         title_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'font_size': 14})
         head_format = workbook.add_format({'bold': True, 'border': 1, 'font_size': 10,'bg_color':'blue','color':'white'})
@@ -168,13 +169,13 @@ class SalesAtlReport(models.TransientModel):
 
         type = data['form']['type']
         if type == 'is_throughput':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL Throughput Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'SALES Throughput Report for %s ' % stklocs.strip(','), title_format)
         elif type == 'is_internal_use':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL Internal Use Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'SALES Internal Use Report for %s ' % stklocs.strip(','), title_format)
         elif type == 'is_indepot':
-            report_worksheet.merge_range(2, 0, 2, 10, 'SALES/ATL In Depot Stock Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'SALES In Depot Stock Report for %s ' % stklocs.strip(','), title_format)
         elif type == 'all':
-            report_worksheet.merge_range(2, 0, 2, 10, 'All SALES/ATL Report for %s ' % stklocs.strip(','), title_format)
+            report_worksheet.merge_range(2, 0, 2, 10, 'All SALES Report for %s ' % stklocs.strip(','), title_format)
 
         report_worksheet.set_row(3, 20)
         report_worksheet.merge_range(3, 0, 3, 10, 'DISCHARGED QTY: %s    VESSEL: %s' % ('{:,.2f}'.format(discharged_qty) ,lot_obj.browse(lot_id[0]).name)  , title_format)
@@ -185,7 +186,7 @@ class SalesAtlReport(models.TransientModel):
         report_worksheet.set_column(1, 1, 15)
         report_worksheet.set_column(2, 2, 10)
         report_worksheet.set_column(3, 3, 20)
-        report_worksheet.set_column(4, 20, 10)
+        report_worksheet.set_column(4, 21, 10)
 
         product_obj = self.env['product.product']
         for product_id in product_ids:
@@ -195,7 +196,7 @@ class SalesAtlReport(models.TransientModel):
             report_worksheet.merge_range(row, col, row, 9, product_name, title_format)
             row += 2
 
-            report_worksheet.write_row(row, col, ('S/N', 'ATL NO.', 'ATL DATE','ATL NAME' , 'ATL QTY', 'CUM. ATL QTY' , 'BAL. QTY'  , 'TRUCK NO.' ,'LOADED DATE','DISPATCHED DATE','LOCATION' , 'SOURCE REF', 'TICKET ID' ,'WAYBILL NO.', 'DEPOT','DESTINATION') , head_format)
+            report_worksheet.write_row(row, col, ('S/N', 'DATE', 'CUSTOMER', 'ORDERED QTY', 'UNIT PRICE', 'AMOUNT','WAYBILL QTY', 'CUM. QTY' , 'STOCK BALANCE' ,'NOTE' , 'MARKETER' , 'TRUCK NO.' ,'LOADED DATE','DISPATCHED DATE','LOCATION' , 'SOURCE REF', 'TICKET ID' ,'WAYBILL NO.', 'DEPOT','DESTINATION') , head_format)
             row += 1
             total_qty = 0
             first_row = row
@@ -211,27 +212,31 @@ class SalesAtlReport(models.TransientModel):
                     cum_qty += product_uom_qty
                     cum_bal -= product_uom_qty
                     report_worksheet.write(row, 0, list_dict['sn'],cell_wrap_format)
-                    report_worksheet.write(row, 1, list_dict['atl_id'], cell_wrap_format)
-                    report_worksheet.write(row, 2, list_dict['atl_date'] and list_dict['date'].strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format) or False
-                    report_worksheet.write(row, 3, list_dict['partner_name'], cell_wrap_format)
-                    report_worksheet.write(row, 4, product_uom_qty, cell_number)
-                    report_worksheet.write(row, 5, cum_qty, cell_number)
-                    report_worksheet.write(row, 6, cum_bal, cell_number)
-                    report_worksheet.write(row, 7, list_dict['truck_no'], cell_wrap_format)
-                    report_worksheet.write(row, 8, list_dict['loaded_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
-                    report_worksheet.write(row, 9, list_dict['dispatch_date'] and list_dict['dispatch_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
-                    report_worksheet.write(row, 10, list_dict['location'], cell_wrap_format)
-                    report_worksheet.write(row, 11, list_dict['origin'], cell_wrap_format)
-                    report_worksheet.write(row, 12, list_dict['ticket_name'], cell_wrap_format)
-                    report_worksheet.write(row, 13, list_dict['waybill_no'], cell_wrap_format)
-                    report_worksheet.write(row, 14, list_dict['stock_location_name'], cell_wrap_format)
-                    report_worksheet.write(row, 15, list_dict['address'], cell_wrap_format)
+                    report_worksheet.write(row, 1, list_dict['atl_date'] and list_dict['date'].strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format) or False
+                    report_worksheet.write(row, 2, list_dict['partner_name'], cell_wrap_format)
+                    report_worksheet.write(row, 3,  list_dict['ordered_qty'], cell_number)
+                    report_worksheet.write(row, 4, list_dict['unit_price'], cell_number)
+                    report_worksheet.write(row, 5, list_dict['amount'], cell_number)
+                    report_worksheet.write(row, 6, product_uom_qty, cell_number)
+                    report_worksheet.write(row, 7, cum_qty, cell_number)
+                    report_worksheet.write(row, 8, cum_bal, cell_number)
+                    report_worksheet.write(row, 9, 'RELEASED', cell_wrap_format)
+                    report_worksheet.write(row, 10, self.env['res.users'].browse(list_dict['sales_person']).name, cell_wrap_format)
+                    report_worksheet.write(row, 11, list_dict['truck_no'], cell_wrap_format)
+                    report_worksheet.write(row, 12, list_dict['loaded_date'] and list_dict['loaded_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
+                    report_worksheet.write(row, 13, list_dict['dispatch_date'] and list_dict['dispatch_date'].strftime('%d/%m/%Y'), cell_wrap_format) or False
+                    report_worksheet.write(row, 14, list_dict['location'], cell_wrap_format)
+                    report_worksheet.write(row, 15, list_dict['origin'], cell_wrap_format)
+                    report_worksheet.write(row, 16, list_dict['ticket_name'], cell_wrap_format)
+                    report_worksheet.write(row, 17, list_dict['waybill_no'], cell_wrap_format)
+                    report_worksheet.write(row, 18, list_dict['stock_location_name'], cell_wrap_format)
+                    report_worksheet.write(row, 19, list_dict['address'], cell_wrap_format)
 
                     row += 1
                     total_qty += product_uom_qty
                 last_row  = row
-                a1_notation_ref = xl_range(first_row, 4, last_row, 4)
-                report_worksheet.write(row, 4, '=SUM(' + a1_notation_ref + ')', cell_total_currency, total_qty)
+                a1_notation_ref = xl_range(first_row, 6, last_row, 6)
+                report_worksheet.write(row, 6, '=SUM(' + a1_notation_ref + ')', cell_total_currency, total_qty)
             row += 1
         return
 
