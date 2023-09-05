@@ -367,9 +367,9 @@
                  </field>
 
 
-                <field name="payment_term_id" position="attributes" >
-                    <attribute name="invisible" >1</attribute>
-                </field>
+<!--                <field name="payment_term_id" position="attributes" >-->
+<!--                    <attribute name="invisible" >1</attribute>-->
+<!--                </field>-->
 
                   <page  name="other_information" position="attributes" >
                     <attribute name="invisible" >1</attribute>
@@ -442,6 +442,11 @@
 
                 <field name="payment_term_id" position="after"  >
                       <field name="is_editable_on_sales" invisible="1" />
+                     <field name="is_autosend_invoice" />
+                 </field>
+
+                <field name="payment_term_id" position="attributes"  >
+                    <attribute name="required" >1</attribute>
                  </field>
 
                 <field name="order_line" position="attributes" >
@@ -463,6 +468,7 @@
                 <field name="sale_order_template_id" position="after" >
                     <field name="cust_acct_name" required="1" attrs="{'readonly': [('state', 'not in', ('draft','sent'))]}"  />
                 </field>
+
 
             </field>
         </record>

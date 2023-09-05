@@ -218,6 +218,7 @@ class SaleOrderExtend(models.Model):
         ticket_obj = self.env['kin.ticket'].create(vals)
         self.partner_id.product_id = product
         ticket_obj.order_id = self.id
+        ticket_obj.installation_fee = self.order_line.filtered(lambda line: line.product_id.is_sub == False).mapped('price_subtotal')[0]
 
 
         grp_name = 'fibernet.group_receive_approve_sale_order_email'
@@ -316,9 +317,6 @@ class SaleOrderExtend(models.Model):
             if len(rec.order_line) == 0 :
                 raise UserError(_('At Least an Order Line is Required'))
         return res
-
-
-
 
 
     def action_view_ticket(self):
@@ -487,6 +485,8 @@ class SaleOrderExtend(models.Model):
     client_type = fields.Selection([
         ('home', 'Home Use'),
         ('corporate', 'Corporate Use')],string='Client Type')
+    is_autosend_invoice = fields.Boolean(string="Auto Send Recurring Invoice", default=True)
+
 
 
 class SaleOrderTemplate(models.Model):

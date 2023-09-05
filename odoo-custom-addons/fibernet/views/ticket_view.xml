@@ -2,9 +2,8 @@
 <odoo>
     <data>
 
-         <menuitem name="Report" id="menu_ticket_report" action="action_ticket_report_wizard"
-          parent="kin_helpdesk.kin_help_desk" sequence="5"    />
-
+         <menuitem name="Report" id="menu_ticket_report"  parent="kin_helpdesk.kin_help_desk" sequence="5"    />
+        <menuitem name="Ticket Report" id="menu_ticket_report_fibernet"  action="action_ticket_report_wizard" parent="menu_ticket_report"  sequence="1" />
 
         <!-- Ticket  -->
             <record id="ticket_form" model="ir.ui.view">
@@ -41,6 +40,34 @@
                  </button>
                 <field name="state" widget="statusbar"  position="attributes">
                     <attribute name="statusbar_visible" >draft,new,progress,done,finalized,closed</attribute>
+                </field>
+
+                 <field name="name" position="before" >
+                    <div class="oe_button_box" name="button_box" >
+                         <button name="action_view_order"
+                                type="object"
+                                class="oe_stat_but ton"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('order_count', '=', 0)]}" >
+                                <field  name="order_count" widget="statinfo" string="Order" />
+                         </button>
+
+                        <button name="action_view_invoice"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('invoice_count', '=', 0)]}" >
+                                <field  name="invoice_count" widget="statinfo" string="Invoice" />
+                         </button>
+
+                        <button name="action_view_contract"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-pencil-square-o"
+                                attrs="{'invisible': [('contract_count', '=', 0)]}" >
+                                <field  name="contract_count" widget="statinfo" string="Subscription" />
+                         </button>
+                    </div>
                 </field>
 
                 <field name="partner_id" position="after" >
@@ -96,25 +123,7 @@
 <!--                     <attribute name="force_save" >1</attribute>-->
                 </field>
 
-                <field name="name" position="before" >
-                    <div class="oe_button_box" name="button_box" >
-                         <button name="action_view_order"
-                                type="object"
-                                class="oe_stat_but ton"
-                                icon="fa-pencil-square-o"
-                                attrs="{'invisible': [('order_count', '=', 0)]}" >
-                                <field  name="order_count" widget="statinfo" string="Order" />
-                         </button>
 
-                        <button name="action_view_invoice"
-                                type="object"
-                                class="oe_stat_button"
-                                icon="fa-pencil-square-o"
-                                attrs="{'invisible': [('invoice_count', '=', 0)]}" >
-                                <field  name="invoice_count" widget="statinfo" string="Invoice" />
-                         </button>
-                    </div>
-                </field>
                 <field name="time_spent" position="after" >
 <!--                    <field name="survey_ticket_id"  domain = "[('id','!=',id),('category_id','=',2)]" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />-->
                     <field name="duration_close" />
@@ -125,7 +134,7 @@
                 <page name="description" position="before" >
                     <page string="Activation Form" attrs="{'invisible': [('category_code', '!=', 'installation' )]}" >
                         <group col="4" >
-                              <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
+                            <field name="installation_form" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="idu_serial_no"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                               <field name="installation_fse_id" domain="[('id','in',assigned_eng_user_ids),('is_group_email','=',False)]"  options="{'no_open': True, 'no_create': True}"  attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                               <field name="power_level_id" options="{'no_open': True, 'no_create': True}" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
@@ -146,8 +155,33 @@
                             <field name="radio_model"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                             <field name="comment_activation"  attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                               <field name="activation_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
-
                         </group>
+                        <group col="4" >
+                                 <field name="movement_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="installation_cost"  readonly="1" force_save="1" />
+                                 <field name="rent_ladder" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="ladder_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('rent_ladder', '=', 'yes' )], 'invisible': [('rent_ladder', '!=', 'yes' )] }" />
+                                <field name="cable_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="cable_used_meter" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
+                                 <field name="cable_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
+                                <field name="old_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
+                                 <field name="onu_changed" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="new_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
+                                <field name="patchcord_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="patchcord_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('patchcord_used', '=', 'yes' )], 'invisible': [('patchcord_used', '!=', 'yes' )] }" />
+                                 <field name="coppler_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="coppler_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('coppler_used', '=', 'yes' )], 'invisible': [('coppler_used', '!=', 'yes' )] }" />
+                                 <field name="pigtail_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="pigtail_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('pigtail_used', '=', 'yes' )], 'invisible': [('pigtail_used', '!=', 'yes' )] }" />
+                                 <field name="box_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="box_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('box_used', '=', 'yes' )], 'invisible': [('box_used', '!=', 'yes' )] }" />
+                                 <field name="splitter_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="splitter_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('splitter_used', '=', 'yes' )], 'invisible': [('splitter_used', '!=', 'yes' )] }" />
+                                 <field name="faceplate_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="faceplate_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('faceplate_used', '=', 'yes' )], 'invisible': [('faceplate_used', '!=', 'yes' )] }" />
+                                 <field name="cabling_price" readonly="1" force_save="1" groups="fibernet.group_show_technical_ticket_fibernet_report" />
+                                <field name="installation_fee" readonly="1" force_save="1"  groups="fibernet.group_show_technical_ticket_fibernet_report" />
+                            </group>
                         <group string="Activation Declined Information">
                              <field name="rejection_evidence" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))]}" />
                         </group>
@@ -156,7 +190,7 @@
                     <page  string="Support Form" attrs="{'invisible': [('category_code', '!=', 'support' )]}" >
 
                             <group col="4" >
-                                 <field name="source_support" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"   />
+                                <field name="source_support" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"   />
                                  <field name="complaint_type_support_id" attrs="{'readonly': [('state', 'in', ('closed'))], 'required': [('category_code', '=', 'support' )]}"    />
                                   <field name="call_type_support" attrs="{'readonly': [('state', 'in', ('closed'))]}"   />
                                  <field name="amt_support_expenses" attrs="{'readonly': [('state', 'in', ('closed'))]}"  />
@@ -164,6 +198,32 @@
                             <group col="4" >
                                   <field name="root_cause" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'support'),('state', '=', 'progress' )]}"   />
                                  <field name="resolution" attrs="{'readonly': [('state', 'in', ('finalized', 'closed'))], 'required': [('category_code', '=', 'support'),('state', '=', 'progress' )]}"   />
+                            </group>
+                            <group col="4" >
+                                 <field name="movement_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="installation_cost"  readonly="1" force_save="1" />
+                                 <field name="rent_ladder" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="ladder_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('rent_ladder', '=', 'yes' )], 'invisible': [('rent_ladder', '!=', 'yes' )] }" />
+                                <field name="cable_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="cable_used_meter" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
+                                 <field name="cable_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
+                                <field name="old_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
+                                 <field name="onu_changed" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="new_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
+                                <field name="patchcord_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="patchcord_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('patchcord_used', '=', 'yes' )], 'invisible': [('patchcord_used', '!=', 'yes' )] }" />
+                                 <field name="coppler_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="coppler_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('coppler_used', '=', 'yes' )], 'invisible': [('coppler_used', '!=', 'yes' )] }" />
+                                 <field name="pigtail_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="pigtail_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('pigtail_used', '=', 'yes' )], 'invisible': [('pigtail_used', '!=', 'yes' )] }" />
+                                 <field name="box_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="box_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('box_used', '=', 'yes' )], 'invisible': [('box_used', '!=', 'yes' )] }" />
+                                 <field name="splitter_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="splitter_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('splitter_used', '=', 'yes' )], 'invisible': [('splitter_used', '!=', 'yes' )] }" />
+                                 <field name="faceplate_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="faceplate_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('faceplate_used', '=', 'yes' )], 'invisible': [('faceplate_used', '!=', 'yes' )] }" />
+                                 <field name="cabling_price" readonly="1" force_save="1" groups="fibernet.group_show_technical_ticket_fibernet_report" />
+                                <field name="installation_fee" readonly="1" force_save="1"  groups="fibernet.group_show_technical_ticket_fibernet_report" />
                             </group>
                     </page>
                     <page  string="Change Request Form" attrs="{'invisible': [('category_code', '!=', 'change_request' )]}" >
@@ -324,6 +384,88 @@
         </record>
 
          <menuitem id="menu_helpdesk_scheduled_tickets" name="Scheduled Installation Tickets" parent="kin_helpdesk.menu_help_desk" action="action_view_scheduled_tickets" sequence="10"/>
+
+        <!-- Ticket Technical Report -->
+         <record model="ir.ui.view" id="ticket_tree_technical_report_view">
+            <field name="name">Ticket Technical Report Tree</field>
+            <field name="model">kin.ticket</field>
+            <field name="arch" type="xml">
+                <tree create="0" delete="0" >
+                    <field name="open_date" optional="show"  />
+                    <field name="closed_date" optional="show" />
+                    <field name="area_customer_id" />
+                    <field name="partner_id" />
+                    <field name="ref" />
+                    <field name="ticket_id" optional="hide"  />
+                    <field name="name" optional="hide"  />
+                    <field name="state"  optional="show" />
+                    <field name="movement_type" />
+                    <field name="location_id" optional="hide"  />
+                    <field name="rent_ladder" optional="hide"  />
+                    <field name="ladder_amt" />
+                    <field name="cable_used" optional="hide"  />
+                    <field name="cable_type" optional="hide"  />
+                    <field name="cable_used_meter" />
+                    <field name="cabling_price" />
+                    <field name="total_amt" />
+                    <field name="installation_cost" />
+                    <field name="installation_fee" />
+                    <field name="onu_changed" optional="hide"  />
+                     <field name="old_serial_number" optional="hide"  />
+                     <field name="new_serial_number" optional="hide"  />
+                     <field name="patchcord_used" optional="hide"  />
+                     <field name="patchcord_used_amt" optional="hide"  />
+                     <field name="coppler_used" optional="hide"  />
+                     <field name="coppler_used_amt" optional="hide"  />
+                     <field name="pigtail_used" optional="hide"  />
+                     <field name="pigtail_used_amt" optional="hide"  />
+                     <field name="box_used" optional="hide"  />
+                     <field name="box_used_type" optional="hide"  />
+                     <field name="splitter_used" optional="hide"  />
+                    <field name="splitter_used_type" optional="hide"  />
+                    <field name="faceplate_used" optional="hide"  />
+                    <field name="faceplate_used_amt" optional="hide"  />
+                </tree>
+
+            </field>
+        </record>
+
+        <record id="view_kin_ticket_filter_technical_report_wifiber" model="ir.ui.view">
+            <field name="name">Technical Report Ticket Search</field>
+            <field name="model">kin.ticket</field>
+            <field name="inherit_id" ref="kin_helpdesk.view_kin_ticket_filter" />
+            <field name="arch" type="xml">
+                <filter name="company" position="after" >
+                    <filter string="Ticket Category" name="grpTicketCategory" context="{'group_by':'category_id'}"/>
+                    <filter string="Open Date" name="grpOpenDate" context="{'group_by':'open_date:month'}"/>
+                     <filter string="Closed Date" name="grpClosedDate" context="{'group_by':'closed_date:month'}"/>
+                     <filter string="Ticket Status" name="grpTicketStatus" context="{'group_by':'state'}"/>
+                </filter>
+
+            </field>
+        </record>
+
+        <record id="action_view_technical_ticket_report_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Technical Ticket Report</field>
+            <field name="view_mode">tree,form</field>
+            <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_technical_report_view')})]"/>
+            <field name="context">{'search_default_grpTicketCategory': 1,'search_default_grpClosedDate': 1 ,'search_default_grpTicketStatus': 1 }</field>
+            <field name="search_view_id" ref="view_kin_ticket_filter_technical_report_wifiber"/>
+            <field name="help" type="html">
+                <p>
+                   Technical Ticket Report
+                </p>
+            </field>
+        </record>
+
+
+
+         <menuitem id="menu_helpdesk_technical_ticket_report" name="Technical Ticket Report" parent="menu_ticket_report" action="action_view_technical_ticket_report_tickets" sequence="10" groups="group_show_technical_ticket_fibernet_report" />
+
+
 
 
         <!-- OLT -->
@@ -591,6 +733,9 @@
                     <field name="is_installation_invoice" readonly="1" />
                     <field name="installation_ticket_id" readonly="1" />
                 </field>
+                <label for="invoice_payment_term_id" position="attributes"  >
+                    <attribute name="string" >Payment Terms</attribute>
+                 </label>
             </field>
         </record>
 

@@ -132,8 +132,6 @@
     </record>
 	
 
-
-
 	<record id="group_show_sales_person" model="res.groups">
         <field name="name">Show Sales Person Field on Customer Database</field>
         <field name="category_id" ref="module_category_fibernet_modifications"/>
@@ -146,6 +144,11 @@
 
 	<record id="group_show_prospect_reset_btn" model="res.groups">
         <field name="name">Show Reset btn in Prospect</field>
+        <field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
+	<record id="group_show_technical_ticket_fibernet_report" model="res.groups">
+        <field name="name">Show Technical Ticket Report</field>
         <field name="category_id" ref="module_category_fibernet_modifications"/>
     </record>
 

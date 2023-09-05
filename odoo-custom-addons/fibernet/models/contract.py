@@ -54,14 +54,8 @@ class ContractRecurrencyMixin(models.AbstractModel):
 
 
 
-
-
-
-
 class ContractContract(models.Model):
     _inherit = "contract.contract"
-
-
 
     def _prepare_recurring_invoices_values(self, date_ref=False):
         """
@@ -105,4 +99,44 @@ class ContractContract(models.Model):
 
 
 
+    def action_view_ticket(self):
+        ticket_ids = self.mapped('ticket_ids')
+        action = self.env["ir.actions.actions"]._for_xml_id("kin_helpdesk.action_view_all_tickets")
+
+        if len(ticket_ids) > 1:
+            action['domain'] = [('id', 'in', ticket_ids.ids)]
+        elif len(ticket_ids) == 1:
+            form_view = [(self.env.ref('kin_helpdesk.ticket_form').id, 'form')]
+            if 'views' in action:
+                action['views'] = form_view + [(state,view) for state,view in action['views'] if view != 'form']
+            else:
+                action['views'] = form_view
+            action['res_id'] = ticket_ids.id
+        else:
+            action = {'type': 'ir.actions.act_window_close'}
+        #action['target'] = 'new'
+
+        context = {
+            #'default_move_type': 'out_invoice',
+        }
+        # if len(self) == 1:
+        #     context.update({
+        #         'default_partner_id': self.partner_id.id,
+        #         'default_partner_shipping_id': self.partner_shipping_id.id,
+        #         'default_invoice_payment_term_id': self.payment_term_id.id or self.partner_id.property_payment_term_id.id or self.env['account.move'].default_get(['invoice_payment_term_id']).get('invoice_payment_term_id'),
+        #         'default_invoice_origin': self.mapped('name'),
+        #         'default_user_id': self.user_id.id,
+        #     })
+        action['context'] = context
+        return action
+
+    @api.depends('ticket_ids')
+    def _compute_ticket_count(self):
+        for rec in self:
+            rec.ticket_count = len(rec.ticket_ids)
+
+
+
+    ticket_ids = fields.One2many('kin.ticket', 'contract_id', string='Tickets')
+    ticket_count = fields.Integer(compute="_compute_ticket_count", string='# of Ticket', copy=False, default=0)
 

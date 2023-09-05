@@ -656,24 +656,66 @@ class Ticket(models.Model):
                 ticket.duration_close =  date_diff
 
 
-    def action_view_order(self):
-        context = dict(self.env.context or {})
-        context['active_id'] = self.id
-        return {
-            'name': _('Order'),
-            'view_mode': 'tree,form',
-            'res_model': 'sale.order',
-            'view_id': False,
-            'type': 'ir.actions.act_window',
-            'domain': [('id', 'in', [x.id for x in self.order_id])],
-            'target': 'new'
+    def action_view_contract(self):
+        contract_id = self.mapped('contract_id')
+        imd = self.env['ir.model.data']
+        action = imd.xmlid_to_object('contract.action_customer_contract')
+        list_view_id = imd.xmlid_to_res_id('contract.contract_contract_tree_view')
+        form_view_id = imd.xmlid_to_res_id('contract.contract_contract_customer_form_view')
+
+        result = {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
+                      [False, 'calendar'], [False, 'pivot']],
+            'context': action.context,
+            'res_model': action.res_model,
         }
+        if len(contract_id) > 1:
+            result['domain'] = "[('id','in',%s)]" % contract_id.id
+        elif len(contract_id) == 1:
+            result['views'] = [(form_view_id, 'form')]
+            result['res_id'] = contract_id.id
+        else:
+            result = {'type': 'ir.actions.act_window_close'}
+        return result
+
+    @api.depends('order_id')
+    def _compute_contract_count(self):
+        for rec in self:
+            rec.contract_count = len(rec.contract_id)
+
+
+    def action_view_order(self):
+        order_id = self.mapped('order_id')
+        imd = self.env['ir.model.data']
+        action = imd.xmlid_to_object('sale.action_orders')
+        list_view_id = imd.xmlid_to_res_id('sale.view_order_tree')
+        form_view_id = imd.xmlid_to_res_id('sale.view_order_form')
+
+        result = {
+            'name': action.name,
+            'help': action.help,
+            'type': action.type,
+            'views': [[list_view_id, 'tree'], [form_view_id, 'form'], [False, 'graph'], [False, 'kanban'],
+                      [False, 'calendar'], [False, 'pivot']],
+            'context': action.context,
+            'res_model': action.res_model,
+        }
+        if len(order_id) > 1:
+            result['domain'] = "[('id','in',%s)]" % order_id.id
+        elif len(order_id) == 1:
+            result['views'] = [(form_view_id, 'form')]
+            result['res_id'] = order_id.id
+        else:
+            result = {'type': 'ir.actions.act_window_close'}
+        return result
 
     @api.depends('order_id')
     def _compute_order_count(self):
         for rec in self:
             rec.order_count = len(rec.order_id)
-
 
     
     def action_view_invoice(self):
@@ -867,8 +909,32 @@ class Ticket(models.Model):
                                 msg=smsg + msg)
 
         return super(Ticket,self).btn_ticket_done()
+#'recurring_next_date' : ,
+    def create_customer_contract(self):
+        sale_order = self.order_id
+        package = sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True)
+        self.contract_id = self.env['contract.contract'].create(
+            {
+                'name' : sale_order.partner_id.name,
+                'partner_id' : sale_order.partner_id.id,
+                'payment_term_id' : sale_order.payment_term_id.id,
+                'date_start': self.activation_date,
+                'recurring_next_date': self.activation_date + relativedelta(days=23),
+                'next_due_date': self.activation_date + relativedelta(days=30),
+                'contract_line_fixed_ids': [(0, 0, {
+                    'product_id': package.mapped('product_id')[0].id,
+                    'name': package.mapped('name')[0],
+                    'quantity': package.mapped('product_uom_qty')[0],
+                    'uom_id':  package.mapped('product_uom')[0].id,
+                    'price_unit': package.mapped('price_unit')[0],
+                     'date_start': self.activation_date,
+                    'recurring_next_date': self.activation_date + relativedelta(days=23),
+                })],
+            }
+        )
 
-    
+
+
     def btn_ticket_close(self):
 
         if self.category_id == self.env.ref('fibernet.installation') and self.state != 'finalized' :
@@ -886,6 +952,7 @@ class Ticket(models.Model):
                 if self.invoice_id :
                     raise UserError('Sorry, this ticket has been previously closed and invoice created. Please refresh your browser')
                 invoice = self.create_customer_invoice(self.order_id)
+                contract = self.create_customer_contract()
 
             # send email
             self.send_email('fibernet.group_ticket_installation_close_notify',subject='An Installation Ticket has been closed',
@@ -1025,6 +1092,9 @@ class Ticket(models.Model):
             if not self.gpon_level:
                 raise UserError(_('Please set the GPON Port in the Activation Form Tab below'))
 
+            if not self.activation_date :
+                raise UserError('Please set the activation date for this service in the activation tab below')
+
             if not self.expiration_date :
                 raise UserError('Please set the expiration date for this service in the activation tab below')
 
@@ -1054,7 +1124,7 @@ class Ticket(models.Model):
             self.partner_id.action_create_customer_selfcare()
 
             self.partner_id.status = 'active'
-            self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+            #self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
             # Send email to the customer after activation from NOC for the installation ticket
             user_names = ''
             if self.partner_id and self.partner_id.email:
@@ -1207,6 +1277,29 @@ class Ticket(models.Model):
                 self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
         return super(Ticket, self).write(vals)
 
+    @api.onchange('movement_type')
+    def _compute_installation_cost(self):
+        installation_cost_mobilized = self.env['ir.config_parameter'].sudo().get_param('fibernet.installation_cost_mobilized')
+        installation_cost_not_mobilized = self.env['ir.config_parameter'].sudo().get_param('fibernet.installation_cost_not_mobilized')
+
+        if self.movement_type == 'mobilized' :
+            self.installation_cost = installation_cost_mobilized
+        elif self.movement_type == 'not mobilized' :
+            self.installation_cost = installation_cost_not_mobilized
+
+    @api.onchange('cable_used_meter')
+    def _compute_cabling_price(self):
+        cable_cost = self.env['ir.config_parameter'].sudo().get_param('fibernet.cable_cost')
+        if self.cable_used_meter > 0 :
+            self.cabling_price = self.cable_used_meter * float(cable_cost)
+        else:
+            self.cabling_price = 0
+
+    @api.onchange('ladder_amt','installation_cost')
+    def _compute_total_amt(self):
+        self.total_amt = self.ladder_amt + self.installation_cost
+
+
 
     #remove store=True for the related fields, because it prevents the helpdesk user from saving a ticket with partner information if there are other tickets attached to the partner, and the user is not in the group for all the previous tickets attached to the partner. so the helpdesk user rule prevents it from saving the form for the related fields with store parameter, since it will want to update the partner which inturns update all other previous tickets having the store=True paramter ( I have tested the fact  the system updates other previous tickets indirectly, whne given the  Helpdesk general manager rights which have access to all tickets)
     cust_name = fields.Char(related='partner_id.name', string='Name', readonly=True)
@@ -1241,6 +1334,8 @@ class Ticket(models.Model):
     order_count = fields.Integer(compute="_compute_order_count", string='# of Order(s)', copy=False, default=0)
     invoice_id = fields.Many2one('account.move', string='Invoice')
     invoice_count = fields.Integer(compute="_compute_invoice_count", string='# of Invoices', copy=False, default=0)
+    contract_id = fields.Many2one('contract.contract', string='Contract')
+    contract_count = fields.Integer(compute="_compute_contract_count", string='# of Contract', copy=False, default=0)
 
     title = fields.Many2one(related='partner_id.title',string="Title", readonly=True)
     gender = fields.Selection(related='partner_id.gender',  string='Gender', readonly=True)    
@@ -1319,6 +1414,7 @@ class Ticket(models.Model):
     comment_activation = fields.Char(string='Comment')
 
 
+
     # Request
     prospect_name = fields.Char(string='Prospect Name')
     prospect_address = fields.Char(string='Prospect Address')
@@ -1363,7 +1459,31 @@ class Ticket(models.Model):
     is_escalation_email_sent = fields.Boolean(string='Is Escalation Email Sent', default=False, tracking=True)
     is_escalation_email_sent_date = fields.Datetime(string='Escalation Email Sent Date')
 
-
+    installation_fee = fields.Float(string='Installation Fee')
+    movement_type = fields.Selection([('mobilized', 'Mobilized'), ('not mobilized', 'Not Mobilized')], string='Movement Type', tracking=True)
+    rent_ladder = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Rent ladder', tracking=True)
+    ladder_amt = fields.Float(string="Ladder Price",tracking=True)
+    cable_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Cable Used', tracking=True)
+    cable_used_meter = fields.Float(string="Meter of Cable Used",tracking=True)
+    cable_type = fields.Selection([('1 core','1 Core'), ('2 core','2 Core'),('4 core','4 Core'),('8 core','8 Core'),('12 core','12 Core'),('24 core','24 Core')],string='Cable Type', tracking=True)
+    cabling_price = fields.Float(string="Cabling Price")
+    onu_changed = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='ONU changed', tracking=True)
+    old_serial_number = fields.Float(string="Old Serial Number",tracking=True)
+    new_serial_number = fields.Float(string="New Serial Number",tracking=True)
+    installation_cost = fields.Float(string='Installation Cost',tracking=True)
+    patchcord_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Patch cord Used', tracking=True)
+    patchcord_used_amt = fields.Float(string="Patch Cord Used Amt.",tracking=True)
+    coppler_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Coppler Used', tracking=True)
+    coppler_used_amt = fields.Float(string="Coppler Used Amt.",tracking=True)
+    pigtail_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Pigtail Used', tracking=True)
+    pigtail_used_amt = fields.Float(string="Pigtail Used Amt.",tracking=True)
+    box_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Box Used', tracking=True)
+    box_used_type = fields.Selection([('1 by 2','1 by 2'),('1 by 16','1 by 16')],string="Box Used Type",tracking=True)
+    splitter_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Splitter Used', tracking=True)
+    splitter_used_type = fields.Selection([('1 by 2','1 by 2'), ('1 by 4','1 by 4'), ('1 by 8','1 by 8')], string="Box Used Type",tracking=True)
+    faceplate_used = fields.Selection([('yes', 'Yes'), ('no', 'No')], string='Faceplate Used', tracking=True)
+    faceplate_used_amt = fields.Float(string="Faceplate Used Amt.", tracking=True)
+    total_amt = fields.Float(string="Total Amt.")
 
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
