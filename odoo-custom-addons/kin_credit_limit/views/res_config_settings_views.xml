@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="res_config_settings_view_form_credit_limit_extend" model="ir.ui.view">
+            <field name="name">res.config.settings.view.form.inherit.kin.credit.extend</field>
+            <field name="model">res.config.settings</field>
+            <field name="priority" eval="30"/>
+            <field name="inherit_id" ref="kin_sales.res_config_settings_view_form_sales_extend" />
+            <field name="arch" type="xml">
+
+                <div name="kin_sales_setting_container" position="after" >
+                    <h2>Credit Limit Settings</h2>
+                    <div class="row mt16 o_settings_container" name="kin_credit_setting_container">
+                        <div class="col-12 col-lg-6 o_setting_box"  >
+                                <div class="o_setting_left_pane">
+                                    <field name="is_activate_credit_limit"/>
+                                </div>
+                                <div class="o_setting_right_pane">
+                                    <label for="is_activate_credit_limit"/>
+                                    <div class="text-muted">
+                                        Set the Activate Credit Limit by Default on Customer's Form
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </field>
+        </record>
+
+    </data>
+</odoo>

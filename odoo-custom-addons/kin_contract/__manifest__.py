@@ -19,6 +19,7 @@ Accounting Contract Extension
     'depends': ['account','contract'],
     'data': [
         'views/res_config_settings_views.xml',
+        'views/contract.xml',
     ],
     'test':[],
     'installable': True,

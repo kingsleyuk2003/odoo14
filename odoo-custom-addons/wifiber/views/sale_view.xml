@@ -520,14 +520,22 @@
                         <field name="amount_balance" readonly="1" />
                  </field>
 
-                <xpath expr="//form//field[@name='product_uom_qty']"  position="attributes">
+<!--                <xpath expr="//form//field[@name='product_uom_qty']"  position="attributes">-->
+<!--                     <attribute name="invisible" >1</attribute>-->
+<!--                </xpath>-->
+<!--                 <xpath expr="//tree/field[@name='product_uom_qty']"  position="attributes">-->
+<!--                     <attribute name="invisible" >1</attribute>-->
+<!--                </xpath>-->
+<!--                <xpath expr="//kanban/field[@name='product_uom_qty']"  position="attributes">-->
+<!--                      <attribute name="invisible" >1</attribute>-->
+<!--                </xpath>-->
+
+
+               <xpath expr="//form//field[@name='qty_delivered']"  position="attributes">
                      <attribute name="invisible" >1</attribute>
                 </xpath>
-                 <xpath expr="//tree/field[@name='product_uom_qty']"  position="attributes">
+                 <xpath expr="//tree/field[@name='qty_delivered']"  position="attributes">
                      <attribute name="invisible" >1</attribute>
-                </xpath>
-                <xpath expr="//kanban/field[@name='product_uom_qty']"  position="attributes">
-                      <attribute name="invisible" >1</attribute>
                 </xpath>
 
 

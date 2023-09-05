@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data>
+		 <template id="report_saleorder_document_wifiber" inherit_id="sale.report_saleorder_document">
+
+             <xpath expr="//span[@t-field='doc.amount_total']"  position="replace">
+                <strong><span t-field="doc.amount_total"/></strong>
+            </xpath>
+
+             <xpath expr="//p[@t-field='doc.note']"  position="replace">
+                <strong><p t-field="doc.note" /></strong>
+            </xpath>
+
+         </template>
+	</data>
+</odoo>
+
+

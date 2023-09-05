@@ -239,8 +239,13 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">All Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
             <field name="context">{'search_default_grpTC': 1 , 'search_default_grpStatus' : 1}</field>
               <!--<field name="domain">[('stage_id.categ_id.name','=','Installation')]</field>-->
+            <field name="search_view_id" ref="view_kin_ticket_filter"/>
             <field name="help" type="html">
                 <p>
                     All Tickets
@@ -252,6 +257,10 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">Draft Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="domain">[('state', 'in', ['draft'])]</field>
             <field name="help" type="html">
                 <p>
@@ -264,6 +273,10 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">Open Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="domain">[('state', 'in', ['new'])]</field>
             <field name="help" type="html">
                 <p>
@@ -276,6 +289,10 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">In Progress Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="domain">[('state', 'in', ['progress'])]</field>
             <field name="help" type="html">
                 <p>
@@ -288,6 +305,10 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">Done Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+            <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="domain">[('state', 'in', ['done'])]</field>
             <field name="help" type="html">
                 <p>
@@ -309,10 +330,20 @@
             </field>
         </record>
 
+        <record id="action_view_active_tickets_view" model="ir.actions.act_window.view">
+            <field name="view_mode">tree</field>
+             <field name="view_id" ref="ticket_tree_view" />
+            <field name="act_window_id" ref="action_view_unclosed_tickets"/>
+        </record>
+
          <record id="action_view_closed_tickets" model="ir.actions.act_window">
             <field name="res_model">kin.ticket</field>
             <field name="name">Closed Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+             <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="context">{'search_default_grpTC': 1}</field>
              <field name="domain">[('state', 'in', ['closed'])]</field>
             <field name="help" type="html">
@@ -457,6 +488,10 @@
             <field name="res_model">kin.ticket</field>
             <field name="name">Open Tickets</field>
             <field name="view_mode">tree,form,pivot,graph</field>
+            <field name="view_ids"
+                   eval="[(5, 0, 0),
+                          (0, 0, {'view_mode': 'tree', 'view_id': ref('ticket_tree_view')}),
+                          (0, 0, {'view_mode': 'form', 'view_id': ref('ticket_form')})]"/>
              <field name="context">{'search_default_grpTC': 1 , 'search_default_grpStatus' : 1}</field>
              <field name="domain">[('user_id', '=', uid),('state','!=', 'closed')]</field>
             <field name="help" type="html">

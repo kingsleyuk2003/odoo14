@@ -12,6 +12,7 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 import pytz
+import requests
 
 class UserGroups(models.Model):
     _inherit = 'user.ticket.group'
@@ -471,6 +472,51 @@ class Ticket(models.Model):
             })]
         return pr_list
 
+    def push_customer_sales_eservice(self):
+        sale_order = self.order_id
+        headers = {
+            'AUTHORIZATION': 'Bearer 1|PMAufZTj0CqUQhU1JsHBKCCpYVn1mPSPxqZkskLZ'}
+        partner_id = sale_order.partner_id
+
+        payload = {
+            "customer_erpid" :  partner_id.id,
+            "order_erpid":  sale_order.id,
+            "firstname":  partner_id.name or '',
+            "lastname":  partner_id.name or '',
+            "customer_username": partner_id.ref or '',
+            "customer_company": partner_id.name,
+            "customer_address": partner_id.street or '',
+            "customer_city": partner_id.city_cust,
+            "customer_state": partner_id.state_ng,
+            "customer_email": partner_id.email or '',
+            "customer_phone": partner_id.phone or '',
+            "sales_order_id": sale_order.name or '',
+            "salesperson": sale_order.user_id.name or '',
+            "salesemail": sale_order.user_id.email or '',
+            "orderdate": sale_order.date_order,
+            "total_amount":  sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('price_subtotal')[0],
+            "customer_plan": sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('product_id')[0].id,
+            "no_of_month": sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('product_uom_qty')[0],
+        }
+
+        try:
+            response = requests.post("http://102.220.173.3/api/v2/receive-erp-invoice", verify=True, data=payload,
+                                     headers=headers)
+            if response.status_code != requests.codes.ok:
+                raise UserError(
+                    _('Sorry, There is an issue pushing the sales details to the external Eservice application. See error: %s ' % response.text))
+            # else:
+            #     self.env.cr.execute(
+            #         "update res_partner set ebilling_push = True, ebilling_response = '%s' where id = %s" % (
+            #         response.text, self.id))
+        except Exception as e:
+            import logging
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            raise UserError(
+                _('Sorry, ERP cannot connect with Eservice. Please contact your IT Administrator. Eservice message: %s' % (
+                    e)))
+        return
 
     def btn_ticket_open(self):
         if self.category_id == self.env.ref('wifiber.installation') and not self.order_id:
@@ -564,6 +610,8 @@ class Ticket(models.Model):
             if not partner_id.ref :
                 partner_id.ref = self.env['ir.sequence'].get('cust_wid_code')
                 partner_id.customer_rank = 1
+                #push information to eservice
+                self.push_customer_sales_eservice()
 
             if not partner_id.email:
                 raise UserError(
@@ -1269,9 +1317,9 @@ class Ticket(models.Model):
 
     def write(self,vals):
         if self.partner_id and self.category_id == self.env.ref('wifiber.installation') :
-            area_id = vals.get('area_customer_id', False)
-            if area_id and not self.partner_id.ref  :
-                vals['ref'] = self.env['ir.sequence'].next_by_code('cust_wid_code')
+            # area_id = vals.get('area_customer_id', False)
+            # if area_id and not self.partner_id.ref  :
+            #     vals['ref'] = self.env['ir.sequence'].next_by_code('cust_wid_code')
 
             cust_vals = {
                 'location_id' : vals.get('location_id',self.partner_id.location_id),

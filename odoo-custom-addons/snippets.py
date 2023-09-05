@@ -1,6 +1,17 @@
 
 class snippet():
 
+    #ref ..odoo-custom-addons/kin_contract/models/contract.py:26
+    def send_email_from_email_template(self):
+        # send email to customer
+        if is_send_recurring_email:
+            template = self.env.ref('account.email_template_edi_invoice', raise_if_not_found=False)
+            if email_from:
+                template.email_from = email_from
+            if email_cc:
+                template.email_cc = email_cc
+            template.send_mail(res.id, force_send=False)
+
 # ../odoo-custom-addons/kin_account/wizard/activity_statement_wizard_extend.py:13
     def send_mass_email_activity_statement(self, partners):
         company_email = self.env.user.company_id.email.strip()

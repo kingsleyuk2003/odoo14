@@ -24,7 +24,7 @@ class ContractExtend(models.Model) :
                 res.action_post()
 
             #send email to customer
-            if is_send_recurring_email:
+            if is_send_recurring_email and self.is_autosend_invoice:
                 template = self.env.ref('account.email_template_edi_invoice', raise_if_not_found=False)
                 if email_from :
                     template.email_from = email_from
@@ -33,3 +33,5 @@ class ContractExtend(models.Model) :
                 template.send_mail(res.id, force_send=False)
 
         return res
+
+    is_autosend_invoice = fields.Boolean(string="Auto Send Recurring Invoice", default=True)
