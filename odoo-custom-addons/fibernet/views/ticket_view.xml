@@ -157,27 +157,27 @@
                               <field name="activation_date" attrs="{'readonly': [('state', 'in', ('closed'))]}" />
                         </group>
                         <group col="4" >
-                                 <field name="movement_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="movement_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                  <field name="installation_cost"  readonly="1" force_save="1" />
-                                 <field name="rent_ladder" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="rent_ladder" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="ladder_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('rent_ladder', '=', 'yes' )], 'invisible': [('rent_ladder', '!=', 'yes' )] }" />
-                                <field name="cable_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="cable_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="cable_used_meter" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
                                  <field name="cable_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('cable_used', '=', 'yes' )], 'invisible': [('cable_used', '!=', 'yes' )] }" />
                                 <field name="old_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
-                                 <field name="onu_changed" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="onu_changed" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="new_serial_number" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('onu_changed', '=', 'yes' )], 'invisible': [('onu_changed', '!=', 'yes' )] }" />
-                                <field name="patchcord_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                <field name="patchcord_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="patchcord_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('patchcord_used', '=', 'yes' )], 'invisible': [('patchcord_used', '!=', 'yes' )] }" />
-                                 <field name="coppler_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="coppler_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="coppler_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('coppler_used', '=', 'yes' )], 'invisible': [('coppler_used', '!=', 'yes' )] }" />
-                                 <field name="pigtail_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="pigtail_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="pigtail_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('pigtail_used', '=', 'yes' )], 'invisible': [('pigtail_used', '!=', 'yes' )] }" />
-                                 <field name="box_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="box_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="box_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('box_used', '=', 'yes' )], 'invisible': [('box_used', '!=', 'yes' )] }" />
-                                 <field name="splitter_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="splitter_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="splitter_used_type" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('splitter_used', '=', 'yes' )], 'invisible': [('splitter_used', '!=', 'yes' )] }" />
-                                 <field name="faceplate_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'support' ),('state', 'not in', ('draft','new') )]}" />
+                                 <field name="faceplate_used" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('category_code', '=', 'installation' ),('state', 'not in', ('draft','new') )]}" />
                                 <field name="faceplate_used_amt" attrs="{'readonly': [('state', 'in', ('done','finalized', 'closed'))], 'required': [('faceplate_used', '=', 'yes' )], 'invisible': [('faceplate_used', '!=', 'yes' )] }" />
                                  <field name="cabling_price" readonly="1" force_save="1" groups="fibernet.group_show_technical_ticket_fibernet_report" />
                                 <field name="installation_fee" readonly="1" force_save="1"  groups="fibernet.group_show_technical_ticket_fibernet_report" />
@@ -402,29 +402,29 @@
                     <field name="movement_type" />
                     <field name="location_id" optional="hide"  />
                     <field name="rent_ladder" optional="hide"  />
-                    <field name="ladder_amt" />
-                    <field name="cable_used" optional="hide"  />
+                    <field name="ladder_amt" sum="Total" />
+                    <field name="cable_used" sum="Total" optional="hide"  />
                     <field name="cable_type" optional="hide"  />
-                    <field name="cable_used_meter" />
-                    <field name="cabling_price" />
-                    <field name="total_amt" />
-                    <field name="installation_cost" />
-                    <field name="installation_fee" />
+                    <field name="cable_used_meter" sum="Total" />
+                    <field name="cabling_price" sum="Total" />
+                    <field name="total_amt" sum="Total" />
+                    <field name="installation_cost" sum="Total" />
+                    <field name="installation_fee" sum="Total" />
                     <field name="onu_changed" optional="hide"  />
                      <field name="old_serial_number" optional="hide"  />
                      <field name="new_serial_number" optional="hide"  />
                      <field name="patchcord_used" optional="hide"  />
-                     <field name="patchcord_used_amt" optional="hide"  />
+                     <field name="patchcord_used_amt" optional="hide"  sum="Total" />
                      <field name="coppler_used" optional="hide"  />
-                     <field name="coppler_used_amt" optional="hide"  />
+                     <field name="coppler_used_amt" optional="hide" sum="Total" />
                      <field name="pigtail_used" optional="hide"  />
-                     <field name="pigtail_used_amt" optional="hide"  />
+                     <field name="pigtail_used_amt" optional="hide" sum="Total" />
                      <field name="box_used" optional="hide"  />
                      <field name="box_used_type" optional="hide"  />
                      <field name="splitter_used" optional="hide"  />
                     <field name="splitter_used_type" optional="hide"  />
                     <field name="faceplate_used" optional="hide"  />
-                    <field name="faceplate_used_amt" optional="hide"  />
+                    <field name="faceplate_used_amt" optional="hide" sum="Total"  />
                 </tree>
 
             </field>
