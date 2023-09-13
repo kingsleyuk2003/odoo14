@@ -441,6 +441,10 @@ class SaleOrderExtend(models.Model):
                 rec.alert_msg = ''
                 rec.show_alert_box = False
 
+    def get_default_payment_term(self):
+        res = self.env['account.payment.term'].search([('is_default_payment_term', '=', True)],limit=1)
+        return res
+
 
     ticket_ids = fields.One2many('kin.ticket', 'order_id', string='Tickets')
     ticket_count = fields.Integer(compute="_compute_ticket_count", string='# of Ticket', copy=False, default=0)
@@ -486,6 +490,7 @@ class SaleOrderExtend(models.Model):
         ('home', 'Home Use'),
         ('corporate', 'Corporate Use')],string='Client Type')
     is_autosend_invoice = fields.Boolean(string="Auto Send Recurring Invoice", default=True)
+    payment_term_id = fields.Many2one('account.payment.term',default=get_default_payment_term)
 
 
 
@@ -732,12 +737,13 @@ class ResPartnerExtend(models.Model):
     selfcare_response = fields.Char(string='Selfcare Response')
 
 
+class AccountPaymentTerm(models.Model):
+    _inherit = 'account.payment.term'
 
+    is_default_payment_term = fields.Boolean(string="Default Payment Term")
 
 class AccountPayment(models.Model):
     _inherit = 'account.payment'
-
-
 
 
     def amount_to_text(self, amt):

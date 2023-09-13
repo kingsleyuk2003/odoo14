@@ -446,7 +446,7 @@
                  </field>
 
                 <field name="payment_term_id" position="attributes"  >
-                    <attribute name="required" >1</attribute>
+                    <attribute name="readonly" >1</attribute>
                  </field>
 
                 <field name="order_line" position="attributes" >
@@ -501,6 +501,18 @@
         </record>
 
 
+
+        <!-- Account payment term  -->
+        <record id="view_account_payment_term_extend_form" model="ir.ui.view">
+            <field name="name">account.payment.term.form.extend</field>
+            <field name="model">account.payment.term</field>
+            <field name="inherit_id" ref="account.view_payment_term_form" />
+            <field name="arch" type="xml">
+                <field name="company_id" position="after" >
+                    <field name="is_default_payment_term" />
+                </field>
+            </field>
+        </record>
 
 
         <!-- Account payment  -->

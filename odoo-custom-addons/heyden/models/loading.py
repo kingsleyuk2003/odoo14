@@ -67,6 +67,8 @@ class StockPicking(models.Model):
             sale_order = self.sale_id
             if sale_order :
                 inv.invoice_date = sale_order.date_order
+                inv.name = ''
+                inv.date = sale_order.date_order
             emp_id = self.env['hr.employee'].search([('user_id', '=', self.env.user.id)])
             if inv :
                 inv.employee_id = emp_id or False
@@ -152,6 +154,7 @@ class PurchaseOrder(models.Model):
             'invoice_line_ids': [],
             'company_id': self.company_id.id,
             'invoice_date' : self.date_order,
+
 
         }
         return invoice_vals
