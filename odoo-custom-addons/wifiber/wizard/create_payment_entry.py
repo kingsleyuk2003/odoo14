@@ -45,7 +45,11 @@ class CreatePaymentEntry(models.TransientModel):
         sale_order.check_debt_customer()
         return True
 
-    is_paid_deferred = fields.Selection([('paid', 'Paid'),('deferred', 'Deferred (Zero Payment)')], string='Payment Status')
+
+
+
+
+    is_paid_deferred = fields.Selection([('paid', 'Paid'),('deferred', 'Deferred (Zero Payment)')], string='Payment Status', default='paid')
     payment_date = fields.Date(string='Payment Date')
     journal_id = fields.Many2one('account.journal',string='Payment Method')
     amount = fields.Float(string='Amount Paid')
@@ -56,4 +60,5 @@ class CreatePaymentEntry(models.TransientModel):
                                   default=lambda self: self.env.user.company_id.currency_id)
     total_amount_paid = fields.Monetary(string='Total Amount Paid')
     amount_balance = fields.Monetary(string='Balance to be Paid')
+    is_eservice_approved = fields.Boolean(string="Eservice Approved")
 

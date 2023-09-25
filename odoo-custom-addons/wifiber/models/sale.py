@@ -96,6 +96,57 @@ class SaleOrderExtend(models.Model):
                 raise UserError(_('You can only delete draft quotations or Quotations Awaiting Acceptance!'))
             self.env.cr.execute("delete from sale_order where id = %s" % order.id)
 
+
+    def push_customer_sales_eservice(self):
+        sale_order = self.order_id
+        headers = {
+            'AUTHORIZATION': 'Bearer 1|PMAufZTj0CqUQhU1JsHBKCCpYVn1mPSPxqZkskLZ'}
+        partner_id = sale_order.partner_id
+
+        payload = {
+            "customer_erpid" :  partner_id.id,
+            "order_erpid":  sale_order.id,
+            "firstname":  partner_id.name or '',
+            "lastname":  partner_id.name or '',
+            "customer_username": partner_id.ref or '',
+            "customer_company": partner_id.name,
+            "customer_address": partner_id.street or '',
+            "customer_city": partner_id.city_cust,
+            "customer_state": partner_id.state_ng,
+            "customer_email": partner_id.email or '',
+            "customer_phone": partner_id.phone or '',
+            "sales_order_id": sale_order.name or '',
+            "salesperson": sale_order.user_id.name or '',
+            "salesemail": sale_order.user_id.email or '',
+            "orderdate": sale_order.date_order,
+            "total_amount":  sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('price_subtotal')[0],
+            "customer_plan": sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('product_id')[0].id,
+            "no_of_month": sale_order.order_line.filtered(lambda line: line.product_id.is_sub == True).mapped('product_uom_qty')[0],
+        }
+
+        try:
+            response = requests.post("http://102.220.173.3/api/v2/receive-erp-invoice", verify=True, data=payload,
+                                     headers=headers)
+            if response.status_code != requests.codes.ok:
+                grp_name = 'wifiber.group_receive_failed_eservice_push_email'
+                subject = 'Eservice Sales details Error Push Notification for the Sales Order (%s) for Customer (%s)' % ( self.name, self.partner_id.name)
+                msg= _('Sorry, There is an issue pushing the sales details belonging to the Sales Order (%s)  for Customer (%s) to the external Eservice application. See error: %s ' % (self.name, self.partner_id.name,response.text))
+                self.send_email(grp_name, subject, msg)
+            # else:
+            #     self.env.cr.execute(
+            #         "update res_partner set ebilling_push = True, ebilling_response = '%s' where id = %s" % (
+            #         response.text, self.id))
+        except Exception as e:
+            import logging
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            grp_name = 'wifiber.group_receive_failed_eservice_push_email'
+            subject = 'Eservice Cannot Connect Error Push Notification for the Sales Order (%s) for Customer (%s)' % (
+            self.name, self.partner_id.name)
+            msg = _('Sorry, ERP cannot connect with Eservice for the Sales Order (%s) for Customer (%s). Please contact your IT Administrator. Eservice message: %s' % (self.name, self.partner_id.name,e))
+            self.send_email(grp_name, subject, msg)
+        return
+
     
     def action_confirm(self):
         self.state = 'so_to_approve'
@@ -110,6 +161,9 @@ class SaleOrderExtend(models.Model):
             self.name, self.env.user.name)
         self.send_email(grp_name, subject, msg)
         self.send_sale_order_email()
+
+        #push sales details to eservice
+        self.push_customer_sales_eservice()
 
         return
 
@@ -153,7 +207,7 @@ class SaleOrderExtend(models.Model):
             'views': [[form_view_id, 'form']],
             'target': action.target,
             'domain': action.domain,
-            'context': {'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
+            'context': {'default_is_eservice_approved':self.is_eservice_approved, 'default_payment_date':self.eservice_payment_date, 'default_journal_id':self.eservice_journal_id.id  ,'default_amount':self.eservice_amt_paid  ,'default_ref':self.eservice_reference,  'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
             'res_model': action.res_model,
             'target': 'new'
         }
@@ -227,6 +281,10 @@ class SaleOrderExtend(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
 
     def action_approve(self):
+        if not self.is_eservice_approved:
+            raise UserError('Sorry, Wait for Eservice to Approve the Payment')
+        if self.eservice_amt_paid <= 0:
+            raise UserError('Eservice Amount Paid is less than or equal to Zero ')
         return self.action_create_payment_entry()
 
 
@@ -464,6 +522,11 @@ class SaleOrderExtend(models.Model):
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
     is_special_other_sme = fields.Boolean(related='sale_order_template_id.is_special_other_sme',string='Is Special Home/Other SME Packages')
 
+    eservice_journal_id = fields.Many2one('account.journal',string='Payment Method',tracking=True)
+    eservice_amt_paid = fields.Float(string='Amount Paid',tracking=True)
+    eservice_payment_date = fields.Date(string='Payment Date',tracking=True)
+    eservice_reference = fields.Char(string='Reference',tracking=True)
+    is_eservice_approved = fields.Boolean(string="Eservice Approved",tracking=True)
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"

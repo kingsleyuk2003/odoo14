@@ -461,6 +461,7 @@
                     <attribute name="invisible" >1</attribute>
                 </field>
 
+
                   <page  name="other_information" position="attributes" >
                     <attribute name="invisible" >1</attribute>
                 </page>
@@ -547,8 +548,20 @@
                 </field>
 
                 <field name="date_order" position="after" >
-                    <field name="opportunity_id" readonly="1" />
+                    <field name="opportunity_id" readonly="1" required="1" />
                 </field>
+
+                 <page  name="other_information" position="after" >
+                    <page name="eservice_payment" string="Eservice Payment" groups="account.group_account_manager"  >
+                        <group col="4" >
+                            <field name="eservice_journal_id" domain="[('type','in',['cash','bank'])]"  attrs="{'required': [('state', 'in', ['so_to_approve'])], 'readonly': [('state', 'not in', ['so_to_approve'])]}" />
+                            <field name="eservice_payment_date" attrs="{'required': [('state', 'in', ['so_to_approve'])], 'readonly': [('state', 'not in', ['so_to_approve'])]}" />
+                            <field name="eservice_amt_paid" attrs="{'required': [('state', 'in', ['so_to_approve'])], 'readonly': [('state', 'not in', ['so_to_approve'])]}" />
+                            <field name="eservice_reference" attrs="{'required': [('state', 'in', ['so_to_approve'])], 'readonly': [('state', 'not in', ['so_to_approve'])]}" />
+                            <field name="is_eservice_approved" attrs="{'required': [('state', 'in', ['so_to_approve'])], 'readonly': [('state', 'not in', ['so_to_approve'])]}" />
+                        </group>
+                    </page>
+                </page>
 
             </field>
         </record>

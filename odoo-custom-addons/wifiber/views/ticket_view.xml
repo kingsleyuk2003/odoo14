@@ -59,6 +59,7 @@
                 <button name="btn_ticket_done" position="attributes" >
                       <attribute  name="states" >new,progress,installed</attribute>
                  </button>
+
                 <button name="btn_ticket_progress" position="before" >
                      <button name="btn_ticket_maint_approve" type="object"  string="Maintenance Approved"  class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket" attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"    />
                      <button type="action"  string="Maintenance Declined"  name="%(action_disapprove_maint)d"   class="oe_highlight" groups="wifiber.group_helpdesk_maint_ticket"   attrs="{'invisible': ['|',('category_code', '!=', 'maintenance' ),('state', 'not in', ('new') )]}"  />
@@ -67,6 +68,7 @@
                 <button name="btn_ticket_progress" position="after" >
                      <button name="btn_ticket_installed" type="object"  string="Installed"  class="oe_highlight" attrs="{'invisible': ['|',('category_code', 'not in', ('installation','support')),('state', 'not in', ('progress') )]}"    />
                     <button name="btn_ticket_re_populate_materials" type="object"  string="Re-populate Materials Requested"   attrs="{'invisible': [('category_code', 'not in', ('installation','support'))]}" groups="wifiber.group_helpdesk_re_populate_materials"    />
+                    <button name="btn_repush_eservice" type="object" string="Re-push to Eservice"  states="new,progress,installed,done,finalized"  attrs="{'invisible': [('category_code', 'not in', ('installation'))]}" groups="wifiber.group_repush_eservice_ticket_btn"  />
                 </button>
                  <button name="btn_ticket_progress" position="attributes" >
                       <attribute  name="states" >maint_approve,new</attribute>

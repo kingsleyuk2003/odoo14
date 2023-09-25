@@ -503,8 +503,10 @@ class Ticket(models.Model):
             response = requests.post("http://102.220.173.3/api/v2/receive-erp-invoice", verify=True, data=payload,
                                      headers=headers)
             if response.status_code != requests.codes.ok:
-                raise UserError(
-                    _('Sorry, There is an issue pushing the sales details to the external Eservice application. See error: %s ' % response.text))
+                grp_name = 'wifiber.group_receive_failed_eservice_push_email'
+                subject = 'Eservice Sales  details Error Push Notification for the Ticket (%s) with description (%s)' % ( self.ticket_id, self.name)
+                msg= _('Sorry, There is an issue pushing the sales details belonging to the ticket (%s)  with description (%s) to the external Eservice application. See error: %s ' % (self.ticket_id, self.name,response.text))
+                self.send_email(grp_name, subject, msg)
             # else:
             #     self.env.cr.execute(
             #         "update res_partner set ebilling_push = True, ebilling_response = '%s' where id = %s" % (
@@ -513,10 +515,15 @@ class Ticket(models.Model):
             import logging
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
-            raise UserError(
-                _('Sorry, ERP cannot connect with Eservice. Please contact your IT Administrator. Eservice message: %s' % (
-                    e)))
+            grp_name = 'wifiber.group_receive_failed_eservice_push_email'
+            subject = 'Eservice Cannot Connect Error Push Notification for the Ticket (%s) with description (%s)' % (
+            self.ticket_id, self.name)
+            msg = _('Sorry, ERP cannot connect with Eservice for the Ticket (%s) with description (%s). Please contact your IT Administrator. Eservice message: %s' % (self.ticket_id, self.name,e))
+            self.send_email(grp_name, subject, msg)
         return
+
+    def btn_repush_eservice(self):
+        self.push_customer_sales_eservice()
 
     def btn_ticket_open(self):
         if self.category_id == self.env.ref('wifiber.installation') and not self.order_id:
