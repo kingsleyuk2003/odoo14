@@ -55,8 +55,9 @@
                     <header>
                         <button name="action_confirm" type="object" states="draft" string="Confirm" class="oe_highlight" groups="kin_loading.group_depot_officer" />
                          <button name="action_line_mgr_approve" type="object" states="confirm" string="Line Manager Approve" class="oe_highlight" groups="kin_loading.group_programme_approver" />
+                        <button name="%(action_disapproval_reason)d" type="action" states="confirm,cancel" string="Dis-Approve" groups="kin_loading.group_programme_approver" />
                         <button name="action_approve" type="object" states="line_approve" string="Depot Manager Approve" class="oe_highlight" groups="kin_loading.group_depot_manager" />
-                        <button name="%(action_disapproval_reason)d" type="action" states="line_approve,approve" string="Dis-Approve" groups="kin_loading.group_depot_manager" />
+                        <button name="%(action_disapproval_reason)d" type="action" states="confirm,line_approve,cancel" string="Dis-Approve" groups="kin_loading.group_depot_manager"  />
                         <button name="action_cancel" states="draft" type="object" string="Cancel" confirm="Are you sure you want to Cancel the Loading Programme?"/>
                         <button name="action_draft" states="confirm,cancel" type="object" string="Reset to Draft" confirm="Are you sure you want to Reset the Loading Programme?" />
                         <button name="btn_loading_programme_excel_export"  type="object" states="approve" string="Export Loading Programme in Excel"  class="oe_highlight" groups="kin_loading.group_show_excel_export_lp_button" />
@@ -2309,9 +2310,6 @@ f
         <menuitem id="menu_payment_mode" name="Mode of Payment" parent="menu_root_atl" sequence="6" action="action_payment_mode_form"/>
 
 
-
-
-
          <!-- DPR INFO -->
         <record id="view_dpr_info_form" model="ir.ui.view" >
             <field name="name" >dpr.info.form</field>
@@ -2320,7 +2318,7 @@ f
                 <form string="DPR Information" >
                     <sheet>
                         <group col="4">
-                            <field name="customer_id" required="1" />
+                            <field name="customer_id" required="1" options="{'no_open':True,'no_create':True}" />
                             <field name="address" required="1" />
                             <field name="dpr_no" required="1" />
                             <field name="dpr_expiry_date" />
