@@ -1202,7 +1202,7 @@
                         <group>
                             <field name="partner_id" attrs="{'invisible': [('picking_type_code', '=', 'internal')]}" on_change="onchange_picking_type(picking_type_id,partner_id)"/>
 <!--                             <field name="source_depot_type_id" options = "{'no_open':True,'no_create':True}" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])] , 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))] }" domain="[('is_depot_type','=',True)]"    />-->
-                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting'))]}"   />
+                            <field name="location_id"  options="{'no_open':True,'no_create':True}" groups="kin_loading.group_show_source_location" attrs="{'invisible': [('picking_type_code', 'in', ['incoming'])], 'required': [('picking_type_code', 'not in', ['incoming'])], 'readonly': [('state', 'not in', ('draft','confirmed','waiting','assigned'))]}"   />
                               <field name="loading_programme_id"   options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />
 <!--                             <field name="loading_programme_ids" widget="many2many_tags"   options="{'no_open':True,'no_create':True}" attrs="{'invisible': [('is_loading_ticket', '!=', True)]}" readonly="1" />-->
                             <!--

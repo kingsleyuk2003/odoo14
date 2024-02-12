@@ -1083,7 +1083,7 @@ class AccountMoveExtend(models.Model):
                 raise UserError('%s credit limit is yet to be approved' % (customer.name))
             allowed_credit = customer._get_allowed_credit()
             if allowed_credit < 0 :
-                raise UserError('The customer (%s) has a balance credit of %s %s' % (customer.name,self.currency_id.symbol, allowed_credit))
+                raise UserError('The customer (%s) has a balance credit of %s %s. Kindly post payment' % (customer.name,self.currency_id.symbol, allowed_credit))
 
     def action_atl_approval(self):
         if self.sale_order_id:
@@ -3698,11 +3698,11 @@ class DRPInfo(models.Model):
     _rec_name = 'address'
     _description = 'DRP Information'
 
-    customer_id = fields.Many2one('res.partner',string='Customer')
-    address = fields.Char(string='Destination')
-    dpr_no = fields.Char('DPR License No.')
-    dpr_expiry_date = fields.Date('DPR Expiry Date')
-    picking_ids = fields.One2many('stock.picking','dpr_info_id',string='Stock Pickings')
+    customer_id = fields.Many2one('res.partner',string='Customer',tracking=True)
+    address = fields.Char(string='Destination',tracking=True)
+    dpr_no = fields.Char('DPR License No.',tracking=True)
+    dpr_expiry_date = fields.Date('DPR Expiry Date',tracking=True)
+    picking_ids = fields.One2many('stock.picking','dpr_info_id',string='Stock Pickings',tracking=True)
 
 
 

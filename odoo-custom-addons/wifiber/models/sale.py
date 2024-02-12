@@ -163,7 +163,7 @@ class SaleOrderExtend(models.Model):
         self.send_sale_order_email()
 
         #push sales details to eservice
-        self.push_customer_sales_eservice()
+        #self.push_customer_sales_eservice()
 
         return
 
@@ -207,7 +207,10 @@ class SaleOrderExtend(models.Model):
             'views': [[form_view_id, 'form']],
             'target': action.target,
             'domain': action.domain,
-            'context': {'default_is_eservice_approved':self.is_eservice_approved, 'default_payment_date':self.eservice_payment_date, 'default_journal_id':self.eservice_journal_id.id  ,'default_amount':self.eservice_amt_paid  ,'default_ref':self.eservice_reference,  'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
+            'context': {'default_partner_id': self.partner_id.id,
+                        'default_total_amount_paid': self.total_amount_paid,
+                        'default_amount_balance': self.amount_balance or self.amount_total},
+           # 'context': {'default_is_eservice_approved':self.is_eservice_approved, 'default_payment_date':self.eservice_payment_date, 'default_journal_id':self.eservice_journal_id.id  ,'default_amount':self.eservice_amt_paid  ,'default_ref':self.eservice_reference,  'default_partner_id': self.partner_id.id,'default_total_amount_paid': self.total_amount_paid,'default_amount_balance': self.amount_balance or self.amount_total},
             'res_model': action.res_model,
             'target': 'new'
         }
@@ -281,10 +284,10 @@ class SaleOrderExtend(models.Model):
             self.env.user.notify_info('%s Will Be Notified by Email' % (user_name))
 
     def action_approve(self):
-        if not self.is_eservice_approved:
-            raise UserError('Sorry, Wait for Eservice to Approve the Payment')
-        if self.eservice_amt_paid <= 0:
-            raise UserError('Eservice Amount Paid is less than or equal to Zero ')
+        # if not self.is_eservice_approved:
+        #     raise UserError('Sorry, Wait for Eservice to Approve the Payment')
+        # if self.eservice_amt_paid <= 0:
+        #     raise UserError('Eservice Amount Paid is less than or equal to Zero ')
         return self.action_create_payment_entry()
 
 
@@ -522,11 +525,11 @@ class SaleOrderExtend(models.Model):
     payment_count = fields.Integer(compute="_compute_payment_count", string='# of Payment', copy=False, default=0)
     is_special_other_sme = fields.Boolean(related='sale_order_template_id.is_special_other_sme',string='Is Special Home/Other SME Packages')
 
-    eservice_journal_id = fields.Many2one('account.journal',string='Payment Method',tracking=True)
-    eservice_amt_paid = fields.Float(string='Amount Paid',tracking=True)
-    eservice_payment_date = fields.Date(string='Payment Date',tracking=True)
-    eservice_reference = fields.Char(string='Reference',tracking=True)
-    is_eservice_approved = fields.Boolean(string="Eservice Approved",tracking=True)
+    # eservice_journal_id = fields.Many2one('account.journal',string='Payment Method',tracking=True)
+    # eservice_amt_paid = fields.Float(string='Amount Paid',tracking=True)
+    # eservice_payment_date = fields.Date(string='Payment Date',tracking=True)
+    # eservice_reference = fields.Char(string='Reference',tracking=True)
+    # is_eservice_approved = fields.Boolean(string="Eservice Approved",tracking=True)
 
 class SaleOrderTemplate(models.Model):
     _inherit = "sale.order.template"
