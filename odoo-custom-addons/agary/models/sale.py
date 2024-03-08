@@ -42,7 +42,6 @@ class SaleOrderLine(models.Model):
             res['account_id'] = False
         return res
 
-
     def _prepare_invoice_line(self, **optional_values):
 
         self.ensure_one()
