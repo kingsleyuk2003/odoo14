@@ -69,7 +69,7 @@ class LoadingProgrammeReport(models.TransientModel):
             report_worksheet.write(row, 2, ticket.partner_id.name, cell_wrap_format)
             report_worksheet.write(row, 3, ticket.ticket_load_qty, cell_amount)
             report_worksheet.write(row, 4, ticket.truck_no, cell_wrap_format)
-            report_worksheet.write(row, 5, ticket.dpr_info_id.display_name, cell_wrap_format)
+            report_worksheet.write(row, 5, ticket.receiving_station_address, cell_wrap_format)
             report_worksheet.write(row, 6, ticket.dpr_no, cell_wrap_format)
             total_qty += ticket.ticket_load_qty
             row += 1

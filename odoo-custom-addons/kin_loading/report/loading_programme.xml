@@ -133,7 +133,7 @@
 													<td class="text-center" ><span t-field="lp.partner_id" /></td>
 													<td class="text-center" ><span t-field="lp.ticket_load_qty" /></td>
 													<td class="text-center" ><span t-field="lp.truck_no" /></td>
-													<td class="text-center" ><span t-field="lp.dpr_info_id" /></td>
+													<td class="text-center" ><span t-field="lp.receiving_station_address" /></td>
 													<td class="text-center" ><span t-field="lp.dpr_no" /></td>
 												</tr>
 											</tbody>

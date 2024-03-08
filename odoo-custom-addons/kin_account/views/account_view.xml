@@ -2,6 +2,9 @@
 <odoo>
     <data>
 
+        <!-- THIS IS CONFIRMED BY ME ON WIFIBER TO CAUSE LOADING ISSUES WHEN THERE ARE SO MANY ENTRIES THAT WILL MAKE THE REAL TIME REPORT TAKE SO MUCH TIME RECALCULATING AND HANGING THE WHOLE SYSTEM. AN EXPERIENCE FROM WIFIBER SETUP -->
+         <delete id="base_accounting_kit.menu_accounting_dashboard" model="ir.ui.menu"  />
+
         <record model="ir.ui.menu" id="account.menu_finance">
 		 <field name="groups_id" eval="[(6, 0, [ref('group_show_account_application')])]"/>
         </record>

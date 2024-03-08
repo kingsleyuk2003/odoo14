@@ -1,6 +1,13 @@
 
 class snippet():
 
+    #pass values in a context variable
+    ## ../ kin_sales / models / sale.py: 270
+    def action_confirm(self):
+        ctx = dict(self._context)
+        ctx['atl_depot_id'] = self.location_id.id
+        res = super(SaleOrder, self.with_context(ctx)).action_confirm()
+
     #ref ..odoo-custom-addons/kin_contract/models/contract.py:26
     def send_email_from_email_template(self):
         # send email to customer
