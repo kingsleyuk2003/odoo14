@@ -28,7 +28,7 @@ class StockQuant(models.Model):
 
 
 
-class StockPicking(models.Model):
+class StockPickingHeyden(models.Model):
     _inherit = "stock.picking"
     _order = 'name desc'
 
@@ -51,10 +51,8 @@ class StockPicking(models.Model):
 
 
 
-
-
     def button_validate(self):
-        res = super(StockPicking, self).button_validate()
+        res = super(StockPickingHeyden, self).button_validate()
         picking_type_code = self.picking_type_code
         purchase_order = self.purchase_id
         if picking_type_code == "incoming" and purchase_order:
@@ -63,53 +61,25 @@ class StockPicking(models.Model):
 
         if self.env.company.id != 1:
             inv = self.create_sales_invoice()
-
+            emp_id = False
             sale_order = self.sale_id
             if sale_order :
                 inv.invoice_date = sale_order.date_order
                 inv.name = ''
                 inv.date = sale_order.date_order
-            emp_id = self.env['hr.employee'].search([('user_id', '=', self.env.user.id)])
+                emp_id = sale_order.emp_hey_id
             if inv :
-                inv.employee_id = emp_id or False
+                inv.emp_hey_id = emp_id or False
                 inv.request_validation()
             bill = self.create_purchase_bill()
             if bill :
-                inv.employee_id = emp_id or False
+                inv.emp_hey_id = emp_id or False
                 bill.request_validation()
 
         return res
 
-    def _create_final_invoice_depot(self,grouped=False, final=False):
-        order = self.sale_id
-        # 1) Create invoices.
-        invoice_vals_list = []
-        order = order.with_company(order.company_id)
-
-        invoice_vals = self._prepare_invoice()
-        invoice_vals['is_from_inventory'] = True
-        invoice_line_vals = self._get_invoiceable_lines()
-        invoice_vals['invoice_line_ids'] += invoice_line_vals
-        inv_line_def_vals = self._get_deferred_revenue_deduction_line()
-        invoice_vals['invoice_line_ids'] += inv_line_def_vals
-        invoice_vals_list.append(invoice_vals)
-
-        # Manage the creation of invoices in sudo because a salesperson must be able to generate an invoice from a
-        # sale order without "billing" access rights. However, he should not be able to create an invoice from scratch.
-        moves = self.env['account.move'].sudo().with_context(default_move_type='out_invoice').create(invoice_vals_list)
-
-        for move in moves:
-            move.message_post_with_view('mail.message_origin_link',
-                values={'self': move, 'origin': move.line_ids.mapped('sale_line_ids.order_id')},
-                subtype_id=self.env.ref('mail.mt_note').id
-            )
-            move.is_has_advance_invoice = True
-            move.picking_ids = self
-            self.invoice_id = move
-            move.request_validation()
-        return moves
-
     aftershore_receipt_documents = fields.Binary(string='After Shore Receipt Documents')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
 
 
 
@@ -122,7 +92,7 @@ class PurchaseRequest(models.Model):
         self.assigned_to = self.sudo().department_id.manager_id.user_id
 
     department_id = fields.Many2one('hr.department', string='Department')
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
     attachment = fields.Binary(string='Document Attachment')
 
 
@@ -177,7 +147,7 @@ class PurchaseOrder(models.Model):
         self.is_request_approval_by = self.env.user
         self.is_request_approval_date = fields.Datetime.now()
 
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
 
 
 # Copyright 2018-2019 ForgeFlow, S.L.
@@ -206,7 +176,6 @@ class ResPartner(models.Model):
         res = super(ResPartner, self).create(vals)
         return res
 
-
     manager = fields.Char(string='Manager')
     is_commercial = fields.Boolean(string="Is Commercial Customer")
 
@@ -233,15 +202,20 @@ class SaleOrder(models.Model):
         self.is_has_advance_invoice = True
         self.advance_invoice_id = inv
         self.state = 'atl_awaiting_approval'
+        emp_id = self.emp_hey_id
+        inv.emp_hey_id = emp_id or False
         if is_post_invoice_before_delivery:
-            emp_id = self.env['hr.employee'].search([('user_id','=',self.env.user.id)])
-            inv.employee_id = emp_id or False
-            inv.request_validation()
+            inv.action_post()
+            #inv.request_validation()
             #inv.validate_tier() # no effect here. so we depend on the scheduler autovalidate
         return inv
 
     def action_confirm(self):
-        res = super(SaleOrder, self).action_confirm()
+        ctx = dict(self._context)
+        if self.location_id:
+            ctx['atl_depot_id'] = self.location_id.id
+        res = super(SaleOrder, self.with_context(ctx)).action_confirm()
+
 
         #for commercial customer
         if self.env.company.id != 1 and self.partner_id.is_commercial:
@@ -262,7 +236,7 @@ class SaleOrder(models.Model):
                     self.order_line.create(inv_line_mgt)
 
         for picking in self.picking_ids :
-            picking.action_assign()
+            picking.with_context(atl_depot_id=11).action_assign()
             picking.button_validate()
         return res
 
@@ -321,7 +295,8 @@ class SaleOrder(models.Model):
                 invoiceable_line_ids.append(line.id)
         return self.env['sale.order.line'].browse(invoiceable_line_ids)
 
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
+    location_id = fields.Many2one('stock.location', string='Stock Location')
 
 
 
@@ -394,20 +369,19 @@ class AccountMove(models.Model):
 
     invoice_date = fields.Date(string='Invoice/Bill Date', readonly=True, index=True, copy=False,
                                states={'draft': [('readonly', False)]}, default=lambda self: fields.Datetime.now())
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
 
 class AccountPayment(models.Model):
     _inherit = 'account.payment'
 
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
+    emp_hey_id = fields.Many2one('employee.heyden', string='Employee Responsible', tracking=True)
 
-class AccountPayment(models.Model):
-    _inherit = 'stock.picking'
-
-    employee_id = fields.Many2one('hr.employee', string='Employee Responsible')
 
 class ProductProductLoading(models.Model):
     _inherit = 'product.template'
 
     mgt_product_id = fields.Many2one('product.product',string='Management Service')
 
+class DRPInfo(models.Model):
+    _inherit = 'dpr.info'
+    _rec_name = 'dpr_no'

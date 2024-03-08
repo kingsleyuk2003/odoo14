@@ -9,6 +9,11 @@ from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_is_zero
 from datetime import datetime, timedelta , date
 
+class employee_heyden(models.Model):
+    _name = 'employee.heyden'
+
+    name = fields.Char(string='Employee')
+
 class HRBank(models.Model):
     _name = 'hr.bank'
 
@@ -61,6 +66,8 @@ class HRContract(models.Model):
     _inherit = 'hr.contract'
 
     paye = fields.Monetary(string="P.A.Y.E")
-    lc = fields.Monetary(string="Logistics / Call Allowances")
+    lc = fields.Monetary(string="Allowances - Logistics & Communication")
+    pension_employer = fields.Monetary(string="Pension - Employer Contribution")
+    pension_employee = fields.Monetary(string="Pension - Employee Contribution")
     bank_account_no = fields.Char(string='Bank Account No.')
     bank_id = fields.Many2one('hr.bank', string='Bank')

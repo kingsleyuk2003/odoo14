@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sales_atl_wizard_user,sales.atl.wizard user,model_sales_atl_wizard,kin_loading.group_depot_officer,1,1,1,1
 access_hr_bank,hr.bank user,model_hr_bank,base.group_user,1,1,1,1
 access_hr_business_unit,hr.business.unit user,model_hr_business_unit,base.group_user,1,1,1,1
+access_employee_heyden,employee.heyden user,model_employee_heyden,base.group_user,1,1,1,1

@@ -33,6 +33,7 @@ class TierValidation(models.AbstractModel):
         res = super(TierValidation, self)._get_under_validation_exceptions()
         #res.append('order_line')
         res.append('depot_id')
+        res.append('emp_hey_id')
         return res
 
 

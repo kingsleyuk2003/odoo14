@@ -114,7 +114,7 @@
 
 
                 <label for="wage"   position="attributes" >
-                    <attribute name="string" >Basic Salary</attribute>
+                    <attribute name="string" >Gross Salary</attribute>
                 </label>
 
 <!--                 <label for="hra"   position="attributes" >-->
@@ -140,6 +140,16 @@
                               <field name="lc" nolabel="1"/>
                               <span>/ month</span>
                           </div>
+                        <label for="pension_employer"/>
+                         <div class="o_row" name="pension_employer">
+                              <field name="pension_employer" nolabel="1"/>
+                              <span>/ month</span>
+                         </div>
+                         <label for="pension_employee"/>
+                         <div class="o_row" name="pension_employee">
+                              <field name="pension_employee" nolabel="1"/>
+                              <span>/ month</span>
+                         </div>
                         <field name="bank_id" options="{'no_open': True, 'no_create': True}" />
                         <field name="bank_account_no" />
                     </div>
@@ -154,6 +164,39 @@
             </field>
         </record>
 
+      <!-- Employee Heyden -->
+        <record id="employee_heyden_form" model="ir.ui.view">
+            <field name="name">employee.heyden.form</field>
+            <field name="model">employee.heyden</field>
+            <field name="arch" type="xml">
+                <form>
+                     <sheet>
+                        <group>
+                             <field name="name" />
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+         <record id="view_employee_heyden_tree" model="ir.ui.view" >
+            <field name="name" >employee.heyden.tree</field>
+            <field name="model">employee.heyden</field>
+            <field name="arch" type="xml" >
+                <tree>
+                    <field name="name" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_view_employee_heyden_form" model="ir.actions.act_window" >
+            <field name="name" >Employee Heyden</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">employee.heyden</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+        <menuitem id="menu_employee_heyden" name="Heyden Employee" parent="hr.menu_human_resources_configuration" sequence="29" action="action_view_employee_heyden_form"/>
+
 
         <!-- bank -->
         <record id="hr_bank_form" model="ir.ui.view">
@@ -167,7 +210,6 @@
                         </group>
                     </sheet>
                 </form>
-
             </field>
         </record>
 

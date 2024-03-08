@@ -18,7 +18,7 @@
             <field name="arch" type="xml">
 
                 <field name="partner_ref" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
                 </field>
 
                 <field name="secondary_uom_qty" position="attributes" >
@@ -49,6 +49,8 @@
         </record>
 
 
+
+
          <record id="purchase_request_form_extend_heyden" model="ir.ui.view">
             <field name="name">purchase.request.form.extend</field>
             <field name="model">purchase.request</field>
@@ -64,7 +66,7 @@
                     <field name="attachment" />
                 </field>
                 <field name="assigned_to" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
                 </field>
             </field>
          </record>
@@ -92,6 +94,12 @@
                     <field name="is_commercial" />
                     <field name="manager" />
                 </field>
+
+                <field name="dpr_expiry_date" position="attributes" >
+                    <attribute name="required" >True</attribute>
+                </field>
+
+
             </field>
          </record>
 
@@ -120,8 +128,13 @@
                     </div>
                 </div>
                 <field name="payment_reference" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
                 </field>
+
+                <xpath expr="//tree/field[@name='price_unit']" position="attributes" >
+                    <attribute name="optional" >show</attribute>
+                </xpath>
+
 
                 <field name="amount_in_words" position="attributes" >
                     <attribute name="invisible" >1</attribute>
@@ -136,7 +149,7 @@
             <field name="inherit_id" ref="account.view_account_payment_form" />
             <field name="arch" type="xml">
                 <field name="company_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
                 </field>
 
             </field>
@@ -149,7 +162,7 @@
             <field name="inherit_id" ref="stock.view_picking_form" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'in', ('done'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
                 </field>
             </field>
         </record>
@@ -160,7 +173,10 @@
             <field name="inherit_id" ref="sale.view_order_form" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
+                </field>
+                 <field name="user_id" position="before" >
+                    <field name="location_id" attrs="{'readonly': [('state', 'in', ['sale','done'])]}" domain="[('usage','=','internal')]" options ="{'no_open':True,'no_create':True}"  />
                 </field>
             </field>
         </record>
@@ -171,7 +187,10 @@
             <field name="inherit_id" ref="kin_loading.view_order_form_other" />
             <field name="arch" type="xml">
                 <field name="partner_id" position="after" >
-                    <field name="employee_id" required="1" options ="{'no_open':True,'no_create':True}" attrs="{'readonly': [('state', 'not in', ('draft'))]}" />
+                    <field name="emp_hey_id" required="1" options ="{'no_open':True,'no_create':True}"  />
+                </field>
+                <field name="user_id" position="before" >
+                    <field name="location_id" attrs="{'readonly': [('state', 'in', ['sale','done'])]}" domain="[('usage','=','internal')]" options ="{'no_open':True,'no_create':True}"  />
                 </field>
             </field>
         </record>
@@ -200,6 +219,74 @@
                 </field>
             </field>
         </record>
+
+         <record id="view_dpr_info_form_heyden" model="ir.ui.view" >
+            <field name="name" >dpr.info.form.heyden</field>
+            <field name="model">dpr.info</field>
+             <field name="inherit_id" ref="kin_loading.view_dpr_info_form" />
+            <field name="arch" type="xml" >
+                    <field name="dpr_expiry_date" position="attributes" >
+                        <attribute name="required" >True</attribute>
+                    </field>
+<!--                <field name="customer_id" position="attributes" >-->
+<!--                        <attribute name="required" >False</attribute>-->
+<!--                        <attribute name="invisible" >True</attribute>-->
+<!--                    </field>-->
+            </field>
+        </record>
+
+
+<!--        <record id="view_dpr_info_tree_heyden" model="ir.ui.view" >-->
+<!--            <field name="name" >dpr.info.tree.heyden</field>-->
+<!--            <field name="model">dpr.info</field>-->
+<!--            <field name="inherit_id" ref="kin_loading.view_dpr_info_tree" />-->
+<!--            <field name="arch" type="xml" >-->
+<!--                  <field name="customer_id" position="attributes" >-->
+<!--                        <attribute name="invisible" >True</attribute>-->
+<!--                  </field>-->
+<!--            </field>-->
+<!--        </record>-->
+
+           <record id="view_res_partner_loading_extend_heyden" model="ir.ui.view">
+            <field name="name" >res.partner.loading.extend.heyden</field>
+            <field name="model" >res.partner</field>
+            <field name="inherit_id" ref="kin_loading.view_res_partner_loading_extend"/>
+            <field name="arch" type="xml">
+                <field name="dpr_info_ids" position="attributes" >
+                        <attribute name="invisible" >True</attribute>
+                </field>
+            </field>
+        </record>
+
+          <record id="view_loading_programme_form_heyden" model="ir.ui.view" >
+            <field name="name" >loading.programme.form</field>
+            <field name="model">loading.programme</field>
+          <field name="inherit_id" ref="kin_loading.view_loading_programme_form" />
+            <field name="arch" type="xml" >
+
+                <xpath expr="//field[@name='ticket_ids']/tree/field[@name='dpr_info_id']" position="attributes" >
+                      <attribute name="domain" >[]</attribute>
+                     <attribute name="string" >DPR No.</attribute>
+                </xpath>
+
+               <xpath expr="//field[@name='ticket_ids']/form/group/field[@name='dpr_info_id']" position="attributes" >
+                      <attribute name="domain" >[]</attribute>
+                     <attribute name="string" >DPR No.</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='ticket_ids']/tree/field[@name='dpr_no']" position="after" >
+                       <field name="receiving_station_address" string="Destination"  readonly="1"   force_save="1"   />
+                </xpath>
+
+               <xpath expr="//field[@name='ticket_ids']/form/group/field[@name='dpr_no']" position="after" >
+                      <field name="receiving_station_address"  string="Destination" readonly="1"  force_save="1"   />
+                </xpath>
+
+                 <xpath expr="//field[@name='ticket_ids']/tree/field[@name='dpr_no']" position="attributes" >
+                     <attribute name="invisible" >True</attribute>
+                 </xpath>
+            </field>
+          </record>
 
 
 
