@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+# Part of Odoo. See LICENSE file for full copyright and licensing details.
+# Copyright 2024  Kinsolve Solutions
+# Copyright 2024 Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)
+# License: see https://www.gnu.org/licenses/lgpl-3.0.en.html
+{
+    'name': 'Agary Modifications',
+    'version': '0.1',
+    'category': 'other',
+    'description': """
+Agary Modifications
+=======================================================================================
+
+""",
+    'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
+    'website': 'http://kinsolve.com',
+     'depends': ['base','kin_sales','kin_stock'],
+    'data': [
+        'security/ir.model.access.csv',
+        'security/security.xml',
+        'views/stock.xml',
+    ],
+    'test':[],
+    'installable': True,
+    'images': [],
+}

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+           <!-- Other Product Category -->
+            <record id="view_other_prod_category_form" model="ir.ui.view">
+                <field name="name">other.prod.category</field>
+                <field name="model">other.prod.category</field>
+                <field name="arch" type="xml">
+                    <form string="Other Product Category">
+                        <sheet>
+                            <group>
+                                <field name="name" required="1" />
+                            </group>
+                        </sheet>
+                    </form>
+                </field>
+            </record>
+
+            <record id="view_other_prod_category_tree" model="ir.ui.view">
+                <field name="name">other.prod.category.tree</field>
+                <field name="model">other.prod.category</field>
+                <field name="arch" type="xml">
+                    <tree string="Other Product Category">
+                        <field name="name"/>
+                    </tree>
+                </field>
+            </record>
+
+            <record id="view_other_prod_category_filter" model="ir.ui.view">
+                <field name="name">other.prod.category</field>
+                <field name="model">other.prod.category</field>
+                <field name="arch" type="xml">
+                    <search string="Other Product Category">
+                        <field name="name" string="Client Type" filter_domain="[('name','ilike',self)]"/>
+
+                    </search>
+                </field>
+            </record>
+
+            <record id="action_other_prod_category_type" model="ir.actions.act_window">
+                <field name="name">Client Type</field>
+                <field name="type">ir.actions.act_window</field>
+                <field name="res_model">other.prod.category</field>
+                <field name="view_mode">tree,form</field>
+                <field name="search_view_id" ref="view_other_prod_category_filter"/>
+                <field name="help" type="html">
+                    <p class="oe_view_nocontent_create">
+                        Other Product Category
+                    </p>
+                </field>
+            </record>
+           <menuitem id="menu_other_product_category" name="Other Product Category"  parent="stock.menu_product_in_config_stock" action="action_other_prod_category_type"   sequence="3"/>
+
+
+         <!-- Product template -->
+        <record id="product_template_form_extend_agary_view" model="ir.ui.view">
+                <field name="name">product.template.form.agary</field>
+                <field name="model">product.template</field>
+                <field name="inherit_id" ref="product.product_template_form_view"/>
+                <field name="arch" type="xml">
+                    <field name="categ_id" position="after"  >
+                        <field name="other_category_id" options="{'no_open': True, 'no_create': True}"  />
+                    </field>
+                </field>
+        </record>
+
+    </data>
+</odoo>
