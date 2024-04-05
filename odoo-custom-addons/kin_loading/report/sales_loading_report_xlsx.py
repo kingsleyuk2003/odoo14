@@ -147,7 +147,7 @@ class SalesReport(models.TransientModel):
 
         # Header Format
         report_worksheet.set_row(0, 30)  # Set row height
-        report_worksheet.merge_range(0, 0, 0, 10, user_company.name, header_format)
+        report_worksheet.merge_range(0, 0, 0, 10, self.env.company.name, header_format)
 
         # Title Format
         report_worksheet.set_row(2, 20)

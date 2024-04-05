@@ -20,7 +20,16 @@ class ProductTemplateExtend(models.Model):
     _inherit = 'product.template'
 
     other_category_id = fields.Many2one('other.prod.category' ,string='Product Category B', track_visibility='always')
+    has_commission = fields.Boolean(string='Has Commission')
 
+class StockInventory(models.Model):
+    _inherit = 'stock.inventory'
+
+    def post_inventory(self):
+        ctx = self.env.context.copy()
+        ctx.update({"branch_id": self.branch_id})
+        res = super(StockInventory,self.with_context(ctx)).post_inventory()
+        return res
 
 
 

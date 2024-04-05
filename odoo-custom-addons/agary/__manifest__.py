@@ -19,6 +19,8 @@ Agary Modifications
         'security/ir.model.access.csv',
         'security/security.xml',
         'views/stock.xml',
+        'views/sale.xml',
+        'views/account.xml',
     ],
     'test':[],
     'installable': True,

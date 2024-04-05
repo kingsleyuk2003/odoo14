@@ -75,7 +75,7 @@ class LoadingTicketReport(models.TransientModel):
                                sp.is_block_ticket, sp.is_loading_ticket, sp.truck_no,
                                sp.total_dispatch_qty, sp.ticket_load_qty, sp.is_exdepot_ticket,
                                sp.product_id, sp.picking_type_code,  prod.name as product_name,
-                               driver_name, partner.name as partner_name
+                               driver_name, partner.name as partner_name, dpr_no, receiving_station_address, truck_driver_phone
                           FROM public.stock_picking as sp
                           LEFT JOIN product_template as prod ON sp.product_id = prod.id                        
                           LEFT JOIN res_partner as partner ON sp.partner_id = partner.id
@@ -138,7 +138,7 @@ class LoadingTicketReport(models.TransientModel):
 
         # Header Format
         report_worksheet.set_row(0, 30)  # Set row height
-        report_worksheet.merge_range(0, 0, 0, 10, user_company.name, header_format)
+        report_worksheet.merge_range(0, 0, 0, 10, self.env.company.name, header_format)
 
         # Title Format
         report_worksheet.set_row(2, 20)
@@ -169,7 +169,7 @@ class LoadingTicketReport(models.TransientModel):
         report_worksheet.set_column(0, 0, 5)
         report_worksheet.set_column(1, 2, 10)
         report_worksheet.set_column(3, 3, 25)
-        report_worksheet.set_column(4, 13, 10)
+        report_worksheet.set_column(4, 17, 10)
 
         product_obj = self.env['product.product']
         for product_id in product_ids:
@@ -179,7 +179,7 @@ class LoadingTicketReport(models.TransientModel):
             report_worksheet.merge_range(row, col, row, 9, product_name, title_format)
             row += 2
 
-            report_worksheet.write_row(row, col, ('S/N', 'Ticket ID', 'Order ID', 'Customer' ,'Ticket Date' , 'Product', 'Qty.', 'Status', 'Loaded Date', 'Vehicle No.','Driver Name', 'Is loading Ticket', 'Is ExDepot Ticket','Picking Operation') , head_format)
+            report_worksheet.write_row(row, col, ('S/N', 'Ticket ID', 'Order ID', 'Customer' ,'Ticket Date' , 'Product', 'Qty.', 'Status', 'Loaded Date', 'Vehicle No.', 'Is loading Ticket', 'Is ExDepot Ticket','Picking Operation','DPR No.','Destination','Waybill','Driver', "Driver's Phone") , head_format)
             row += 1
             total_qty = 0
             first_row = row
@@ -210,14 +210,18 @@ class LoadingTicketReport(models.TransientModel):
                     report_worksheet.write(row, 7, str_state, cell_wrap_format)
                     report_worksheet.write(row, 8, list_dict['date_done'] and list_dict['date_done'].strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format) or False
                     report_worksheet.write(row, 9, list_dict['truck_no'], cell_wrap_format)
-                    report_worksheet.write(row, 10, list_dict['driver_name'], cell_wrap_format)
-                    report_worksheet.write(row, 11, list_dict['is_loading_ticket'], cell_wrap_format)
-                    report_worksheet.write(row, 12, list_dict['is_exdepot_ticket'], cell_wrap_format)
+                    report_worksheet.write(row, 10, list_dict['is_loading_ticket'], cell_wrap_format)
+                    report_worksheet.write(row, 11, list_dict['is_exdepot_ticket'], cell_wrap_format)
                     # report_worksheet.write(row, 13, list_dict['is_block_ticket'], cell_wrap_format)
-                    report_worksheet.write(row, 13, list_dict['picking_type_code'], cell_wrap_format)
+                    report_worksheet.write(row, 12, list_dict['picking_type_code'], cell_wrap_format)
+                    report_worksheet.write(row, 13, list_dict['dpr_no'], cell_wrap_format)
+                    report_worksheet.write(row, 14, list_dict['receiving_station_address'], cell_wrap_format)
+                    report_worksheet.write(row, 15, list_dict['picking_name'], cell_wrap_format)
+                    report_worksheet.write(row, 16, list_dict['driver_name'], cell_wrap_format)
+                    report_worksheet.write(row, 17, list_dict['truck_driver_phone'], cell_wrap_format)
                     row += 1
                     total_qty += float(load_qty)
-                last_row  = row
+                last_row = row
                 a1_notation_ref = xl_range(first_row, 6, last_row, 6)
                 report_worksheet.write(row, 6, '=SUM(' + a1_notation_ref + ')', cell_total_currency, total_qty)
             row += 1

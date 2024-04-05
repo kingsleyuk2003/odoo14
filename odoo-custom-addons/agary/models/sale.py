@@ -14,6 +14,10 @@ from datetime import datetime, timedelta , date
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
+    @api.onchange('product_id')
+    def product_id_change(self):
+        self.has_commission = self.product_id.has_commission
+
     def _default_prepare_invoice_line(self, **optional_values):
         """
         Prepare the dict of values to create the new invoice line for a sales order line.
@@ -43,19 +47,16 @@ class SaleOrderLine(models.Model):
         return res
 
     def _prepare_invoice_line(self, **optional_values):
-
         self.ensure_one()
-        deferred_revenue = self.product_id.account_unearned_revenue_id.id
-        if not deferred_revenue:
-            raise UserError(_('Please contact the Administrator to set the Unearned revenue account for %s', self.product_id.name))
 
         res = {
             'display_type': self.display_type,
             'sequence': self.sequence,
             'name': self.name,
-            #'product_id' : self.product_id.product_deferred_revenue_id.id,
-            'account_id':deferred_revenue,
-           #'product_uom_id': self.product_uom.id,
+            'product_id' : self.product_id.id,
+            #'account_id':deferred_revenue,
+            'product_uom_id': self.product_uom.id,
+            'has_commission': self.has_commission,
             'quantity': self.product_uom_qty,
             'discount': self.discount,
             'price_unit': self.price_unit,
@@ -70,4 +71,4 @@ class SaleOrderLine(models.Model):
             res['account_id'] = False
         return res
 
-    has_commission = fields.Boolean(string='Has Commission')
+    has_commission = fields.Boolean(string='Commission')

@@ -17,7 +17,7 @@ class AccountMove(models.Model):
 
     is_eservice_invoice = fields.Boolean(string='Is eservice Invoice')
 
-class AccountMove(models.Model):
+class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     is_eservice_invoice_line = fields.Boolean(string='Is eservice invoice line')
