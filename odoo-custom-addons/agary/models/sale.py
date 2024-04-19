@@ -10,6 +10,12 @@ from odoo.tools import float_compare, float_is_zero
 from datetime import datetime, timedelta , date
 
 
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
+
+    sale_note = fields.Text(string='Sales Person Note')
+    account_note = fields.Text(string="Accountant's Note")
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
