@@ -16,13 +16,35 @@ class SaleOrder(models.Model):
     sale_note = fields.Text(string='Sales Person Note')
     account_note = fields.Text(string="Accountant's Note")
 
+    # temporary thing. remove after go live
+    def action_confirm(self):
+        for order in self:
+            quote_date = order.date_order
+            res = super(SaleOrder, order).action_confirm()
+            order.date_order = quote_date
+            for picking in order.picking_ids :
+                picking.action_assign()
+                picking.scheduled_date = order.date_order
+                picking.move_line_ids.update({
+                    'date_backdating': order.date_order
+                }
+                )
+                picking.button_validate()
+                picking.date_done = order.date_order
+        return res
+
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
+
     @api.onchange('product_id')
     def product_id_change(self):
         self.has_commission = self.product_id.has_commission
+
+        res = super(SaleOrderLine,self).product_id_change()
+        self.name = self.product_id.name
+        return res
 
     def _default_prepare_invoice_line(self, **optional_values):
         """

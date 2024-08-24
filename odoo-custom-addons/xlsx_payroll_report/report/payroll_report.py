@@ -89,10 +89,10 @@ class PayrollReport(models.AbstractModel):
                         for line in slip.line_ids:
                             for rule in rules:
                                 if line.code == rule[1]:
-                                    if line.amount > 0:
-                                        sheet.write(x, rule[0], line.amount, format3_colored)
+                                    if line.total > 0:
+                                        sheet.write(x, rule[0], line.total, format3_colored)
                                     else:
-                                        sheet.write(x, rule[0], line.amount, format3)
+                                        sheet.write(x, rule[0], line.total, format3)
                         sheet.write(e_name, rule[0]+1, slip.contract_id.bank_id.name, format5)
                         sheet.write(e_name, rule[0]+2, slip.contract_id.bank_account_no, format5)
                         x += 1

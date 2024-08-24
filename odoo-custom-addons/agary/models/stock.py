@@ -32,4 +32,23 @@ class StockInventory(models.Model):
         return res
 
 
+class StockPickingAgary(models.Model):
+    _inherit = "stock.picking"
+    _order = 'name desc'
+
+    def button_validate(self):
+        res = super(StockPickingAgary, self).button_validate()
+        sale_order = self.sale_id
+
+        #temporary thing. remove after go live
+        if sale_order:
+            self.invoice_id.invoice_date = sale_order.date_order
+            self.invoice_id.name = ''
+            self.invoice_id.action_post()
+            self.invoice_id.date = sale_order.date_order
+
+        return res
+
+
+
 
