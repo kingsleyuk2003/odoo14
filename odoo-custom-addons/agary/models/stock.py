@@ -39,13 +39,8 @@ class StockPickingAgary(models.Model):
     def button_validate(self):
         res = super(StockPickingAgary, self).button_validate()
         sale_order = self.sale_id
-
-        #temporary thing. remove after go live
         if sale_order:
-            self.invoice_id.invoice_date = sale_order.date_order
-            self.invoice_id.name = ''
-            self.invoice_id.action_post()
-            self.invoice_id.date = sale_order.date_order
+            self.invoice_id.picking_id = self
 
         return res
 

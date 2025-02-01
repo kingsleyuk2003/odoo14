@@ -83,14 +83,14 @@ class CreateEntryWizard(models.TransientModel):
             move_id.write({'line_ids': mv_lines})
             move_id.post()
 
-        #add to the Line
+        bank_statement_id.gl_balance = bank_statement_id.get_gl_balance()
 
         return
 
     trx_type = fields.Selection([
-        ('increase', 'Credit  - CREDIT the Account Selected Below and DEBIT the Bank on the Statement'),
-        ('decrease', 'Debit - DEBIT the Account Selected Below and CREDIT the Bank on the Statement'),
-    ], 'Transaction Type', select=True)
+        ('increase', 'Income'),
+        ('decrease', 'Expense'),
+    ], 'Transaction Type', select=True, help=' Income - CREDIT the Account Selected Below and DEBIT the Bank on the Statement \n Expense - DEBIT the Account Selected Below and CREDIT the Bank on the Statement')
     account_id = fields.Many2one('account.account',string='Account')
     partner_id = fields.Many2one('res.partner',string='Partner')
     name = fields.Char(string='Description')

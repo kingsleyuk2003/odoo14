@@ -224,5 +224,3 @@ class AccountMove(models.Model):
     picking_id = fields.Many2one('stock.picking', string='Transfer Document')
 
 
-
-

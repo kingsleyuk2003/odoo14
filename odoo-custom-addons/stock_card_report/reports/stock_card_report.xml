@@ -108,7 +108,7 @@
                                 t-value="product_line.picking_id.purchase_id.partner_id.name"
                             />
                         </t>
-                        <t t-if="product_line.picking_id.sale_id" >
+                        <t t-if="product_line.sudo().picking_id.sale_id" >
                             <t
                                 t-set="details"
                                 t-value="product_line.picking_id.sale_id.partner_id.name"

@@ -419,8 +419,42 @@ class SaleOrderLine(models.Model):
                     # qty_available += res[product_id]['qty_available']
                     res = quant._get_available_quantity(sale_order_line.product_id,location_id)  # This gives quantity available that excludes reserved qty
                     qty_available += res
-                conv_qty = self.env['uom.uom']._compute_quantity(order_line_qty, sale_order_line.product_uom)
+                conv_qty = product.uom_id._compute_quantity(order_line_qty, sale_order_line.product_uom,rounding_method='HALF-UP')
                 if qty_available < conv_qty:
                     return {product_id: (qty_available, conv_qty)}
 
         return {}
+
+    @api.onchange('product_id')
+    def product_id_change(self):
+        res = super(SaleOrderLine, self).product_id_change()
+        vals = {}
+        product = self.product_id.with_context(
+            lang=self.order_id.partner_id.lang,
+            partner=self.order_id.partner_id.id,
+            quantity=self.product_uom_qty,
+            date=self.order_id.date_order,
+            pricelist=self.order_id.pricelist_id.id,
+            uom=self.product_uom.id
+        )
+
+        if self.product_id.type == 'product':
+            ctx = {}
+            product_id = product.id
+            qty_available = 0
+            product_obj = self.env['product.product']
+            sale_stock_loc_ids = self.order_id.team_id.sale_stock_location_ids
+            for location_id in sale_stock_loc_ids:
+                ctx.update({"location": location_id.id})
+                res = product_obj.browse([product_id])[0].with_context(ctx)._product_available()
+                qty_available += res[product_id]['qty_available']
+
+            product_qty = self.product_id.uom_id._compute_quantity(qty_available, self.product_uom,rounding_method='HALF-UP')
+            vals['qty_available'] = product_qty
+            self.update(vals)
+
+        return res
+
+    qty_available = fields.Float('Qty. Available', readonly=True)
+
+

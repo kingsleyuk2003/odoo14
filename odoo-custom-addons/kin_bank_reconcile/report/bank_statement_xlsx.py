@@ -43,10 +43,10 @@ class BankStatement(models.AbstractModel):
         report_worksheet.merge_range(3, 0, 3, 7, '', title_format)
         report_worksheet.merge_range(4, 0,4, 3, 'Bank: %s' % (obj.account_id.name), head_format)
         if obj.start_date:
-            start_date_time_format = datetime.strptime(obj.start_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+            start_date_time_format = obj.start_date.strftime('%d/%m/%Y')
             report_worksheet.merge_range(4, 4, 4, 5, 'Start Date: %s' % (start_date_time_format), head_format)
         if obj.end_date:
-            end_date_time_format = datetime.strptime(obj.end_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+            end_date_time_format = obj.end_date.strftime('%d/%m/%Y')
             report_worksheet.merge_range(4, 6, 4, 7, 'End Date: %s' % (end_date_time_format), head_format)
 
         report_worksheet.merge_range(5, 0, 5, 7, 'Balance as per Company Books: %s %s' % (obj.company_id.currency_id.symbol,'{:,.2f}'.format(obj.gl_balance)), cell_total_currency)

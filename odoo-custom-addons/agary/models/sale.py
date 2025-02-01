@@ -13,25 +13,17 @@ from datetime import datetime, timedelta , date
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
+    def _prepare_confirmation_values(self):
+        return {
+            'state': 'sale'
+        }
+
+
     sale_note = fields.Text(string='Sales Person Note')
     account_note = fields.Text(string="Accountant's Note")
+    partner_balance = fields.Monetary(related='partner_id.credit', string="Account Balance")
 
-    # temporary thing. remove after go live
-    def action_confirm(self):
-        for order in self:
-            quote_date = order.date_order
-            res = super(SaleOrder, order).action_confirm()
-            order.date_order = quote_date
-            for picking in order.picking_ids :
-                picking.action_assign()
-                picking.scheduled_date = order.date_order
-                picking.move_line_ids.update({
-                    'date_backdating': order.date_order
-                }
-                )
-                picking.button_validate()
-                picking.date_done = order.date_order
-        return res
+
 
 
 class SaleOrderLine(models.Model):
@@ -74,29 +66,17 @@ class SaleOrderLine(models.Model):
             res['account_id'] = False
         return res
 
-    def _prepare_invoice_line(self, **optional_values):
-        self.ensure_one()
 
-        res = {
-            'display_type': self.display_type,
-            'sequence': self.sequence,
-            'name': self.name,
-            'product_id' : self.product_id.id,
-            #'account_id':deferred_revenue,
-            'product_uom_id': self.product_uom.id,
-            'has_commission': self.has_commission,
-            'quantity': self.product_uom_qty,
-            'discount': self.discount,
-            'price_unit': self.price_unit,
-            'tax_ids': [(6, 0, self.tax_id.ids)],
-            'analytic_account_id': self.order_id.analytic_account_id.id,
-            'analytic_tag_ids': [(6, 0, self.analytic_tag_ids.ids)],
-            'sale_line_ids': [(4, self.id)],
-        }
-        if optional_values:
-            res.update(optional_values)
-        if self.display_type:
-            res['account_id'] = False
-        return res
+    def _prepare_invoice_line(self, **optional_values):
+        invoice_line_vals = super(SaleOrderLine, self)._prepare_invoice_line(**optional_values)
+        invoice_line_vals['has_commission'] = self.has_commission
+        return invoice_line_vals
+
+
 
     has_commission = fields.Boolean(string='Commission')
+
+
+
+
+

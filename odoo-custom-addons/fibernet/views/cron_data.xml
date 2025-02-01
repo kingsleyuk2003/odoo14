@@ -67,6 +67,46 @@
         </record>
 
 
+        <record forcecreate="True" id="ir_cron_run_support_date_check" model="ir.cron">
+            <field name="name">Run Support Date Check</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_support_date_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 11:00:00')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
+         <record forcecreate="True" id="ir_cron_run_support_date_today_check" model="ir.cron">
+            <field name="name">Run Support Date Check Today</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_support_date_today_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 06:00:00')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
+        <record forcecreate="True" id="ir_cron_run_escalate_support_date_check" model="ir.cron">
+            <field name="name">Run Escalate Failed Date Check</field>
+            <field name="model_id" ref="model_kin_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model.run_escalate_support_date_check()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="doall" eval="False"/>
+        </record>
+
+
     </data>
 </odoo>
 

@@ -22,6 +22,7 @@
                     <button name="btn_ticket_finalized" type="object"  string="Finalize"  class="oe_highlight" groups="fibernet.group_helpdesk_finalized_ticket"  attrs="{'invisible': ['|',('category_code', 'not in', ('installation','change_request') ),('state', 'not in', ('done') )]}"   />
                     <button name="%(action_disapprove_finalized)d" type="action" states="done,finalized"  string="Reject" groups="fibernet.group_helpdesk_finalized_ticket"  />
                     <button name="%(action_date_change_wizard)d" type="action" states="new,progress,done,finalized"  string="Reschedule Installation" groups="fibernet.group_ticket_reschedule_installation_btn" />
+                    <button name="%(action_date_change_support_wizard)d" type="action" states="new,progress,done,finalized"  string="Schedule Support" groups="fibernet.group_ticket_schedule_support_btn" />
                 </button>
 
                  <button name="btn_ticket_progress" position="attributes" >
@@ -129,6 +130,7 @@
                     <field name="duration_close" />
                     <field name="order_id" readonly="1" />
                     <field name="installation_date" readonly="1" />
+                    <field name="support_date" readonly="1" />
                 </field>
 
                 <page name="description" position="before" >
@@ -364,6 +366,7 @@
             <field name="arch" type="xml">
                 <filter name="company" position="after" >
                     <filter string="Installation Date" name="grpInstDate" context="{'group_by':'installation_date:day'}"/>
+                    <filter string="Support Date" name="grpSupDate" context="{'group_by':'support_date:day'}"/>
                     <filter string="Ticket Group" name="grpTicketGrp" context="{'group_by':'user_ticket_group_id'}"/>
                 </filter>
 
@@ -384,6 +387,23 @@
         </record>
 
          <menuitem id="menu_helpdesk_scheduled_tickets" name="Scheduled Installation Tickets" parent="kin_helpdesk.menu_help_desk" action="action_view_scheduled_tickets" sequence="10"/>
+
+
+        <record id="action_view_scheduled_support_tickets" model="ir.actions.act_window">
+            <field name="res_model">kin.ticket</field>
+            <field name="name">Scheduled Support Tickets</field>
+            <field name="view_mode">tree,form,pivot,graph</field>
+            <field name="context">{'search_default_grpSupDate': 1,'search_default_grpTicketGrp': 1 }</field>
+              <field name="domain">[('category_code', '=', 'support'),('state','in',['new','progress'])]</field>
+            <field name="help" type="html">
+                <p>
+                    Scheduled Support Tickets
+                </p>
+            </field>
+        </record>
+
+         <menuitem id="menu_helpdesk_scheduled_support_tickets" name="Scheduled Support Tickets" parent="kin_helpdesk.menu_help_desk" action="action_view_scheduled_support_tickets" sequence="11"/>
+
 
         <!-- Ticket Technical Report -->
          <record model="ir.ui.view" id="ticket_tree_technical_report_view">

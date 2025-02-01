@@ -104,6 +104,10 @@
                     <attribute name="attrs" >{'readonly': [('state', 'not in', ['draft'])]}</attribute>
                 </field>
 
+                <xpath expr="//tree/field[@name='product_uom_qty']" position="after" >
+                    <field name="qty_available"  groups="kin_sales.group_show_qty_available_field"  />
+                </xpath>
+
 
 <!--                 <xpath expr="//form//field[@name='price_tax']"  position="attributes">-->
 <!--                     <attribute name="invisible" >0</attribute>-->

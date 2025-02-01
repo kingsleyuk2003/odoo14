@@ -6,10 +6,11 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
-
+from odoo.addons.base.models.res_currency import Currency
 
 class AccountMove(models.Model):
     _inherit = "account.move"
+
 
     @api.model
     def create(self, vals):
@@ -33,9 +34,29 @@ class AccountMove(models.Model):
                 raise UserError('Please select a branch location for the account move update')
             return res
 
+    @api.model
+    def amount_to_text(self, amt):
+        amount_text = Currency.amount_to_text(amount=amt)
+        return amount_text
+
+    # delivery_note = fields.Char(string='Delivery Note')
+    supplier_ref = fields.Char(string='Suppliers Reference')
+    other_ref = fields.Char(string='Other Reference')
+    buyer_order_no = fields.Char(string='Buyer Order Number')
+    buyer_order_no_dated = fields.Date('Buyer Order Dated')
+    dispatch_doc_no = fields.Char('Dispatch Document Number')
+    dispatch_doc_no_dated = fields.Date('Dispatch Doc. No. Dated')
+    dispatched_through = fields.Char(string='Dispatched Through')
+    destination = fields.Char(string='Destination')
+    terms_of_delivery = fields.Text(string='Terms of Delivery')
+
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
     has_commission = fields.Boolean(string='Has Commission')
 
 
+class AccountJournal(models.Model):
+    _inherit = "account.journal"
+
+    branch_id = fields.Many2one('res.branch', string="Branch")

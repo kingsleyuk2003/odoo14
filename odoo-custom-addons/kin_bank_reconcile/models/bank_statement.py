@@ -69,7 +69,7 @@ class AccountJournal(models.Model):
         res = super(AccountJournal,self).get_journal_dashboard_datas()
 
         if self.type == 'bank':
-            gl_balance = reconciled_bal =  0
+            gl_balance = reconciled_bal = unreconciled_bal = 0
             account_ids = tuple(filter(None, [self.payment_debit_account_id.id, self.payment_credit_account_id.id]))
             if account_ids:
                 amount_field = 'balance' if not self.currency_id else 'amount_currency'
@@ -85,11 +85,18 @@ class AccountJournal(models.Model):
                 if query_results_reconciled and query_results_reconciled[0].get('sum') != None:
                     reconciled_bal = query_results_reconciled[0].get('sum')
 
+                query_unreconciled = """SELECT sum(%s) FROM account_move_line WHERE is_bank_reconciled = 'False' and  account_id in %%s;""" % (
+                amount_field,)
+                self.env.cr.execute(query_unreconciled, (account_ids,))
+                query_results_unreconciled = self.env.cr.dictfetchall()
+                if query_results_unreconciled and query_results_unreconciled[0].get('sum') != None:
+                    unreconciled_bal = query_results_unreconciled[0].get('sum')
+
             res.update({
                         'count_bank_statement' : len(self.bank_statement_ids),
                         'gl_balance' : formatLang(self.env, gl_balance, currency_obj=self.currency_id or self.company_id.currency_id),
                         'reconciled_bal' : formatLang(self.env, reconciled_bal, currency_obj=self.currency_id or self.company_id.currency_id),
-                        'unreconciled_bal' : formatLang(self.env, (gl_balance - reconciled_bal), currency_obj=self.currency_id or self.company_id.currency_id),
+                        'unreconciled_bal' : formatLang(self.env, unreconciled_bal, currency_obj=self.currency_id or self.company_id.currency_id),
                     }
                 )
         return res
@@ -101,7 +108,7 @@ class AccountJournal(models.Model):
 class AccountMoveLineExtend(models.Model):
     _inherit = 'account.move.line'
 
-    is_bank_reconciled = fields.Boolean(string='Is Bank Reconciled')
+    is_bank_reconciled = fields.Boolean(string='Reconciled')
     bank_statement_id  = fields.Many2one('bank.statement',string='Bank Statement')
 
 
@@ -150,8 +157,6 @@ class BankStatement(models.Model):
 
 
 
-
-    @api.depends('journal_id','move_line_ids.balance')
     def _compute_gl_balance(self):
         self.gl_balance = self.get_gl_balance()
         self._compute_reconcile()
@@ -164,12 +169,11 @@ class BankStatement(models.Model):
             account_ids = tuple(filter(None, [journal_id.payment_debit_account_id.id, journal_id.payment_credit_account_id.id]))
             if account_ids:
                 amount_field = 'balance' if not journal_id.currency_id else 'amount_currency'
-                query = """SELECT sum(%s) FROM account_move_line WHERE account_id in %%s;""" % (amount_field,)
+                query = """SELECT sum(%s) FROM account_move_line WHERE parent_state = 'posted' and date <= '%s' and account_id in %%s;""" % (amount_field,self.end_date,)
                 self.env.cr.execute(query, (account_ids,))
                 query_results = self.env.cr.dictfetchall()
                 if query_results and query_results[0].get('sum') != None:
                     balance = query_results[0].get('sum')
-
         return balance
 
     @api.depends('journal_id')
@@ -179,18 +183,54 @@ class BankStatement(models.Model):
         self.account_id = account
 
 
-    @api.depends('bank_reconciled_balance')
+    @api.depends('gl_balance','bank_reconciled_balance')
+    def _compute_outstanding_amt(self):
+        for rec in self:
+            rec.outstanding_amt = rec.get_outstanding_checks()
+
+
+    def get_outstanding_checks(self):
+        journal_id = self.journal_id
+        balance = 0
+        if journal_id:
+            account_ids = tuple(
+                filter(None, [journal_id.payment_debit_account_id.id, journal_id.payment_credit_account_id.id]))
+            if account_ids:
+                amount_field = 'balance' if not journal_id.currency_id else 'amount_currency'
+                query = """SELECT sum(Abs(%s)) FROM account_move_line WHERE parent_state = 'posted' and is_bank_reconciled = 'False' and date <= '%s' and account_id in %%s;""" % (
+                amount_field, self.end_date,)
+                self.env.cr.execute(query, (account_ids,))
+                query_results = self.env.cr.dictfetchall()
+                if query_results and query_results[0].get('sum') != None:
+                    balance = query_results[0].get('sum')
+        return balance
+
+    def get_outstanding_amt(self):
+        journal_id = self.journal_id
+        balance = 0
+        if journal_id:
+            account_ids = tuple(
+                filter(None, [journal_id.payment_debit_account_id.id, journal_id.payment_credit_account_id.id]))
+            if account_ids:
+                amount_field = 'balance' if not journal_id.currency_id else 'amount_currency'
+                query = """SELECT sum(%s) FROM account_move_line WHERE parent_state = 'posted' and is_bank_reconciled = 'False' and date <= '%s' and account_id in %%s;""" % (
+                amount_field, self.end_date,)
+                self.env.cr.execute(query, (account_ids,))
+                query_results = self.env.cr.dictfetchall()
+                if query_results and query_results[0].get('sum') != None:
+                    balance = query_results[0].get('sum')
+        return balance
+
+
+    @api.depends('statement_end_balance','outstanding_amt','move_line_ids.balance')
     def _compute_unreconcile(self):
         for rec in self:
-            rec.unreconciled_balance = rec.gl_balance - rec.bank_reconciled_balance
+            rec.unreconciled_balance = rec.gl_balance - rec.statement_end_balance - rec.get_outstanding_amt()
 
-
-    @api.depends('move_line_ids')
+    @api.depends('move_line_ids.balance')
     def _compute_reconcile(self):
         ans = self.get_reconciled_amount()
         self.bank_reconciled_balance = ans
-
-
 
     def get_reconciled_amount(self):
         journal_id = self.journal_id
@@ -198,16 +238,16 @@ class BankStatement(models.Model):
         if journal_id:
             amount_field = 'balance' if not journal_id.currency_id else 'amount_currency'
             account_ids = tuple(filter(None, [journal_id.payment_debit_account_id.id, journal_id.payment_credit_account_id.id]))
-            query_reconciled = """SELECT sum(%s) FROM account_move_line WHERE is_bank_reconciled = 'True' and  account_id in %%s;""" % (
+            query_reconciled = """SELECT sum(%s) FROM account_move_line WHERE parent_state = 'posted' and  is_bank_reconciled = 'True' and  account_id in %%s;""" % (
             amount_field,)
             self.env.cr.execute(query_reconciled, (account_ids,))
             query_results_reconciled = self.env.cr.dictfetchall()
             if query_results_reconciled and query_results_reconciled[0].get('sum') != None:
                 reconcile_balance = query_results_reconciled[0].get('sum')
-
         return  reconcile_balance
 
     def btn_get_lines(self):
+        self._compute_gl_balance()
         start_date = self.start_date
         end_date = self.end_date
         journal_id = self.journal_id
@@ -216,7 +256,7 @@ class BankStatement(models.Model):
         for ml in self.move_line_ids:
             ml.is_bank_reconciled =  False
             ml.bank_statement_id = False
-        domain = [('account_id','=',account.id),('is_bank_reconciled','=',False)]
+        domain = [('account_id','=',account.id),('is_bank_reconciled','=',False),('parent_state','=','posted')]
         if start_date:
             domain.append(('date', '>=',start_date))
         if end_date:
@@ -226,9 +266,20 @@ class BankStatement(models.Model):
 
 
 
+    def btn_check_all(self):
+        for line in self.move_line_ids:
+            line.is_bank_reconciled = True
+        self._compute_unreconcile()
 
-    
+    def btn_uncheck_all(self):
+        for line in self.move_line_ids:
+            line.is_bank_reconciled = False
+        self._compute_unreconcile()
+
+
     def btn_approve(self):
+        if self.unreconciled_balance != 0 :
+            raise UserError("Sorry, the Unreconciled Difference below should be Zero")
         self.state = 'approve'
 
     
@@ -239,6 +290,9 @@ class BankStatement(models.Model):
     def btn_cancel(self):
         self.state = 'cancel'
 
+    def btn_update(self):
+        self._compute_gl_balance()
+
 
     @api.depends('journal_id')
     def _compute_currency(self):
@@ -248,10 +302,12 @@ class BankStatement(models.Model):
     journal_id = fields.Many2one('account.journal',string='Bank Journal')
     account_id = fields.Many2one('account.account',string='Account',compute='_compute_account')
     start_date = fields.Date(string='Start Date')
-    end_date = fields.Date(string='End Date')
-    gl_balance = fields.Monetary(string='Balance as per Company Books',help='GL Balance',compute='_compute_gl_balance',store=True)
-    bank_reconciled_balance = fields.Monetary(string='Balance as per Bank',help='Reconciled Balance',compute='_compute_reconcile',store=True)
-    unreconciled_balance = fields.Monetary(string='Amounts not reflected in Bank',help='Unreconciled Balance',compute='_compute_unreconcile',store=True)
+    end_date = fields.Date(string='Statement End Date')
+    gl_balance = fields.Monetary(help='Balance as per Company Books',string='GL Balance',compute='_compute_gl_balance',store=True)
+    bank_reconciled_balance = fields.Monetary(help='Balance as per Bank',string='Reconciled Balance',compute='_compute_reconcile',store=True)
+    unreconciled_balance = fields.Monetary(help='Amounts not reflected in Bank',string='UNRECONCILED DIFFERENCE',compute='_compute_unreconcile',store=True)
+    statement_end_balance = fields.Monetary(string="Statement Ending Balance")
+    outstanding_amt = fields.Monetary(string="Outstanding Checks", help='Checks or Deposit in Transit', compute='_compute_outstanding_amt', store=True)
     currency_id = fields.Many2one('res.currency', compute='_compute_currency', string="Currency")
     company_id = fields.Many2one('res.company', related='journal_id.company_id', string='Company', store=True,
                                  readonly=True,
@@ -263,6 +319,7 @@ class BankStatement(models.Model):
         ('approve', 'Approved'),
         ('cancel', 'Cancelled'),
     ], 'Status', default='draft',select=True, readonly=True, copy=False)
+
 
 #
 #

@@ -27,6 +27,7 @@ Fibernet Modifications
         'wizard/finalized_disapprove.xml',
         'wizard/ticket_report_wizard_view.xml',
         'wizard/installation_date_change.xml',
+        'wizard/support_date_change.xml',
         'views/sequence.xml',
         'views/sale_view.xml',
         'views/ticket_view.xml',

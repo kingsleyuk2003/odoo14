@@ -7,11 +7,13 @@
             <field name="arch" type="xml">
                 <form string="Bank Statement">
                     <header>
+                        <button name="btn_check_all" type="object" string="Check-All" states="draft" class="oe_highlight"/>
+                        <button name="btn_uncheck_all" type="object" string="UnCheck-All" states="draft" class="oe_highlight"/>
                         <button name="action_create_entry_wizard" type="object" states="draft" string="Create Entry" class="oe_highlight"/>
-                         <button name="%(action_bank_statement_wizard)d" type="action" states="draft,approve" string="Export in Excel"    />
-                          <button name="btn_print_pdf_statement" string="Export in PDF" states="draft,approve"  type="object"   />
+                        <button name="%(action_bank_statement_wizard)d" type="action" states="draft,approve" string="Export in Excel"    />
+                        <button name="btn_print_pdf_statement" string="Export in PDF" states="draft,approve"  type="object"   />
                         <button name="btn_approve" type="object" string="Approve" states="draft" class="oe_highlight"/>
-                         <button string="Cancel" name="btn_cancel" type="object" states="approve" />
+                        <button string="Cancel" name="btn_cancel" type="object" states="approve" />
                         <button string="Set to Draft" name="btn_reset" type="object" states="cancel" />
                         <field name="state" widget="statusbar"/>
                     </header>
@@ -22,11 +24,11 @@
                         </h1>
                         <group>
                             <group  col="2">
-                                 <field name="journal_id" domain="[('type','=','bank')]"  options="{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', '!=', 'draft')]}" />
+                                 <field name="journal_id" required="1" domain="[('type','=','bank')]"  options="{'no_open':True,'no_create':True}"  attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                 <field name="account_id" />
-                                  <label for="start_date" string="Date Range"/>
+                                  <label for="end_date" string="Statement End Date"/>
                                  <div>
-                                       <field name="start_date" attrs="{'readonly': [('state', '!=', 'draft')]}" class="oe_inline"/> -  <field name="end_date" class="oe_inline" attrs="{'readonly': [('state', '!=', 'draft')]}" />
+<!--                                       <field name="start_date" attrs="{'readonly': [('state', '!=', 'draft')]}" class="oe_inline"/> -  --> <field name="end_date" required="1" class="oe_inline" attrs="{'readonly': [('state', '!=', 'draft')]}" />
                                  </div>
                             </group>
                             <group col="2" >
@@ -43,11 +45,13 @@
                             <field name="move_line_ids" nolabel="1" attrs="{'readonly': [('state', '!=', 'draft')]}"     >
                                 <tree editable="bottom" create="0" delete="0" >
                                     <field name="date" readonly="1"  />
-<!--                                    <field name="move_id" readonly="1" />-->
+                                   <!-- <field name="move_id" readonly="1" />-->
                                     <field name="name"  readonly="1"  />
-<!--                                    <field name="ref" readonly="1" />-->
+                                    <field name="ref" readonly="1" />
                                     <field name="partner_id"  readonly="1"  />
-                                    <field name="amount_currency" readonly="1" />
+                                    <field name="debit" readonly="1" sum="True" />
+                                    <field name="credit" readonly="1" sum="True" />
+                                  <!--  <field name="amount_currency" readonly="1" />-->
                                     <field name="balance" string="Amount" sum="True" />
                                     <field name="is_bank_reconciled" />
                                 </tree>
@@ -59,16 +63,22 @@
                                         <field name="ref" readonly="1" />
                                         <field name="partner_id"  readonly="1"  />
                                         <field name="amount_currency" readonly="1" />
+                                        <field name="debit" readonly="1" sum="True" />
+                                        <field name="credit" readonly="1" sum="True" />
                                         <field name="balance" string="Amount" sum="True" />
                                     </group>
                                 </form>
                             </field>
                         </group>
                            <group class="oe_subtotal_footer oe_right" colspan="2" >
+                               <button string="Update" name="btn_update" type="object"  />
+                                   <field name="statement_end_balance" />
                                    <field name="gl_balance" />
+                                    <field name="outstanding_amt"  />
                                     <field name="bank_reconciled_balance" />
-                                    <field name="unreconciled_balance" />
+                                     <field name="unreconciled_balance" />
                            </group>
+
                     </sheet>
                      <div class="oe_chatter">
                         <field name="message_follower_ids" widget="mail_followers"/>

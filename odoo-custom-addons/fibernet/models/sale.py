@@ -227,6 +227,15 @@ class SaleOrderExtend(models.Model):
             self.name, self.env.user.name)
         self.send_email(grp_name, subject, msg)
 
+
+        if self.amount_balance and self.amount_balance > 0:
+            debt_msg = '%s has a balance of %s%s, to pay before his account can be activated.  %s should request for the balance payment and contact the accountant to approve the sales order (%s) with the balance before you can re-try finalizing this ticket ' % (
+            self.partner_id.name, self.currency_id.symbol, self.amount_balance,
+            self.user_id.name, self.name)
+
+            ticket_obj.alert_msg = debt_msg
+            ticket_obj.show_alert_box = True
+
         return res
 
     def send_email_to_sales_person(self):

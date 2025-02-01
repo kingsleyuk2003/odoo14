@@ -6,6 +6,7 @@
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.tools import float_is_zero, float_compare
 
 class StockMove(models.Model):
     _inherit = "stock.move"
@@ -99,9 +100,10 @@ class StockPicking(models.Model):
         if res != True and res.get('name') == 'Create Backorder?':
             return res
 
-        self.create_sales_invoice()
         self.create_purchase_bill()
-
+        inv = self.with_context(picking_name=self.name).create_sales_invoice()
+        if self.picking_type_code == 'incoming' and self.so_count:
+            inv.action_switch_invoice_into_refund_credit_note()
         return res
 
 
@@ -137,6 +139,174 @@ class StockPicking(models.Model):
             self.invoice_id = inv
             return inv
         return False
+
+    # def _prepare_refund_invoice(self):
+    #     self.ensure_one()
+    #     journal = self.env['account.move'].with_context(default_move_type='out_invoice')._get_default_journal()
+    #     if not journal:
+    #         raise UserError(_('Please define an accounting sales journal for the company %s (%s).') % (self.company_id.name, self.company_id.id))
+    #     sale_order = self.sale_id
+    #     invoice_vals = {
+    #         'ref': sale_order.client_order_ref or '',
+    #         'move_type': 'in_invoice',
+    #         'narration': sale_order.note,
+    #         'currency_id': sale_order.pricelist_id.currency_id.id,
+    #         'campaign_id': sale_order.campaign_id.id,
+    #         'medium_id': sale_order.medium_id.id,
+    #         'source_id': sale_order.source_id.id,
+    #         'invoice_user_id': sale_order.user_id and sale_order.user_id.id,
+    #         'team_id': sale_order.team_id.id,
+    #         'partner_id': sale_order.partner_invoice_id.id,
+    #         'partner_shipping_id': sale_order.partner_shipping_id.id,
+    #         'fiscal_position_id': (sale_order.fiscal_position_id or sale_order.fiscal_position_id.get_fiscal_position(sale_order.partner_invoice_id.id)).id,
+    #         'partner_bank_id': sale_order.company_id.partner_id.bank_ids[:1].id,
+    #         'journal_id': journal.id,  # company comes from the journal
+    #         'invoice_origin': sale_order.name,
+    #         'invoice_payment_term_id': sale_order.payment_term_id.id,
+    #         'payment_reference': sale_order.reference,
+    #         'transaction_ids': [(6, 0, sale_order.transaction_ids.ids)],
+    #         'invoice_line_ids': [],
+    #         'company_id': sale_order.company_id.id,
+    #     }
+    #     return invoice_vals
+
+    # def _get_invoiceable_lines(self, final=False):
+    #     invoiceable_line_ids = []
+    #
+    #     for line in self.order_line:
+    #         invoiceable_line_ids.append(line.id)
+    #
+    #     return self.env['sale.order.line'].browse(invoiceable_line_ids)
+
+
+    # def _prepare_invoice_line(self, **optional_values):
+    #     """
+    #     Prepare the dict of values to create the new invoice line for a sales order line.
+    #
+    #     :param qty: float quantity to invoice
+    #     :param optional_values: any parameter that should be added to the returned invoice line
+    #     """
+    #     self.ensure_one()
+    #     sale_order = self.sale_id
+    #     res = {
+    #         'display_type': sale_order.display_type,
+    #         'sequence': sale_order.sequence,
+    #         'name': sale_order.name,
+    #         'product_id': self.product_id.id,
+    #         'product_uom_id': self.product_uom.id,
+    #         'quantity': self.qty_to_invoice,
+    #         'discount': self.discount,
+    #         'price_unit': self.price_unit,
+    #         'tax_ids': [(6, 0, self.tax_id.ids)],
+    #         'analytic_account_id': self.order_id.analytic_account_id.id,
+    #         'analytic_tag_ids': [(6, 0, self.analytic_tag_ids.ids)],
+    #         'sale_line_ids': [(4, self.id)],
+    #     }
+    #     if optional_values:
+    #         res.update(optional_values)
+    #     if self.display_type:
+    #         res['account_id'] = False
+    #     return res
+
+    # def _create_refund_invoices(self, grouped=False, final=False, date=None):
+    #
+    #     # 1) Create refund invoices.
+    #     invoice_vals_list = []
+    #     invoice_item_sequence = 0 # Incremental sequencing to keep the lines order on the invoice.
+    #     for move_id in self.move_ids_without_package:
+    #         picking_line = picking_line.with_company(self.company_id)
+    #
+    #         invoice_vals = self._prepare_refund_invoice()
+    #         invoiceable_lines = self._get_invoiceable_lines(final)
+    #
+    #         if not any(not line.display_type for line in invoiceable_lines):
+    #             raise UserError('No Invoiceable Lines')
+    #
+    #         invoice_line_vals = []
+    #         for line in invoiceable_lines:
+    #             invoice_line_vals.append(
+    #                 (0, 0, line._prepare_invoice_line(
+    #                     sequence=invoice_item_sequence,
+    #                 )),
+    #             )
+    #             invoice_item_sequence += 1
+    #
+    #         invoice_vals['invoice_line_ids'] += invoice_line_vals
+    #         invoice_vals_list.append(invoice_vals)
+    #
+    #     if not invoice_vals_list:
+    #         raise self._nothing_to_invoice_error()
+    #
+    #     # 2) Manage 'grouped' parameter: group by (partner_id, currency_id).
+    #     if not grouped:
+    #         new_invoice_vals_list = []
+    #         invoice_grouping_keys = self._get_invoice_grouping_keys()
+    #         for grouping_keys, invoices in groupby(invoice_vals_list, key=lambda x: [x.get(grouping_key) for grouping_key in invoice_grouping_keys]):
+    #             origins = set()
+    #             payment_refs = set()
+    #             refs = set()
+    #             ref_invoice_vals = None
+    #             for invoice_vals in invoices:
+    #                 if not ref_invoice_vals:
+    #                     ref_invoice_vals = invoice_vals
+    #                 else:
+    #                     ref_invoice_vals['invoice_line_ids'] += invoice_vals['invoice_line_ids']
+    #                 origins.add(invoice_vals['invoice_origin'])
+    #                 payment_refs.add(invoice_vals['payment_reference'])
+    #                 refs.add(invoice_vals['ref'])
+    #             ref_invoice_vals.update({
+    #                 'ref': ', '.join(refs)[:2000],
+    #                 'invoice_origin': ', '.join(origins),
+    #                 'payment_reference': len(payment_refs) == 1 and payment_refs.pop() or False,
+    #             })
+    #             new_invoice_vals_list.append(ref_invoice_vals)
+    #         invoice_vals_list = new_invoice_vals_list
+    #
+    #     # 3) Create invoices.
+    #
+    #     # As part of the invoice creation, we make sure the sequence of multiple SO do not interfere
+    #     # in a single invoice. Example:
+    #     # SO 1:
+    #     # - Section A (sequence: 10)
+    #     # - Product A (sequence: 11)
+    #     # SO 2:
+    #     # - Section B (sequence: 10)
+    #     # - Product B (sequence: 11)
+    #     #
+    #     # If SO 1 & 2 are grouped in the same invoice, the result will be:
+    #     # - Section A (sequence: 10)
+    #     # - Section B (sequence: 10)
+    #     # - Product A (sequence: 11)
+    #     # - Product B (sequence: 11)
+    #     #
+    #     # Resequencing should be safe, however we resequence only if there are less invoices than
+    #     # orders, meaning a grouping might have been done. This could also mean that only a part
+    #     # of the selected SO are invoiceable, but resequencing in this case shouldn't be an issue.
+    #     if len(invoice_vals_list) < len(self):
+    #         SaleOrderLine = self.env['sale.order.line']
+    #         for invoice in invoice_vals_list:
+    #             sequence = 1
+    #             for line in invoice['invoice_line_ids']:
+    #                 line[2]['sequence'] = SaleOrderLine._get_invoice_line_sequence(new=sequence, old=line[2]['sequence'])
+    #                 sequence += 1
+    #
+    #     # Manage the creation of invoices in sudo because a salesperson must be able to generate an invoice from a
+    #     # sale order without "billing" access rights. However, he should not be able to create an invoice from scratch.
+    #     moves = self.env['account.move'].sudo().with_context(default_move_type='out_invoice').create(invoice_vals_list)
+    #
+    #     # 4) Some moves might actually be refunds: convert them if the total amount is negative
+    #     # We do this after the moves have been created since we need taxes, etc. to know if the total
+    #     # is actually negative or not
+    #     if final:
+    #         moves.sudo().filtered(lambda m: m.amount_total < 0).action_switch_invoice_into_refund_credit_note()
+    #     for move in moves:
+    #         move.message_post_with_view('mail.message_origin_link',
+    #             values={'self': move, 'origin': move.line_ids.mapped('sale_line_ids.order_id')},
+    #             subtype_id=self.env.ref('mail.mt_note').id
+    #         )
+    #     return moves
+
+
 
     @api.depends('purchase_id')
     def _compute_po_count(self):
