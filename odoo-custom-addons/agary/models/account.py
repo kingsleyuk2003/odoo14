@@ -53,6 +53,27 @@ class AccountMove(models.Model):
 class AccountMoveLine(models.Model):
     _inherit = "account.move.line"
 
+    def _calculate_margin_markup_profit(self):
+        self.ensure_one()
+        if self.cos and (self.price_subtotal > 0) and self.move_id.move_type == "out_invoice":  # Invoice
+            total_cos = self.cos * self.quantity
+            gross_profit = self.price_subtotal - total_cos
+            self.markup = (gross_profit / total_cos) * 100
+            self.gross_margin = (gross_profit / self.price_subtotal) * 100
+            self.gross_profit = gross_profit
+            self.cos_total = total_cos
+            self.is_cos = True
+            self.has_commission = True
+        elif self.cos and (self.price_subtotal < 0) or self.move_id.move_type == "out_refund":  # Refund  Invoice or a negative invoice line
+            total_cos = self.cos * self.quantity
+            gross_profit = -(self.price_subtotal - total_cos)
+            self.markup = (gross_profit / total_cos) * 100
+            self.gross_margin = (gross_profit / self.price_subtotal) * 100
+            self.gross_profit = gross_profit
+            self.cos_total = -total_cos
+            self.is_cos = True
+            self.has_commission = True
+
     has_commission = fields.Boolean(string='Has Commission')
 
 

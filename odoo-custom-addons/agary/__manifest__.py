@@ -14,7 +14,7 @@ Agary Modifications
 """,
     'author': 'Kinsolve Solutions - kingsley@kinsolve.com',
     'website': 'http://kinsolve.com',
-     'depends': ['base','kin_sales','kin_stock','mrp','stock_move_backdating','branch'],
+     'depends': ['base','kin_sales','kin_stock','mrp','stock_move_backdating','branch','kin_account_margin'],
     'data': [
         'security/ir.model.access.csv',
         'security/security.xml',
@@ -23,6 +23,7 @@ Agary Modifications
         'views/account.xml',
         'views/mrp.xml',
         'views/branch_view.xml',
+        'views/res_partner_view.xml',
         'report/report_invoice.xml',
         'report/report_deliveryslip.xml',
         'report/template.xml',
