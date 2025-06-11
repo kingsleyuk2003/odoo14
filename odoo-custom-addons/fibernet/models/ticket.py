@@ -11,6 +11,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
+import requests, logging
 import pytz
 
 class UserGroups(models.Model):
@@ -50,6 +51,43 @@ class REGION(models.Model):
     _name = "region"
     _description = 'Region'
 
+
+    def create(self,vals):
+        region = super(REGION, self).create(vals)
+        region.action_create_region_eservice()
+        return region
+
+    def action_create_region_eservice(self):
+        payload =  {
+            'name': self.name or 'nil',
+        }
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES (%s, %s, %s, %s,'%s','%s')" % (
+                        msg, 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user))
+
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'ticket', 'success', 'action_create_region_eservice', datetime.now(), self.env.user))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'action_create_customer_selfcare error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    msg, 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user))
+            raise UserError('ERP while communicating with selfcare (Create Region Endpoint) has encountered the following error: %s' % (e))
+
+
     name = fields.Char(string='Region')
 
 
@@ -74,7 +112,42 @@ class Area(models.Model):
                 'company_id': company_id,
             }
             vals['sequence_id'] = IrSequence.create(val).id
-        return super(Area, self).create(vals)
+
+        area = super(Area, self).create(vals)
+        area.action_create_area_eservice()
+        return area
+
+    def action_create_area_eservice(self):
+        payload =  {
+            'name': self.name or 'nil',
+        }
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            if response.status_code != requests.codes.ok:
+
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'ticket', 'failed', 'action_create_area_eservice', datetime.now(), self.env.user))
+
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'ticket', 'success', 'action_create_area_eservice', datetime.now(), self.env.user))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'action_create_area_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    msg, 'ticket', 'failed', 'action_create_area_eservice', datetime.now(), self.env.user))
+            raise UserError('ERP while communicating with selfcare (Create Area Endpoint) has encountered the following error: %s' % (e))
+
 
 
     name = fields.Char(string='Area')
@@ -531,7 +604,95 @@ class Ticket(models.Model):
             return True
         return False
 
+    def get_installation_date_eservice(self,next_day,installation_day_offset):
+        from_date = datetime.now() + relativedelta(days=+int(next_day))
+        installation_date = self.get_installation_date(from_date, installation_day_offset)
+        return installation_date
 
+    def schedule_installation_date_eservice(self,next_day,area,installation_day_offset,ticket_count_per_day):
+        from_date = datetime.now() + relativedelta(days=+int(next_day))
+        installation_date = self.get_installation_date(from_date, installation_day_offset)
+        records = self.search([('state', 'not in', ['draft']),('area_customer_id', '=', area.id), ('installation_date', '=', installation_date)])
+
+        if len(records) < ticket_count_per_day:
+             return True
+        return False
+
+
+    def get_proposed_installation_date_eservice(self,area_id):
+        next_day = 0
+        area = self.env['area'].browse(area_id)
+        installation_day_offset = area.installation_day_offset
+        ticket_count_per_day = area.ticket_count_per_day
+        while not  self.schedule_installation_date_eservice(next_day,area,installation_day_offset,ticket_count_per_day):
+            next_day += 1
+            continue
+        installation_date = self.get_installation_date_eservice(next_day,installation_day_offset).strftime('%d/%m/%Y')
+
+        msg = "message: %s and payload: %s" % (
+            installation_date, area_id)
+        self.env.cr.execute(
+            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                msg, 'ticket', 'success', 'create_customer_eservice', datetime.now(), self.env.user.id))
+
+        return installation_date
+
+    def create_support_ticket_eservice(self, vals):
+        ticket_id = self.create(vals)
+        msg = 'message: %s and payload: %s' % (
+            ticket_id, vals)
+        self.env.cr.execute(
+            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                msg, 'ticket', 'success', 'create_support_ticket_eservice', datetime.now(), self.env.user))
+        return ticket_id.id
+
+    def receive_ticket_comment_eservice(self,vals):
+        msg_id = self.env['mail.message'].create({
+            'subject': 'Eservice Comment',
+            'email_from': 'Eservice',
+            'message_type': 'comment',
+            'model': 'kin.ticket',
+            'body': vals,
+        })
+        msg = 'message: %s and payload: %s' % (
+            msg_id, vals)
+        self.env.cr.execute(
+            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                msg, 'ticket', 'success', 'receive_ticket_comment_eservice', datetime.now(), self.env.user))
+
+        return msg_id
+
+    def send_ticket_comment_eservicec(self):
+        payload = {
+            'username': self.ref,
+            'key': 1899,
+        }
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/delete-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'ticket', 'success', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'action_create_customer_selfcare error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    msg, 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+            raise UserError(
+                'ERP while communicating with selfcare (send_ticket_comment_eservice Endpoint) has encountered the following error: %s' % (
+                    e))
 
     def installation_date_change(self,new_installation_date):
 
@@ -1299,6 +1460,7 @@ class Ticket(models.Model):
             mrc_subscription = self.order_id.order_line.filtered(lambda line: line.product_id.is_sub == True)
             self.partner_id.amount = mrc_subscription.price_unit
             self.partner_id.action_create_customer_selfcare()
+            self.partner_id.action_create_customer_eservice()
 
             self.partner_id.status = 'active'
             #self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)

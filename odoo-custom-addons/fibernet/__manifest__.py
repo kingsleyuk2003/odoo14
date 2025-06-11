@@ -33,7 +33,7 @@ Fibernet Modifications
         'views/ticket_view.xml',
         'views/contract.xml',
         'views/cron_data.xml',
-
+        'views/audit_log.xml',
     ],
     'test':[],
     'installable': True,
