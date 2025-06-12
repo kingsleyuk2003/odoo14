@@ -114,10 +114,10 @@ class Area(models.Model):
             vals['sequence_id'] = IrSequence.create(val).id
 
         area = super(Area, self).create(vals)
-        area.action_create_area_eservice()
+        area.create_area_eservice()
         return area
 
-    def action_create_area_eservice(self):
+    def create_area_eservice(self):
         payload =  {
             'name': self.name or 'nil',
         }
@@ -633,34 +633,89 @@ class Ticket(models.Model):
             installation_date, area_id)
         self.env.cr.execute(
             "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                msg, 'ticket', 'success', 'create_customer_eservice', datetime.now(), self.env.user.id))
+                msg, 'ticket', 'success', 'get_proposed_installation_date_eservice', datetime.now(), self.env.user.id))
 
         return installation_date
+
 
     def create_support_ticket_eservice(self, vals):
         ticket_id = self.create(vals)
         msg = 'message: %s and payload: %s' % (
-            ticket_id, vals)
-        self.env.cr.execute(
-            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                msg, 'ticket', 'success', 'create_support_ticket_eservice', datetime.now(), self.env.user))
+            ticket_id.id, vals)
+        self.env['audit.log'].create(
+            {
+                'name': msg,
+                'log_type': 'ticket',
+                'status': 'success',
+                'endpoint': 'create_support_ticket_eservice',
+                'date': datetime.now(),
+                'user_id': self.env.user.id,
+            }
+        )
+
+        # email ticket opener users
+        partn_ids = []
+        user_names = ''
+        msg = 'The Ticket (%s) with description (%s), has been created  by %s, you may open the ticket' % (
+            ticket_id.ticket_id, ticket_id.name, self.env.user.name)
+
+        ope_users = ticket_id.initiator_ticket_group_id.sudo().user_ids
+        for user in ope_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            ticket_id.message_follower_ids.unlink()
+            ticket_id.message_post(
+                body=_(msg),
+                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
         return ticket_id.id
 
     def receive_ticket_comment_eservice(self,vals):
-        msg_id = self.env['mail.message'].create({
-            'subject': 'Eservice Comment',
-            'email_from': 'Eservice',
-            'message_type': 'comment',
-            'model': 'kin.ticket',
-            'body': vals,
-        })
-        msg = 'message: %s and payload: %s' % (
-            msg_id, vals)
-        self.env.cr.execute(
-            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                msg, 'ticket', 'success', 'receive_ticket_comment_eservice', datetime.now(), self.env.user))
+        # msg_id = self.env['mail.message'].create({
+        #     'subject': 'Eservice Comment',
+        #     'email_from': 'Eservice',
+        #     'message_type': 'comment',
+        #     'model': 'kin.ticket',
+        #     'res_id': self.id,
+        #     'body': vals,
+        # })
 
-        return msg_id
+        msg = 'message: %s and payload: %s' % (
+            self.id, vals)
+        self.env['audit.log'].create(
+            {
+                'name': msg,
+                'log_type': 'ticket',
+                'status': 'success',
+                'endpoint': 'receive_ticket_comment_eservice',
+                'date': datetime.now(),
+                'user_id': self.env.user.id,
+            }
+        )
+
+        # email ticket opener users
+        partn_ids = []
+        user_names = ''
+        # msg = 'The Ticket (%s) with description (%s), has a new comment from  %s, you can read and reply the comment' % (
+        #     self.ticket_id, self.name, self.env.user.name)
+        msg = vals
+
+        ope_users = self.initiator_ticket_group_id.sudo().user_ids
+        for user in ope_users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+
+        if partn_ids:
+            self.message_follower_ids.unlink()
+            pm = self.message_post(
+                body=_(msg),
+                subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=True)
+
+        return self.id
+
 
     def send_ticket_comment_eservicec(self):
         payload = {
@@ -1460,7 +1515,7 @@ class Ticket(models.Model):
             mrc_subscription = self.order_id.order_line.filtered(lambda line: line.product_id.is_sub == True)
             self.partner_id.amount = mrc_subscription.price_unit
             self.partner_id.action_create_customer_selfcare()
-            self.partner_id.action_create_customer_eservice()
+            self.partner_id.create_customer_eservice()
 
             self.partner_id.status = 'active'
             #self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)

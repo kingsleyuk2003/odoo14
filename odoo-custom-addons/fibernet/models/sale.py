@@ -702,12 +702,21 @@ class ResPartnerExtend(models.Model):
 
     def create_customer_eservice(self,vals):
         customer = self.create(vals)
+
         msg = 'message: %s and payload: %s' % (
-            customer.ref, vals)
-        self.env.cr.execute(
-            "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                msg, 'sale', 'success', 'create_customer_eservice', datetime.now(), self.env.user))
-        return customer.ref
+            customer.id, vals)
+        self.env['audit.log'].create(
+            {
+                'name': msg,
+                'log_type': 'sale',
+                'status': 'success',
+                'endpoint': 'create_customer_eservice',
+                'date': datetime.now(),
+                'user_id': self.env.user.id,
+            }
+        )
+
+        return customer.id
 
     product_id = fields.Many2one('product.product', string='Package',tracking=True)
     amount = fields.Float(string='Package Amount')
