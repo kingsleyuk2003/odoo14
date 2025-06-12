@@ -1515,7 +1515,6 @@ class Ticket(models.Model):
             mrc_subscription = self.order_id.order_line.filtered(lambda line: line.product_id.is_sub == True)
             self.partner_id.amount = mrc_subscription.price_unit
             self.partner_id.action_create_customer_selfcare()
-            self.partner_id.create_customer_eservice()
 
             self.partner_id.status = 'active'
             #self.partner_id.activation_date = datetime.now().strftime(DEFAULT_SERVER_DATETIME_FORMAT)
@@ -1594,6 +1593,36 @@ class Ticket(models.Model):
         return res
 
 
+    def update_customer_ref_eservice(self,val):
+        payload = {'ref':val}
+        try:
+            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            if response.status_code != requests.codes.ok:
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'sale', 'failed', 'update_customer_ref_eservice', datetime.now(), self.env.user))
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        msg, 'sale', 'success', 'update_customer_ref_eservice', datetime.now(), self.env.user))
+
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'update_customer_ref_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    msg, 'sale', 'failed', 'update_customer_ref_eservice', datetime.now(), self.env.user))
+            raise UserError('ERP while communicating with selfcare (update_customer_ref_eservice Endpoint) has encountered the following error: %s' % (e))
+
+
+
     def write(self,vals):
         if self.partner_id and self.category_id == self.env.ref('fibernet.installation') :
             area_id = vals.get('area_customer_id', False)
@@ -1604,6 +1633,8 @@ class Ticket(models.Model):
                     sequence_id = self.env['area'].browse(area_id).sequence_id
                     if sequence_id:
                         vals['ref'] = sequence_id.next_by_id()
+                        #update new client id on eservice
+                        #self.update_customer_ref_eservice(vals['ref'])
                     else:
                         vals['ref'] = ''
 

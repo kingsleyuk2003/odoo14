@@ -327,6 +327,27 @@ class SaleOrderExtend(models.Model):
                 raise UserError(_('At Least an Order Line is Required'))
         return res
 
+    def create_sales_order_eservice(self,vals):
+        res = self.create(vals)
+        res.action_confirm()
+        res.action_create_payment(datetime.now(), self.env['account.journal'].browse(12), res.amount_total, 'eservice', res.partner_id)
+        res.create_ticket_with_email()
+        res.state = 'sale'
+
+        msg = 'message: %s and payload: %s' % (
+            res.id, vals)
+        self.env['audit.log'].create(
+            {
+                'name': msg,
+                'log_type': 'sale',
+                'status': 'success',
+                'endpoint': 'create_sales_order_eservice',
+                'date': datetime.now(),
+                'user_id': self.env.user.id,
+            }
+        )
+        return res.id
+
 
     def action_view_ticket(self):
         ticket_ids = self.mapped('ticket_ids')
