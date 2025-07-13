@@ -10,8 +10,9 @@ from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
 from dateutil.relativedelta import relativedelta
-import requests, logging
+import requests, logging, json
 from odoo.tools.misc import format_amount
+import urllib.parse
 
 class location(models.Model):
     _name = 'location'
@@ -346,7 +347,7 @@ class SaleOrderExtend(models.Model):
                 'user_id': self.env.user.id,
             }
         )
-        return res.id
+        return [res.id,res.name]
 
 
     def action_view_ticket(self):
@@ -541,6 +542,15 @@ class SaleOrderTemplateLine(models.Model):
 class ResPartnerExtend(models.Model):
     _inherit = 'res.partner'
 
+    def auth_eservice(self):
+        payload = {
+            "user": "erppusher1",
+            "pass": "CrU5h3!267^43*#"
+        }
+        response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/api-router/auth", data=payload)
+        bearer_token = json.loads(response.text).get('token')
+        return bearer_token
+
     def send_email(self, grp_name, subject, msg):
         partn_ids = []
         user_names = ''
@@ -583,19 +593,25 @@ class ResPartnerExtend(models.Model):
             raise UserError('Kindly set the client service package amount')
 
         payload = {
-            'username': self.ref or 'nil',
-            'key': 1899,
-            'state': self.state_ng or 'nil',
-            'city': self.city_cust or 'nil' ,
-            'address': self.street or 'nil',
-            'password': self.ref or 'nil',
-            'firstname': self.name or 'nil',
-            'phone': self.phone or 'nil',
-            'email': self.email or 'nil',
-            'expiration': self.expiration_date or 'nil',
-            'plan': self.product_id.selfcare_package_id or 'nil',
-            'ipaddress': self.ip_address or 'nil',
-            'amount': self.amount or 'nil' ,
+            "erp_id" : self.id,
+            "clientID": self.ref or 'nil',
+            "firstname": self.name or 'nil',
+            "lastname": "",
+            "product_id": self.product_id.id or 'nil',
+            "area_id": self.area_id.id or 'nil',
+            "company": "",
+            "address": self.street or 'nil',
+            "city": self.city_cust or 'nil' ,
+            "state": self.state_ng or 'nil',
+            "phone": self.phone or 'nil',
+            "email": self.email or 'nil',
+            "expiry_date": str(self.expiration_date) or 'nil',
+            "activation_date":  str(self.activation_date) or 'nil',
+            "ipaddress": self.ip_address or 'nil',
+            "idu_serial_no": self.serial_no or 'nil',
+            "olt_id": self.olt_id.id or 'nil',
+            "gpon": self.gpon or 'nil',
+            "vlan": self.vlan or 'nil'
         }
         return payload
 
@@ -605,20 +621,20 @@ class ResPartnerExtend(models.Model):
             raise UserError('This is to be applied to customers only')
         payload = self._get_self_care_payload()
         try:
-            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-user", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice())})
             if response.status_code != requests.codes.ok:
                 msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'failed', 'action_push_customer_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'sale', 'failed', 'action_create_customer_selfcare', datetime.now(), self.env.user.id))
                 raise UserError(response.text)
             else:
                 msg = 'message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'success', 'action_push_customer_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'sale', 'success', 'action_create_customer_selfcare', datetime.now(), self.env.user.id))
                 self.env.cr.execute("update res_partner set selfcare_push = True, selfcare_response = '%s' where id = %s" % (response.text, self.id))
                 # send email
                 grp_name = 'fibernet.group_receive_push_selfcare_customer_email'
@@ -633,24 +649,24 @@ class ResPartnerExtend(models.Model):
                 e)
             self.env.cr.execute(
                 "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'sale', 'failed', 'action_push_customer_eservice', datetime.now(), self.env.user))
+                    urllib.parse.quote(msg), 'sale', 'failed', 'action_push_customer_eservice', datetime.now(), self.env.user.id))
             raise UserError('ERP while communicating with selfcare (Create Customer Endpoint) has encountered the following error: %s' % (e))
 
-    def action_push_customer_eservice(self):
-        self.action_create_customer_selfcare()
 
-    def action_update_customer_selfcare(self):
+
+    def action_update_customer_eservice(self):
         if not self.customer_rank:
             raise UserError('This is to be applied to customers only')
         payload = self._get_self_care_payload()
+
         try:
-            response = requests.post("http://api.fibernet.ng:8010/api/update-client", data=payload)
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-user", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice())})
             if response.status_code != requests.codes.ok:
                 msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'failed', 'action_update_customer_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'sale', 'failed', 'action_update_customer_eservice', datetime.now(), self.env.user.id))
 
                 raise UserError(response.text)
             else:
@@ -658,7 +674,7 @@ class ResPartnerExtend(models.Model):
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'success', 'action_update_customer_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'sale', 'success', 'action_update_customer_eservice', datetime.now(), self.env.user.id))
 
                 self.env.cr.execute("update res_partner set selfcare_push = True, selfcare_response = '%s' where id = %s" % (response.text, self.id))
                 # send email
@@ -670,15 +686,14 @@ class ResPartnerExtend(models.Model):
         except Exception as e:
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
-            msg = 'action_create_customer_selfcare error while trying to communicate with eservice with the following message: %s' % (
+            msg = 'action_update_customer_eservice error while trying to communicate with eservice with the following message: %s' % (
                 e)
             self.env.cr.execute(
                 "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'sale', 'failed', 'action_update_customer_eservice', datetime.now(), self.env.user))
+                    msg, 'sale', 'failed', 'action_update_customer_eservice', datetime.now(), self.env.user.id))
             raise UserError('ERP while communicating with selfcare (Update Customer Endpoint) has encountered the following error: %s' % (e))
 
-    def action_update_customer_eservice(self):
-        self.action_update_customer_selfcare()
+
 
     def action_delete_customer_selfcare(self):
         if not self.customer_rank:
@@ -706,7 +721,6 @@ class ResPartnerExtend(models.Model):
 
     def btn_push_update_selfcare(self):
         if self.selfcare_push :
-            self.action_update_customer_selfcare()
             self.action_update_customer_eservice()
         else:
             raise UserError('There is no initial customer created from ERP to selfcare from the installation ticket')

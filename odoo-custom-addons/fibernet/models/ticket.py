@@ -11,7 +11,9 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
-import requests, logging
+import requests, logging, json
+import urllib.parse
+from bs4 import BeautifulSoup
 import pytz
 
 class UserGroups(models.Model):
@@ -37,6 +39,98 @@ class Estate(models.Model):
 class OLT(models.Model):
     _name = "olt"
     _description = 'OLT'
+
+    @api.model
+    def create(self, vals):
+        area = super(OLT, self).create(vals)
+        area.create_olt_eservice()
+        return area
+
+    def write(self, vals):
+        res = super(OLT, self).write(vals)
+        self.update_olt_eservice()
+        return res
+
+
+    def auth_eservice(self):
+        payload = {
+            "user": "erppusher1",
+            "pass": "CrU5h3!267^43*#"
+        }
+        response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/api-router/auth", data=payload)
+        bearer_token = json.loads(response.text).get('token')
+        return bearer_token
+
+    def create_olt_eservice(self):
+
+        payload = {
+            "oltName": self.name,
+            "oltErpId": self.id
+        }
+
+        try:
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-region", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
+            if response.status_code != requests.codes.ok:
+
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'create_olt_eservice', datetime.now(), self.env.user.id))
+
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'success', 'create_olt_eservice', datetime.now(), self.env.user.id.id))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'create_olt_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'create_olt_eservice', datetime.now(), self.env.user.id))
+            raise UserError('ERP while communicating with selfcare (Create Area Endpoint) has encountered the following error: %s' % (e))
+
+
+
+    def update_olt_eservice(self):
+        payload = {
+            "oltName": self.name,
+            "oltErpId": self.id
+        }
+
+        try:
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/update-region", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
+            if response.status_code != requests.codes.ok:
+
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'update_olt_eservice', datetime.now(), self.env.user.id))
+
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'success', 'update_olt_eservice', datetime.now(), self.env.user.id))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'update_olt_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'update_olt_eservice', datetime.now(), self.env.user.id))
+            raise UserError('ERP while communicating with selfcare (Create Area Endpoint) has encountered the following error: %s' % (e))
+
+
 
     name = fields.Char(string='OLT')
 
@@ -68,7 +162,7 @@ class REGION(models.Model):
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES (%s, %s, %s, %s,'%s','%s')" % (
-                        msg, 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user.id))
 
                 raise UserError(response.text)
             else:
@@ -76,7 +170,7 @@ class REGION(models.Model):
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'ticket', 'success', 'action_create_region_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'success', 'action_create_region_eservice', datetime.now(), self.env.user.id))
         except Exception as e:
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
@@ -84,7 +178,7 @@ class REGION(models.Model):
                 e)
             self.env.cr.execute(
                 "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user))
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'action_create_region_eservice', datetime.now(), self.env.user.id))
             raise UserError('ERP while communicating with selfcare (Create Region Endpoint) has encountered the following error: %s' % (e))
 
 
@@ -117,19 +211,37 @@ class Area(models.Model):
         area.create_area_eservice()
         return area
 
-    def create_area_eservice(self):
-        payload =  {
-            'name': self.name or 'nil',
+    def write(self, vals):
+        res = super(Area, self).write(vals)
+        self.update_area_eservice()
+        return res
+
+
+    def auth_eservice(self):
+        payload = {
+            "user": "erppusher1",
+            "pass": "CrU5h3!267^43*#"
         }
+        response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/api-router/auth", data=payload)
+        bearer_token = json.loads(response.text).get('token')
+        return bearer_token
+
+    def create_area_eservice(self):
+
+        payload = {
+            "regionName": self.name,
+            "regionErpId": self.id
+        }
+
         try:
-            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-region", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
             if response.status_code != requests.codes.ok:
 
                 msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'ticket', 'failed', 'action_create_area_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'create_area_eservice', datetime.now(), self.env.user.id))
 
                 raise UserError(response.text)
             else:
@@ -137,17 +249,51 @@ class Area(models.Model):
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'ticket', 'success', 'action_create_area_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'success', 'create_area_eservice', datetime.now(), self.env.user.id.id))
         except Exception as e:
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
-            msg = 'action_create_area_eservice error while trying to communicate with eservice with the following message: %s' % (
+            msg = 'create_area_eservice error while trying to communicate with eservice with the following message: %s' % (
                 e)
             self.env.cr.execute(
                 "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'ticket', 'failed', 'action_create_area_eservice', datetime.now(), self.env.user))
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'create_area_eservice', datetime.now(), self.env.user.id))
             raise UserError('ERP while communicating with selfcare (Create Area Endpoint) has encountered the following error: %s' % (e))
 
+
+
+    def update_area_eservice(self):
+        payload = {
+            "regionName": self.name,
+            "regionErpId": self.id
+        }
+
+        try:
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/update-region", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
+            if response.status_code != requests.codes.ok:
+
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'update_area_eservice', datetime.now(), self.env.user.id))
+
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'success', 'update_area_eservice', datetime.now(), self.env.user.id))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'update_area_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'update_area_eservice', datetime.now(), self.env.user.id))
+            raise UserError('ERP while communicating with selfcare (Create Area Endpoint) has encountered the following error: %s' % (e))
 
 
     name = fields.Char(string='Area')
@@ -215,6 +361,15 @@ class TicketCategory(models.Model):
 class Ticket(models.Model):
     _inherit = 'kin.ticket'
     _rec_name = 'ticket_id'
+
+    def auth_eservice(self):
+        payload = {
+            "user": "erppusher1",
+            "pass": "CrU5h3!267^43*#"
+        }
+        response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/api-router/auth", data=payload)
+        bearer_token = json.loads(response.text).get('token')
+        return bearer_token
 
     @api.model
     def run_escalate_check(self):
@@ -633,13 +788,14 @@ class Ticket(models.Model):
             installation_date, area_id)
         self.env.cr.execute(
             "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                msg, 'ticket', 'success', 'get_proposed_installation_date_eservice', datetime.now(), self.env.user.id))
+                urllib.parse.quote(msg), 'ticket', 'success', 'get_proposed_installation_date_eservice', datetime.now(), self.env.user.id.id))
 
         return installation_date
 
 
     def create_support_ticket_eservice(self, vals):
         ticket_id = self.create(vals)
+        ticket_id.is_from_eservice = True
         msg = 'message: %s and payload: %s' % (
             ticket_id.id, vals)
         self.env['audit.log'].create(
@@ -717,26 +873,26 @@ class Ticket(models.Model):
         return self.id
 
 
-    def send_ticket_comment_eservicec(self):
+    def send_ticket_comment_eservice(self,comment):
         payload = {
-            'username': self.ref,
-            'key': 1899,
+              "erp_ticket_id": self.id,
+              "comment":   BeautifulSoup(comment, 'html.parser').find('p').text
         }
         try:
-            response = requests.post("http://api.fibernet.ng:8010/api/delete-client", data=payload)
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/saveAdminComment", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
             if response.status_code != requests.codes.ok:
                 msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user.id))
                 raise UserError(response.text)
             else:
                 msg = 'message: %s and payload: %s' % (
                     response.text, payload)
                 self.env.cr.execute(
                     "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'ticket', 'success', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+                        urllib.parse.quote(msg), 'ticket', 'success', 'send_ticket_comment_eservice', datetime.now(), self.env.user.id))
         except Exception as e:
             _logger = logging.getLogger(__name__)
             _logger.exception(e)
@@ -744,10 +900,43 @@ class Ticket(models.Model):
                 e)
             self.env.cr.execute(
                 "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user))
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'send_ticket_comment_eservice', datetime.now(), self.env.user.id))
             raise UserError(
                 'ERP while communicating with selfcare (send_ticket_comment_eservice Endpoint) has encountered the following error: %s' % (
                     e))
+
+
+    def close_ticket_eservice(self):
+        payload = {
+              "erp_ticket_id": self.id
+        }
+        try:
+            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/tckCloseAdmin", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice()) })
+            if response.status_code != requests.codes.ok:
+                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'failed', 'close_ticket_eservice', datetime.now(), self.env.user.id))
+                raise UserError(response.text)
+            else:
+                msg = 'message: %s and payload: %s' % (
+                    response.text, payload)
+                self.env.cr.execute(
+                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                        urllib.parse.quote(msg), 'ticket', 'success', 'close_ticket_eservice', datetime.now(), self.env.user.id))
+        except Exception as e:
+            _logger = logging.getLogger(__name__)
+            _logger.exception(e)
+            msg = 'close_ticket_eservice error while trying to communicate with eservice with the following message: %s' % (
+                e)
+            self.env.cr.execute(
+                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
+                    urllib.parse.quote(msg), 'ticket', 'failed', 'close_ticket_eservice', datetime.now(), self.env.user.id))
+            raise UserError(
+                'ERP while communicating with selfcare (close_ticket_eservice Endpoint) has encountered the following error: %s' % (
+                    e))
+
 
     def installation_date_change(self,new_installation_date):
 
@@ -1390,6 +1579,10 @@ class Ticket(models.Model):
                 mail_obj.reply_to = 'csc@fibernet.ng'
                 self.env.user.notify_info('%s Will Be Notified by Email for Installation Ticket Closure' % (user_names))
 
+                #close also in eservice
+                if self.is_from_eservice:
+                    self.close_ticket_eservice()
+
         elif self.category_id == self.env.ref('fibernet.survey') :
             # send email
             self.send_email('fibernet.group_ticket_survey_close_notify',
@@ -1593,36 +1786,6 @@ class Ticket(models.Model):
         return res
 
 
-    def update_customer_ref_eservice(self,val):
-        payload = {'ref':val}
-        try:
-            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
-            if response.status_code != requests.codes.ok:
-                msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
-                    response.text, payload)
-                self.env.cr.execute(
-                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'failed', 'update_customer_ref_eservice', datetime.now(), self.env.user))
-                raise UserError(response.text)
-            else:
-                msg = 'message: %s and payload: %s' % (
-                    response.text, payload)
-                self.env.cr.execute(
-                    "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                        msg, 'sale', 'success', 'update_customer_ref_eservice', datetime.now(), self.env.user))
-
-        except Exception as e:
-            _logger = logging.getLogger(__name__)
-            _logger.exception(e)
-            msg = 'update_customer_ref_eservice error while trying to communicate with eservice with the following message: %s' % (
-                e)
-            self.env.cr.execute(
-                "INSERT INTO audit_log (name,log_type, status, endpoint,  date, user_id) VALUES ('%s', '%s', '%s', '%s','%s','%s')" % (
-                    msg, 'sale', 'failed', 'update_customer_ref_eservice', datetime.now(), self.env.user))
-            raise UserError('ERP while communicating with selfcare (update_customer_ref_eservice Endpoint) has encountered the following error: %s' % (e))
-
-
-
     def write(self,vals):
         if self.partner_id and self.category_id == self.env.ref('fibernet.installation') :
             area_id = vals.get('area_customer_id', False)
@@ -1633,8 +1796,6 @@ class Ticket(models.Model):
                     sequence_id = self.env['area'].browse(area_id).sequence_id
                     if sequence_id:
                         vals['ref'] = sequence_id.next_by_id()
-                        #update new client id on eservice
-                        #self.update_customer_ref_eservice(vals['ref'])
                     else:
                         vals['ref'] = ''
 
@@ -1837,6 +1998,7 @@ class Ticket(models.Model):
     ap_ip_address = fields.Char(string='AP IP Address')
     radio_model = fields.Char(string='Radio Model(microwave,MK,UB,Vjjt etc)')
     comment_activation = fields.Char(string='Comment')
+    is_from_eservice = fields.Boolean(string="Is From Eservice")
 
 
 
@@ -1913,23 +2075,47 @@ class Ticket(models.Model):
 
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
-    #
-    # 
-    # def write(self, vals):
-    #     is_partner = vals.get('partner_id', False)
-    #     if is_partner and self.is_advance_invoice:
-    #         raise UserError(_('Sorry, you are not allowed to change the customer, for the advance payment invoice'))
-    #
-    #     res = super(AccountInvoice, self).write(vals)
-    #     return res
 
-    
-    # def unlink(self):
-    #     for rec in self:
-    #         if rec.is_installation_invoice :
-    #             if self.env.user not in rec.installation_ticket_id.initiator_ticket_group_id.sudo().user_ids:
-    #                 raise UserError('Sorry, you cannot delete an installation invoice')
-    #     return super(AccountInvoice,self).unlink()
+    def send_email(self, grp_name, subject, msg):
+        partn_ids = []
+        user_names = ''
+        group_obj = self.env.ref(grp_name)
+        for user in group_obj.users:
+            if user.is_group_email:
+                user_names += user.name + ", "
+                partn_ids.append(user.partner_id.id)
+        if partn_ids:
+            # self.message_unsubscribe(partner_ids=[self.partner_id.id]) #this will not remove any other unwanted follower or group, there by sending to other groups/followers that we did not intend to send
+            self.message_follower_ids.unlink()
+            self.message_post(body=msg, subject=subject, partner_ids=partn_ids,subtype_xmlid='mail.mt_comment', force_send=False)
+            self.env.user.notify_info('%s Will Be Notified by Email' % (user_names))
+
+
+
+    def post_journal_entry_mrc_eservice(self,vals):
+        move = self.create(vals)
+        msg = 'message: %s and payload: %s' % (
+            self.id, vals)
+        self.env['audit.log'].create(
+            {
+                'name': msg,
+                'log_type': 'ticket',
+                'status': 'success',
+                'endpoint': 'post_journal_entry_mrc_eservice',
+                'date': datetime.now(),
+                'user_id': self.env.user.id,
+            }
+        )
+
+        grp_name = 'fibernet.group_receive_mrc_journal_entry_fibernet'
+        subject = 'A New MRC Journal Entry from Eservice'
+        msg = _('A New MRC Journal Entry with payment reference (%s) from Eservice requires your approval and posting') % (
+            move.payment_reference)
+        move.send_email(grp_name, subject, msg)
+
+        return move.id
+
+
 
     is_installation_invoice = fields.Boolean(string='Is Installation Invoice')
     installation_ticket_id = fields.Many2one('kin.ticket',string='Installation Ticket')
@@ -1940,6 +2126,7 @@ class Message(models.Model):
 
     @api.model
     def create(self, values):
+
         model = values.get('model', False)
         res = super(Message,self).create(values)
         if isinstance(model, bool):
@@ -1950,4 +2137,6 @@ class Message(models.Model):
             ticket_obj.last_log_datetime = datetime.today()
             ticket_obj.last_log_user_id = ticket_obj.env.user
             ticket_obj.last_log_message = values['body']
+            if ticket_obj.is_from_eservice and values['subtype_id']==1 :
+                ticket_obj.send_ticket_comment_eservice(values['body'])
         return res

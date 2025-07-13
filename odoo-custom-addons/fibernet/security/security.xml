@@ -165,6 +165,17 @@
         <field name="category_id" ref="module_category_fibernet_modifications"/>
     </record>
 
+	<record id="group_receive_mrc_journal_entry_fibernet" model="res.groups">
+        <field name="name">Receive MRC Journal Entry Email Notification</field>
+        <field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
+	<record id="group_show_quotation_templates_fibernet" model="res.groups">
+        <field name="name">Show Quotation Template Menu</field>
+        <field name="category_id" ref="module_category_fibernet_modifications"/>
+    </record>
+
+
 
 		<record id="user_ticket_intg_user_rule" model="ir.rule">
             <field name="name" >Ticket Helpdesk User finalized</field>
