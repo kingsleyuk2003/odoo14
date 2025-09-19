@@ -63,7 +63,7 @@ class StockPickingHeyden(models.Model):
             inv = self.create_sales_invoice()
             emp_id = False
             sale_order = self.sale_id
-            if sale_order :
+            if sale_order and inv:
                 inv.invoice_date = sale_order.date_order
                 inv.name = ''
                 inv.date = sale_order.date_order

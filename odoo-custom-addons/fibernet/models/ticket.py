@@ -795,7 +795,6 @@ class Ticket(models.Model):
 
     def create_support_ticket_eservice(self, vals):
         ticket_id = self.create(vals)
-        ticket_id.is_from_eservice = True
         msg = 'message: %s and payload: %s' % (
             ticket_id.id, vals)
         self.env['audit.log'].create(
@@ -826,6 +825,7 @@ class Ticket(models.Model):
             ticket_id.message_post(
                 body=_(msg),
                 subject='%s' % msg, partner_ids=partn_ids, subtype_xmlid='mail.mt_comment', force_send=False)
+        ticket_id.is_from_eservice = True
         return ticket_id.id
 
     def receive_ticket_comment_eservice(self,vals):

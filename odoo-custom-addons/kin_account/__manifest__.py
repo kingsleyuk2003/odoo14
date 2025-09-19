@@ -14,7 +14,7 @@ Account Modifications
 """,
     'author': 'Kingsley Okonkwo (kingsley@kinsolve.com, +2348030412562)',
     'website': 'http://kinsolve.com',
-    'depends': ['base','base_tier_validation' ,'account','kin_stock','stock_landed_costs','kin_sales','kin_purchase','partner_statement'],
+    'depends': ['base','account','kin_stock','stock_landed_costs','kin_sales','kin_purchase','partner_statement'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
@@ -28,7 +28,6 @@ Account Modifications
         'views/account_view.xml',
         'views/account_payment_view.xml',
         'views/stock_view.xml',
-        'views/account_move_tier_view.xml',
     ],
     'test':[],
     'installable': True,

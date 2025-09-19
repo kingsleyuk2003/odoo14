@@ -152,6 +152,9 @@ class SaleOrderExtend(models.Model):
         self.state = 'so_to_approve'
         self.confirmed_by_user_id = self.env.user
 
+        if self.env.user == self.create_uid:
+            raise UserError('Sorry, you can not post a payment created by you')
+
         if self.partner_id.ref :
             raise UserError('Sorry, this is not a new customer. You can create a new customer for a new installation')
 
@@ -288,6 +291,8 @@ class SaleOrderExtend(models.Model):
         #     raise UserError('Sorry, Wait for Eservice to Approve the Payment')
         # if self.eservice_amt_paid <= 0:
         #     raise UserError('Eservice Amount Paid is less than or equal to Zero ')
+        if self.env.user == self.create_uid:
+            raise UserError('Sorry, you can not post a payment created by you')
         return self.action_create_payment_entry()
 
 

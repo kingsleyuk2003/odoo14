@@ -7,14 +7,13 @@
     'category': 'Inventory/Purchase',
     'sequence': 35,
     'description': "",
-    'depends': ['purchase','purchase_stock','base_tier_validation'],
+    'depends': ['purchase','purchase_stock'],
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
         'wizard/purchase_lines_report_wizard_view.xml',
         'views/report.xml',
         'views/purchase_views.xml',
-        'views/purchase_order_tier_view.xml',
 
     ],
 

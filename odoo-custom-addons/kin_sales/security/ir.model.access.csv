@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sales_lines_report_wizard_user,sales.lines.report.wizard user,model_sales_lines_report_wizard,sales_team.group_sale_salesman,1,1,1,1
 access_sales_lines_report_wizard_manager,sales.lines.report.wizard manager,model_sales_lines_report_wizard,sales_team.group_sale_manager,1,1,1,1
+access_sales_customer_summary_report_wizard_manager,sales.customer.summary.report.wizard manager,model_sales_customer_summary_report_wizard,sales_team.group_sale_manager,1,1,1,1
+access_sales_rep_report_wizard_manager,sales.rep.report.wizard manager,model_sales_rep_report_wizard,sales_team.group_sale_manager,1,1,1,1

@@ -593,6 +593,7 @@ class ResPartnerExtend(models.Model):
             raise UserError('Kindly set the client service package amount')
 
         payload = {
+            'key': 1899, #remove when they golive on new eservice
             "erp_id" : self.id,
             "clientID": self.ref or 'nil',
             "firstname": self.name or 'nil',
@@ -621,7 +622,8 @@ class ResPartnerExtend(models.Model):
             raise UserError('This is to be applied to customers only')
         payload = self._get_self_care_payload()
         try:
-            response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-user", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice())})
+            response = requests.post("http://api.fibernet.ng:8010/api/create-client", data=payload)
+            #response = requests.post("https://selfcare-backyard-demo.fibernet.ng/apyv1/erp/create-user", data=payload, headers={'Authorization': 'Bearer %s' % (self.auth_eservice())})
             if response.status_code != requests.codes.ok:
                 msg = 'error while trying to communicate with eservice with the following message: %s and payload: %s' % (
                     response.text, payload)

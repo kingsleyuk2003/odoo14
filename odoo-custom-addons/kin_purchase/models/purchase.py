@@ -69,9 +69,17 @@ class PurchaseOrder(models.Model):
             order.invoice_ids = invoices
             order.invoice_count = len(invoices)
 
+    READONLY_STATES = {
+        'purchase': [('readonly', True)],
+        'done': [('readonly', True)],
+        'cancel': [('readonly', True)],
+    }
 
     invoice_ids = fields.Many2many('account.move', 'purchase_account_move', 'purchase_id', 'account_id',  compute="_compute_invoice", string='Bills', copy=False, store=True)
     is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
     is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
     is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
-
+    partner_id = fields.Many2one('res.partner', string='Vendor', required=True, states=READONLY_STATES,
+                                 change_default=True, tracking=True,
+                                 domain="['|','&' ,('company_id', '=', False), ('company_id', '=', company_id), ('supplier_rank','>',1)]",
+                                 help="You can find a vendor by its Name, TIN, Email or Internal Reference.")

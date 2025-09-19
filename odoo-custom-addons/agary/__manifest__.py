@@ -24,10 +24,13 @@ Agary Modifications
         'views/mrp.xml',
         'views/branch_view.xml',
         'views/res_partner_view.xml',
+        'views/report.xml',
         'report/report_invoice.xml',
         'report/report_deliveryslip.xml',
         'report/template.xml',
         'report/report_quote.xml',
+        'wizard/sales_branch_wizard_view.xml',
+
 
     ],
     'test':[],

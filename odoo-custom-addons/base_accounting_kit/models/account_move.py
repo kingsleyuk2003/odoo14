@@ -139,9 +139,9 @@ class AccountInvoiceLine(models.Model):
 
     @api.onchange('asset_category_id')
     def onchange_asset_category_id(self):
-        if self.move_id == 'out_invoice' and self.asset_category_id:
+        if self.move_id.move_type == 'out_invoice' and self.asset_category_id:
             self.account_id = self.asset_category_id.account_asset_id.id
-        elif self.move_id == 'in_invoice' and self.asset_category_id:
+        elif self.move_id.move_type == 'in_invoice' and self.asset_category_id:
             self.account_id = self.asset_category_id.account_asset_id.id
 
     @api.onchange('product_uom_id')
@@ -154,9 +154,9 @@ class AccountInvoiceLine(models.Model):
     def _onchange_product_id(self):
         vals = super(AccountInvoiceLine, self)._onchange_product_id()
         if self.product_id:
-            if self.move_id == 'out_invoice':
+            if self.move_id.move_type == 'out_invoice':
                 self.asset_category_id = self.product_id.product_tmpl_id.deferred_revenue_category_id
-            elif self.move_id == 'in_invoice':
+            elif self.move_id.move_type == 'in_invoice':
                 self.asset_category_id = self.product_id.product_tmpl_id.asset_category_id
         return vals
 

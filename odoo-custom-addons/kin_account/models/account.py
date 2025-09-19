@@ -189,6 +189,7 @@ class AccountMove(models.Model):
             else:
                 rec.amount_in_words = False
 
+
     @api.depends('amount_total')
     def _compute_description_report(self):
         desc = ''
@@ -199,6 +200,17 @@ class AccountMove(models.Model):
                 sym = line.currency_id.symbol
                 desc += "<br>%s.) Product:%s   Qty:%s %s   Price:%s%s   Subtotal:%s%s" % (count,line.name, line.quantity,line.product_uom_id.name,sym,line.price_unit,sym,line.price_subtotal)
             self.description_report = desc
+
+    @api.onchange('partner_id_customer')
+    def _compute_partner_id_customer(self):
+        for pay in self:
+            pay.partner_id = pay.partner_id_customer
+
+    @api.onchange('partner_id_supplier')
+    def _compute_partner_id_supplier(self):
+        for pay in self:
+            pay.partner_id = pay.partner_id_supplier
+
 
 
     amount_in_words = fields.Char(string="Amount in Words", store=True, compute='_compute_amount_in_words')
@@ -222,5 +234,9 @@ class AccountMove(models.Model):
     so_count = fields.Integer(compute="_compute_so_count", string='# of Sales Orders', copy=False, default=0)
     payment_id = fields.Many2one('account.payment',string='Payment')
     picking_id = fields.Many2one('stock.picking', string='Transfer Document')
+    partner_id_customer = fields.Many2one(related='partner_id', readonly=False, check_company=True, string="Customer")
+    partner_id_supplier = fields.Many2one(related='partner_id', readonly=False, check_company=True, string="Vendor")
+
+
 
 

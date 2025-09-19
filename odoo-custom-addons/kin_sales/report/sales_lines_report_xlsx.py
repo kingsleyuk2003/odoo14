@@ -43,13 +43,15 @@ class SalesReport(models.TransientModel):
                sol.qty_invoiced, sol.currency_id,
                sol.product_uom, sol.name as prod_name, sol.state, sol.order_partner_id,
                sol.order_id, sol.price_subtotal, sol.discount, sol.price_reduce,
-               sol.qty_delivered, sol.price_total, sol.product_id, sol.salesman_id, sale_order.date_order, 
+               sol.qty_delivered, sol.price_total, sol.product_id, sol.salesman_id, sale_order.date_order, sales_per_user.name as sales_rep,
                customer.name as customer_name, sale_order.name as so_name,
                sale_order.client_order_ref,
                sale_order.state
             FROM sale_order_line as sol
             LEFT JOIN res_partner as customer ON sol.order_partner_id = customer.id            
             LEFT JOIN sale_order as sale_order ON sol.order_id = sale_order.id
+             LEFT JOIN res_users as sales_person ON sol.salesman_id = sales_person.id
+            LEFT JOIN res_partner as sales_per_user ON sales_person.partner_id = sales_per_user.id 
             WHERE
              """ + where_start_date +"""            
              """ + where_partner +"""            
@@ -130,25 +132,44 @@ class SalesReport(models.TransientModel):
             report_worksheet.merge_range(row, col, row, 9, product_name, title_format)
             row += 2
 
-            report_worksheet.write_row(row, col, ('S/N', 'Order ID' , 'Order Date', 'Customer', 'PO Ref.' , 'Product', 'Ordered Qty.', 'Delivered Qty.', 'Invoiced', 'Un-Invoiced' ,'Unit Price' ,'Disc(%)','Sub-total', 'Status' ) , head_format)
+            report_worksheet.write_row(row, col, ('S/N', 'Order ID' , 'Order Date', 'Sales Rep.', 'Customer', 'PO Ref.' , 'Product', 'Ordered Qty.', 'Delivered Qty.', 'Invoiced', 'Un-Invoiced' ,'Unit Price' ,'Disc(%)','Sub-total', 'Status' ) , head_format)
             row += 1
+            first_row = row
+            total_qty = total_product_uom_qty = total_qty_delivered = total_qty_invoiced = total_qty_to_invoice = 0
             for list_dict in list_dicts:
                 if list_dict['product_id'] == product_id :
                     report_worksheet.write(row, 0, list_dict['sn'],cell_wrap_format)
                     report_worksheet.write(row, 1, list_dict['so_name'], cell_wrap_format)
                     report_worksheet.write(row, 2, list_dict['date_order'].strftime('%d/%m/%Y %H:%M:%S'), cell_wrap_format)
-                    report_worksheet.write(row, 3, list_dict['customer_name'], cell_wrap_format)
-                    report_worksheet.write(row, 4, list_dict['client_order_ref'], cell_wrap_format)
-                    report_worksheet.write(row, 5, list_dict['prod_name'], cell_wrap_format)
-                    report_worksheet.write(row, 6, list_dict['product_uom_qty'], cell_number)
-                    report_worksheet.write(row, 7, list_dict['qty_delivered'], cell_number)
-                    report_worksheet.write(row, 8, list_dict['qty_invoiced'], cell_number)
-                    report_worksheet.write(row, 9, list_dict['qty_to_invoice'], cell_number)
-                    report_worksheet.write(row, 10, list_dict['price_unit'], cell_amount)
-                    report_worksheet.write(row, 11, list_dict['discount'], cell_amount)
-                    report_worksheet.write(row, 12, list_dict['price_subtotal'], cell_amount)
-                    report_worksheet.write(row, 13, list_dict['state'], cell_wrap_format)
+                    report_worksheet.write(row, 3, list_dict['sales_rep'], cell_wrap_format)
+                    report_worksheet.write(row, 4, list_dict['customer_name'], cell_wrap_format)
+                    report_worksheet.write(row, 5, list_dict['client_order_ref'], cell_wrap_format)
+                    report_worksheet.write(row, 6, list_dict['prod_name'], cell_wrap_format)
+                    report_worksheet.write(row, 7, list_dict['product_uom_qty'], cell_number)
+                    report_worksheet.write(row, 8, list_dict['qty_delivered'], cell_number)
+                    report_worksheet.write(row, 9, list_dict['qty_invoiced'], cell_number)
+                    report_worksheet.write(row, 10, list_dict['qty_to_invoice'], cell_number)
+                    report_worksheet.write(row, 11, list_dict['price_unit'], cell_amount)
+                    report_worksheet.write(row, 12, list_dict['discount'], cell_amount)
+                    report_worksheet.write(row, 13, list_dict['price_subtotal'], cell_amount)
+                    report_worksheet.write(row, 14, list_dict['state'], cell_wrap_format)
                     row += 1
+                    total_product_uom_qty += list_dict['product_uom_qty']
+                    total_qty_delivered += list_dict['qty_delivered']
+                    total_qty_invoiced += list_dict['qty_invoiced']
+                    total_qty_to_invoice += list_dict['qty_to_invoice']
+                    total_qty += list_dict['price_subtotal']
+                last_row = row
+                notation_ref = xl_range(first_row, 7, last_row, 7)
+                report_worksheet.write(row, 7, '=SUM(' + notation_ref + ')', cell_total_currency, total_product_uom_qty)
+                notation_ref = xl_range(first_row, 8, last_row, 8)
+                report_worksheet.write(row, 8, '=SUM(' + notation_ref + ')', cell_total_currency, total_qty_delivered)
+                notation_ref = xl_range(first_row, 9, last_row, 9)
+                report_worksheet.write(row, 9, '=SUM(' + notation_ref + ')', cell_total_currency, total_qty_invoiced)
+                notation_ref = xl_range(first_row, 10, last_row, 10)
+                report_worksheet.write(row, 10, '=SUM(' + notation_ref + ')', cell_total_currency, total_qty_to_invoice)
+                notation_ref = xl_range(first_row, 13, last_row, 13)
+                report_worksheet.write(row, 13, '=SUM(' + notation_ref + ')', cell_total_currency, total_qty)
             row += 1
         return
 

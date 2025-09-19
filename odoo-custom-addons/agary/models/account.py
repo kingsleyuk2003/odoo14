@@ -8,6 +8,9 @@ from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.addons.base.models.res_currency import Currency
 
+
+
+
 class AccountMove(models.Model):
     _inherit = "account.move"
 
@@ -38,6 +41,22 @@ class AccountMove(models.Model):
     def amount_to_text(self, amt):
         amount_text = Currency.amount_to_text(amount=amt)
         return amount_text
+
+    def populate_ref_invoice_line_details(self):
+        for move in self:
+            if not move.is_sale_document(include_receipts=True) or not move.company_id.anglo_saxon_accounting:
+                continue
+            txt = ''
+            for line in move.invoice_line_ids:
+                txt += " %s %s(%s) %s | " % (line.name, line.quantity,line.product_uom_id.name,line.price_unit)
+            move.ref = txt
+
+        return  super(AccountMove, self)._stock_account_prepare_anglo_saxon_out_lines_vals()
+
+
+    def _stock_account_prepare_anglo_saxon_out_lines_vals(self):
+        self.populate_ref_invoice_line_details()
+        return  super(AccountMove, self)._stock_account_prepare_anglo_saxon_out_lines_vals()
 
     # delivery_note = fields.Char(string='Delivery Note')
     supplier_ref = fields.Char(string='Suppliers Reference')

@@ -399,6 +399,11 @@ class SaleOrderExtend(models.Model):
     is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
     is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
     is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
+    partner_id = fields.Many2one(
+        'res.partner', string='Customer', readonly=True,
+        states={'draft': [('readonly', False)], 'sent': [('readonly', False)]},
+        required=True, change_default=True, index=True, tracking=1,
+        domain="['|', '&',('company_id', '=', False), ('company_id', '=', company_id), ('customer_rank','>',1)]", )
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'

@@ -12,6 +12,22 @@
             <field name="report_file">Sales Report</field>
         </record>
 
+         <record id="sales_customer_summary_report" model="ir.actions.report">
+            <field name="name">Sales Customer Summary Report</field>
+            <field name="model">sales.customer.summary.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_sales.report_sales_customer_summary</field>
+            <field name="report_file">Sales Report</field>
+        </record>
+
+        <record id="sales_rep_report" model="ir.actions.report">
+            <field name="name">Sales by Rep. Report</field>
+            <field name="model">sales.rep.report.wizard</field>
+            <field name="report_type">xlsx</field>
+            <field name="report_name">kin_sales.report_sales_rep</field>
+            <field name="report_file">Sales by Rep. Report</field>
+        </record>
+
 
 
 

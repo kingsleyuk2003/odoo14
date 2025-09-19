@@ -9,10 +9,11 @@
                   <strong>This wizard will help you generate a sales order lines report in .xlsx file</strong>
 
                     <group col="4" colspan="4" >
-                         <field name="product_ids"  widget="many2many_tags"  options="{'no_open':True,'no_create':True}"  required="1" />
                         <field name="start_date" />
-                        <field name="partner_id" options="{'no_open':True,'no_create':True}"  />
+                         <field name="product_ids"  widget="many2many_tags"  options="{'no_open':True,'no_create':True}"  />
                         <field name="end_date" />
+                        <field name="partner_id" options="{'no_open':True,'no_create':True}"  required="1" />
+
                     </group>
                         <footer>
                             <button default_focus="1"  name="sales_lines_excel_report" string="Export" type="object"  colspan="2" class="oe_highlight" />

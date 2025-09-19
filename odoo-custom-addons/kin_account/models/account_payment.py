@@ -131,8 +131,20 @@ class AccountPayment(models.Model):
         self.is_request_approval_by = self.env.user
         self.is_request_approval_date = fields.Datetime.now()
 
+    @api.onchange('partner_id_customer')
+    def _compute_partner_id_customer(self):
+        for rec in self:
+            rec.partner_id = rec.partner_id_customer
+
+    @api.onchange('partner_id_supplier')
+    def _compute_partner_id_supplier(self):
+        for rec in self:
+            rec.partner_id = rec.partner_id_supplier
+
+
     is_request_approval_sent = fields.Boolean(string='Is Request Approval Sent', copy=False, tracking=True)
     is_request_approval_by = fields.Many2one('res.users', string='Requested By', copy=False, tracking=True)
     is_request_approval_date = fields.Datetime(string='Request Approval Date', copy=False, tracking=True)
-
+    partner_id_customer = fields.Many2one(related='partner_id', readonly=False,  check_company=True,string="Customer")
+    partner_id_supplier = fields.Many2one(related='partner_id', readonly=False,  check_company=True,string="Vendor")
 
